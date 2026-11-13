@@ -32,6 +32,8 @@ namespace Plugin.Systems
                     WeaponView = Array.Exists(Lines, L => L.Trim().Equals("weaponview", StringComparison.OrdinalIgnoreCase));
                     WristView = Array.Exists(Lines, L => L.Trim().Equals("wristview", StringComparison.OrdinalIgnoreCase));
                     PauseView = Array.Exists(Lines, L => L.Trim().Equals("pauseview", StringComparison.OrdinalIgnoreCase));
+                    InputTest = Array.Exists(Lines, L => L.Trim().Equals("inputtest", StringComparison.OrdinalIgnoreCase));
+                    Unfocused = Array.Exists(Lines, L => L.Trim().Equals("unfocused", StringComparison.OrdinalIgnoreCase));
                 }
             }
             catch (Exception e) { Vars.Log.LogWarning("Test scene file unreadable: " + e.Message); }
@@ -55,6 +57,8 @@ namespace Plugin.Systems
             while (Clock.Elapsed.TotalSeconds < Ready + 4) yield return null;
             Vars.Log.LogWarning($"Developer test hook: SceneHelper.LoadScene(\"{Scene}\").");
             SceneHelper.LoadScene(Scene);
+            if (Unfocused) yield return LoseFocus(Clock);
+            if (InputTest) yield return MeasureInput(Clock);
             if (JumpTest) yield return MeasureJumps(Clock);
             if (PunchTest) yield return MeasurePunches(Clock);
             if (ShortcutTest) yield return PressSlideDashPause(Clock);
@@ -299,6 +303,81 @@ namespace Plugin.Systems
             }
             Vars.Config.EnableMBP = MBP;
             Controllers.VRArmsSystem.TestHandSpeed = null;
+        }
+
+        // A line "unfocused": once the level is up, puts the Windows taskbar in front, so the checks after it run with
+        // the game window unfocused, as when another window is clicked while playing.
+        private static bool Unfocused;
+        [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+        private static extern IntPtr FindWindow(string ClassName, string WindowName);
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool SetForegroundWindow(IntPtr Window);
+        private static IEnumerator LoseFocus(System.Diagnostics.Stopwatch Clock)
+        {
+            double T = Clock.Elapsed.TotalSeconds;
+            while (Clock.Elapsed.TotalSeconds < T + 60 && (Vars.IsMainMenu || Vars.Registered<NewMovement>() == null)) yield return null;
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 3) yield return null;
+            SetForegroundWindow(FindWindow("Shell_TrayWnd", null));
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 1.5) yield return null;
+            Vars.Log.LogWarning($"Focus: game window focused {Application.isFocused} (virtual input {Input.SVRActionsManager.UseVirtualInput}).");
+        }
+
+        // A line "inputtest": presses buttons through the mod's SteamVR handlers, as the controllers do, and checks the game
+        // reacted: weapon slot keys, the wheel (next weapon), shoot (the revolver's Shoot runs), jump (NewMovement.Jump
+        // runs) and pause then unpause. Logs "Input test, <what>: ... -> OK" or "-> DIFFERENT".
+        private static bool InputTest;
+        private static int Shots, Jumps;
+        private static void CountShot() => Shots++;
+        private static void CountJump() => Jumps++;
+        private static IEnumerator Press(System.Diagnostics.Stopwatch Clock, string Button, double After)
+        {
+            Input.SVRActionsManager.TestButton(Button, true);
+            double T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + .15) yield return null;
+            Input.SVRActionsManager.TestButton(Button, false);
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + After) yield return null;
+        }
+        private static void Report(string What, bool Ok, string Detail)
+            => Vars.Log.LogWarning($"Input test, {What}: {Detail} -> {(Ok ? "OK" : "DIFFERENT")} (window focused {Application.isFocused}, virtual input {Input.SVRActionsManager.UseVirtualInput}).");
+        private static IEnumerator MeasureInput(System.Diagnostics.Stopwatch Clock)
+        {
+            double T = Clock.Elapsed.TotalSeconds;
+            while (Clock.Elapsed.TotalSeconds < T + 60 && (Vars.IsMainMenu || Vars.Registered<NewMovement>() == null)) yield return null;
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 3) yield return null;
+            var H = new HarmonyLib.Harmony("vrtrakill.devtest.input");
+            H.Patch(HarmonyLib.AccessTools.Method(typeof(Revolver), "Shoot"), postfix: new HarmonyLib.HarmonyMethod(typeof(DevTestHooks), nameof(CountShot)));
+            H.Patch(HarmonyLib.AccessTools.Method(typeof(NewMovement), nameof(NewMovement.Jump)), postfix: new HarmonyLib.HarmonyMethod(typeof(DevTestHooks), nameof(CountJump)));
+            GunControl GC = MonoSingleton<GunControl>.Instance;
+            if (GC == null) { Vars.Log.LogWarning("Input test: no GunControl in this level (use Level 1-1)."); yield break; }
+
+            yield return Press(Clock, "slot1", 1.2);
+            GameObject W1 = GC.currentWeapon; int S1 = GC.currentSlotIndex;
+            yield return Press(Clock, "slot2", 1.2);
+            Report("weapon slot 2", GC.currentSlotIndex == 2 && GC.currentWeapon != W1, $"slot {S1} -> {GC.currentSlotIndex}");
+
+            GameObject W2 = GC.currentWeapon; int S2 = GC.currentSlotIndex;
+            yield return Press(Clock, "next", 1.2);
+            Report("next weapon (wheel)", GC.currentWeapon != W2, $"slot {S2} -> {GC.currentSlotIndex}, weapon {(GC.currentWeapon != W2 ? "changed" : "same")}, scroll switching {MonoSingleton<InputManager>.Instance.ScrOn}");
+
+            yield return Press(Clock, "slot1", 1.5);
+            int ShotsBefore = Shots;
+            yield return Press(Clock, "shoot", .8);
+            Report("shoot (revolver)", Shots > ShotsBefore, $"{Shots - ShotsBefore} shot(s)");
+
+            NewMovement NM = Vars.Registered<NewMovement>();
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 5 && NM != null && !NM.gc.onGround) yield return null;
+            int JumpsBefore = Jumps;
+            yield return Press(Clock, "jump", .8);
+            Report("jump", Jumps > JumpsBefore, $"{Jumps - JumpsBefore} jump(s)");
+
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 1.5) yield return null;
+            bool PausedBefore = Vars.IsPaused;
+            yield return Press(Clock, "escape", 1.2);
+            bool PausedAfter = Vars.IsPaused;
+            Report("pause", !PausedBefore && PausedAfter, $"paused {PausedBefore} -> {PausedAfter}");
+            yield return Press(Clock, "escape", 1.2);
+            Report("unpause", PausedAfter && !Vars.IsPaused, $"paused {PausedAfter} -> {Vars.IsPaused}");
+            H.UnpatchSelf();
+            Vars.Log.LogWarning("Input test: done.");
         }
 
         // A second line "jumptest" in the file: once the player has stood on the ground for 2 s, jump three times through

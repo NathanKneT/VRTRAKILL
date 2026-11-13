@@ -9,6 +9,25 @@ namespace Plugin.Systems.Input
     {
         // one Windows input simulator for all keyboard and mouse events; a new one per event allocated three objects
         private static readonly InputSimulator InpSim = new InputSimulator();
+        // presses go to the virtual keyboard and mouse inside the game (VirtualInput), unless "Windows key presses" is on
+        // or the Input System refused the devices
+        public static bool UseVirtualInput { get; private set; }
+        private static bool WantVirtualInput, VirtualInputTried;
+
+        // Called every frame (ModHost): adds the virtual keyboard and mouse once the game is running. VR, and with it
+        // this class, can start inside BepInEx's loader, before the Input System has its device layouts: adding a
+        // device then throws (NullReferenceException in InputControlLayout). Nothing is pressed before the menus anyway.
+        public static void TickVirtualInput()
+        {
+            if (!WantVirtualInput || VirtualInputTried || Time.frameCount < 30) return;
+            VirtualInputTried = true;
+            if (VirtualInput.Init())
+            {
+                ReleaseAll(); // Windows keys pressed before the switch
+                UseVirtualInput = true;
+            }
+            else Vars.Log.LogInfo("VR buttons are sent as Windows key presses; the game window must have focus.");
+        }
 
         public static bool
             Jump = false,
@@ -92,18 +111,37 @@ namespace Plugin.Systems.Input
             return false;
         }
 
-        // Releases every key and mouse button the mod is holding. Called when the game loses focus and when it quits.
+        // Releases every key and mouse button the mod is holding. Called when the game quits.
         public static void ReleaseAll()
         {
+            if (UseVirtualInput)
+            {
+                VirtualInput.ReleaseAll();
+                HeldKeys.Clear(); HeldButtons.Clear();
+                return;
+            }
             foreach (VirtualKeyCode Key in HeldKeys) InpSim.Keyboard.KeyUp(Key);
             HeldKeys.Clear();
             foreach (MouseButton Button in new System.Collections.Generic.List<MouseButton>(HeldButtons)) TriggerKey(Button, false, true);
             HeldButtons.Clear();
         }
+        // Windows key presses held when the game loses focus would reach the program that gets it, so they are released.
+        // The virtual devices only reach the game, and keep working while another window is in front.
+        public static void OnFocusLost()
+        {
+            if (!UseVirtualInput) ReleaseAll();
+        }
 
         // Presses the key when the action starts and releases it when the action ends.
         private static void TriggerKey(VirtualKeyCode KeyCode, bool Started, bool Ended)
         {
+            if (UseVirtualInput)
+            {
+                // no focus check and no modifier release: nothing reaches Windows
+                if (Started) { if (VirtualInput.SetKey(KeyCode, true)) HeldKeys.Add(KeyCode); }
+                else if (Ended && HeldKeys.Remove(KeyCode)) VirtualInput.SetKey(KeyCode, false);
+                return;
+            }
             if (Started)
             {
                 if (!CanSend()) return;
@@ -119,6 +157,13 @@ namespace Plugin.Systems.Input
         // Presses or releases a mouse button; 3 is XBUTTON1, 4 is XBUTTON2 and 10 scrolls up with no release.
         private static void TriggerKey(MouseButton Button, bool Started, bool Ended)
         {
+            if (UseVirtualInput)
+            {
+                if ((int)Button == 10) { if (Started) VirtualInput.Scroll(1); return; }
+                if (Started) { if (VirtualInput.SetButton(Button, true)) HeldButtons.Add(Button); }
+                else if (Ended && HeldButtons.Remove(Button)) VirtualInput.SetButton(Button, false);
+                return;
+            }
             if (Started && !CanSend()) return;
             if (Started && (int)Button != 10) HeldButtons.Add(Button);
             if (Ended && !HeldButtons.Remove(Button)) return;
@@ -156,6 +201,7 @@ namespace Plugin.Systems.Input
         // Scrolls the mouse wheel by the given amount, only while the game has focus.
         private static void MouseScroll(int Amount)
         {
+            if (UseVirtualInput) { VirtualInput.Scroll(Amount); return; }
             if (!CanSend()) return;
             InpSim.Mouse.VerticalScroll(Amount);
         }
@@ -163,6 +209,8 @@ namespace Plugin.Systems.Input
         // Adds the SteamVR action listeners that drive movement, guns, arms and key presses.
         public static void Init()
         {
+            WantVirtualInput = !Vars.Config.Controllers.WindowsKeyPresses;
+            if (!WantVirtualInput) Vars.Log.LogInfo("VR buttons are sent as Windows key presses (\"Windows key presses\" is on); the game window must have focus.");
             // the first per-hand read (UIInteraction, the pose trackers) adds a source and updates it at once, mid-frame,
             // which logs NoData; added here, in SteamVR_Input's startup frame, their first update waits for the input update
             SteamVR_Actions._default.Shoot.ForceAddSourceToUpdateList(SteamVR_Input_Sources.LeftHand);
@@ -305,6 +353,11 @@ namespace Plugin.Systems.Input
                 case "dash": DashH(null, SteamVR_Input_Sources.Any, Down); break;
                 case "escape": EscapeH(null, SteamVR_Input_Sources.Any, Down); break;
                 case "whiplash": WhiplashH(null, SteamVR_Input_Sources.Any, Down); break;
+                case "jump": JumpH(null, SteamVR_Input_Sources.Any, Down); break;
+                case "shoot": RHShootH(null, SteamVR_Input_Sources.Any, Down); break;
+                case "slot1": Slot1H(null, SteamVR_Input_Sources.Any, Down); break;
+                case "slot2": Slot2H(null, SteamVR_Input_Sources.Any, Down); break;
+                case "next": NextWeaponH(null, SteamVR_Input_Sources.Any, Down); break;
             }
         }
         private static void PunchH(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)

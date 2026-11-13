@@ -30,9 +30,9 @@ namespace Plugin.Prefs
 
         // Version of the defaults this file was written with; null for files from before 1.1.0. See Migrate.
         [JsonProperty("Config version")] public int? ConfigVersion { get; set; }
-        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added. 4: auto height. 5: HUD on wrist. 6: "Left handed" renamed (was "Left handed (BROKEN)").
+        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added. 4: auto height. 5: HUD on wrist. 6: "Left handed" renamed (was "Left handed (BROKEN)"). 7: "Windows key presses".
         // Bump it when settings are added, so existing files are rewritten and show the new settings.
-        public const int CurrentConfigVersion = 6;
+        public const int CurrentConfigVersion = 7;
 
         // Moves values that are still the old defaults to the new defaults, once. Returns true when the file should be
         // rewritten (which also adds settings the file does not have yet).
@@ -64,6 +64,9 @@ namespace Plugin.Prefs
             // the 1.0.x name, read so the choice survives the rename; never written back
             [JsonProperty("Left handed (BROKEN)")] private bool LegacyLeftHanded { set { if (value) LeftHanded = true; } }
             [JsonProperty("Finger tracking")] public bool FingerTracking { get; set; } = false;
+            // VR buttons as real Windows key presses, like 1.0.x (needs the game window in front); off: a virtual
+            // keyboard and mouse inside the game (Input/VirtualInput)
+            [JsonProperty("Windows key presses")] public bool WindowsKeyPresses { get; set; } = false;
         }
 
         [JsonProperty("Enable controller-based aiming")] public bool EnableCBA { get; set; } = true;

@@ -29,6 +29,8 @@ namespace Plugin.Systems
         {
             try { Plugin.TickVRStart(); }
             catch (System.Exception e) { if (loggedErrors++ < 3) Vars.Log.LogError("VR start step failed: " + e); }
+            try { Input.SVRActionsManager.TickVirtualInput(); }
+            catch (System.Exception e) { if (loggedErrors++ < 3) Vars.Log.LogError("Virtual input step failed: " + e); }
         }
 
         private void OnApplicationQuit()
@@ -37,10 +39,10 @@ namespace Plugin.Systems
             Input.SVRActionsManager.ReleaseAll(); // a key held at exit would stay down in Windows
         }
 
-        // The VR buttons are Windows key presses; held ones must not stay down for the program that gets focus.
+        // With "Windows key presses", held keys must not stay down for the program that gets focus.
         private void OnApplicationFocus(bool focused)
         {
-            if (!focused) Input.SVRActionsManager.ReleaseAll();
+            if (!focused) Input.SVRActionsManager.OnFocusLost();
         }
 
         private void OnDestroy()

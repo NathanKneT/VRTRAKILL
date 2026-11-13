@@ -187,6 +187,7 @@ The settings players ask about most, in `BepInEx/plugins/VRTRAKILL/VRTRAKILL_Con
 | `HUD on wrist` | `true` | Health, stamina and the weapon panel sit on your arm-hand forearm, facing you, like a watch: raise your wrist to read them. `false` brings back the panel floating low in the view. |
 | `Whiplash aim marker` | `true` | A small blue marker ahead of the arm hand where the whiplash will go, while it is ready to throw. |
 | `Left handed` | `false` | Puts the guns in the left hand and the arm in the right hand, and mirrors the buttons (see Controls). Takes effect the next time VR starts. A layout you made yourself in SteamVR's binding screen still wins; pick the default there to get the mirrored one. Config files with the old name, `Left handed (BROKEN)`, are read and renamed. |
+| `Windows key presses` | `false` | `false`: the VR buttons press a keyboard and mouse that exist only inside the game, so they work while another window has focus and never reach other programs. `true`: real Windows key presses, like 1.0.x, which need the ULTRAKILL window in front. Use it only if a button does nothing with `false`, and report it. |
 
 When you update from an older version, the mod changes the old defaults in your file once (movement multiplier 0.575 to 1.0, punch speed 7.5 to 4.0), adds the new settings to the file and writes its `"Config version"`. Values you changed yourself are kept.
 
@@ -205,7 +206,7 @@ VR starts by itself as soon as SteamVR sees the headset; you do not need to rest
 
 Other problems:
 
-- Buttons do nothing: the mod's buttons are Windows key presses, so the ULTRAKILL window must have focus. Click the game window on your monitor (or with the SteamVR desktop view). The log says when presses were held back because the window had no focus.
+- Buttons do nothing: check that the log says "VR buttons go to a virtual keyboard and mouse inside the game". If you turned on `Windows key presses`, the buttons are real Windows key presses and the ULTRAKILL window must have focus: click it on your monitor (or with the SteamVR desktop view).
 - Buttons act like an old layout: SteamVR > Settings > Controllers > Manage Controller Bindings > ULTRAKILL > Default.
 
 ## Changes in 1.1.0
@@ -216,6 +217,7 @@ Fixes for the problems players reported most. The full list is in [CHANGELOG.md]
 - Movement and jumps at the game's speed by default (the old 0.575 multiplier made jumps about a third as high).
 - Easier punches (2 m/s swing), and a button-only punch option.
 - "Auto height": your head at the game's eye height whatever your height or seated/standing, recalibrated each level and with H; plus "Height offset (meters)".
+- Buttons no longer need the game window in front: they go to a keyboard and mouse inside the game, never to Windows or other programs.
 - Task Manager no longer opens mid-fight (slide + dash + pause sent Ctrl+Shift+Esc).
 - Left handed mode works: the buttons swap hands too (mirrored layouts for PS VR2, Quest, Index, Vive and WMR), the guns are no longer swapped twice, and the revolver is no longer turned around.
 - A whiplash aim marker on the arm hand.
@@ -300,7 +302,7 @@ The game folder comes from the `ULTRAKILLDir` property. The default is `C:\Progr
 dotnet build VRTRAKILL.sln -c Release -p:ULTRAKILLDir="E:\SteamLibrary\steamapps\common\ULTRAKILL"
 ```
 
-To check a level in VR without controllers (for example with SteamVR's null headset driver), put a file `BepInEx/plugins/VRTRAKILL/VRTRAKILL_TEST_SCENE.txt` containing a scene name such as `Level 0-1` in the game folder: the mod loads that scene once, a few seconds after VR starts in the main menu. Extra lines run in-game checks, logged to `BepInEx/LogOutput.log`: `jumptest` (jumps three times through the game's own jump and logs the height), `punchtest` (presses punch through the mod's SteamVR handler with simulated hand speeds and counts the punches; the game window needs focus) and `shortcuttest` (holds slide and dash, then pauses; check that Task Manager did not open), `aimtest` (for each weapon in the save, the angle between the crosshair and the shot line; with the rocket launcher, fires a rocket and measures it) `whiplashtest` (checks the whiplash marker and throws the whiplash through the mod's handler) `wristview` (raises the arm hand like reading a watch and logs `Wrist view: ready` for a capture of the wrist HUD) `pauseview` (opens the pause menu, logs `Pause view: open`, turns 60 degrees, logs `Pause view: turned` with where the menu is, then closes it) and `weaponview` (puts both hands at a fixed holding pose and shows each weapon family for 4 s, logging `Weapon view: <name>` so the headset window can be captured). With `Left handed` on, the hand poses are mirrored. Weapons appear from Level 1-1 on; Level 0-1 starts empty-handed. Delete the file afterwards. Without it nothing happens.
+To check a level in VR without controllers (for example with SteamVR's null headset driver), put a file `BepInEx/plugins/VRTRAKILL/VRTRAKILL_TEST_SCENE.txt` containing a scene name such as `Level 0-1` in the game folder: the mod loads that scene once, a few seconds after VR starts in the main menu. Extra lines run in-game checks, logged to `BepInEx/LogOutput.log`: `jumptest` (jumps three times through the game's own jump and logs the height), `punchtest` (presses punch through the mod's SteamVR handler with simulated hand speeds and counts the punches; the game window needs focus) and `shortcuttest` (holds slide and dash, then pauses; check that Task Manager did not open), `aimtest` (for each weapon in the save, the angle between the crosshair and the shot line; with the rocket launcher, fires a rocket and measures it) `whiplashtest` (checks the whiplash marker and throws the whiplash through the mod's handler) `wristview` (raises the arm hand like reading a watch and logs `Wrist view: ready` for a capture of the wrist HUD) `inputtest` (presses weapon slot, next weapon, shoot, jump and pause through the mod's SteamVR handlers and checks the game reacted) `unfocused` (put first: brings the Windows taskbar to the front so the checks after it run with the game unfocused) `pauseview` (opens the pause menu, logs `Pause view: open`, turns 60 degrees, logs `Pause view: turned` with where the menu is, then closes it) and `weaponview` (puts both hands at a fixed holding pose and shows each weapon family for 4 s, logging `Weapon view: <name>` so the headset window can be captured). With `Left handed` on, the hand poses are mirrored. Weapons appear from Level 1-1 on; Level 0-1 starts empty-handed. Delete the file afterwards. Without it nothing happens.
 
 To make the release zips, run:
 

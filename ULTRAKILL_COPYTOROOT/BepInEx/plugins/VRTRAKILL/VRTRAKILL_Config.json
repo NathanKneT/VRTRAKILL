@@ -9,7 +9,7 @@
     "Jump multiplier": 1.0,
     "Height offset (meters)": 0.0,
     "Auto height": true,
-    "Config version": 6,
+    "Config version": 7,
     "Controller Settings": {
       "Deadzone (from 0 to 1)": 0.4,
       "Smooth turning speed": 300.0,
@@ -18,7 +18,8 @@
       "Draw controller models": true,
       "Enable Controller Rumble": true,
       "Left handed": false,
-      "Finger tracking": false
+      "Finger tracking": false,
+      "Windows key presses": false
     },
     "Enable controller-based aiming": true,
     "CBS Settings": {
