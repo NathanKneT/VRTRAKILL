@@ -11,6 +11,8 @@ Fixes for the problems players reported most (from the 171 issues of the origina
   - When SteamVR has only just started, VR waits a few seconds before starting, so SteamVR Home or Room Setup, which SteamVR may still be launching, do not take VR away from the game.
   - If SteamVR stops VR for the game later (another VR app started, SteamVR closed), the desktop window says so instead of leaving a frozen headset image.
   - The menu laser no longer throws an error every frame while VR is not running.
+  - When VR starts after the game (headset turned on later), the hand trackers and the SteamVR plugin are set up then too; before, a failed first try left them broken for the session.
+  - If SteamVR stops answering (for example its "Unexpected SteamVR Error" with the headset unplugged), the desktop window says so; the game keeps running.
   - The retries really run now. Before, the game destroyed the object that ran them right after startup, so only the first try happened.
   - The desktop window says why VR is not running: SteamVR closed, no headset, or a game build other than 22957324.
   - The game keeps running when its window loses focus, so the headset image no longer freezes when a SteamVR window or another program takes focus.

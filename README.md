@@ -193,6 +193,7 @@ While VR is not running, a box at the top of the game window on your monitor say
 - "SteamVR is not running": start SteamVR (PS VR2: start the PlayStation VR2 App). If SteamVR is not running when the game starts, the game starts it itself, like any VR game.
 - "SteamVR sees the headset. Starting VR in a few seconds...": SteamVR has just started; VR waits a moment so SteamVR's own apps (Home, Room Setup) do not take it away.
 - "SteamVR stopped VR for ULTRAKILL": another VR app started or SteamVR closed. Restart ULTRAKILL.
+- "SteamVR is not answering": SteamVR is stuck, often on "Unexpected SteamVR Error" because the headset is not connected. Connect and turn on the headset, then restart SteamVR; the game keeps waiting.
 - "SteamVR does not see a headset": turn the headset on. For PS VR2, start the PlayStation VR2 App and wait until it shows the headset as connected.
 - "ULTRAKILL was updated (build ...)": the game build is not the one this release was tested on. The mod still starts, but some VR features may not work.
 

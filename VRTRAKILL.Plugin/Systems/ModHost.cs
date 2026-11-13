@@ -22,7 +22,14 @@ namespace Plugin.Systems
             return Instance;
         }
 
-        private void Update() => Plugin.TickVRStart();
+        // The game filters Unity exceptions out of its log (the plugin sets filterLogType to Warning), so an exception in
+        // the VR start loop would stop it silently; log the first few to BepInEx's log instead.
+        private int loggedErrors;
+        private void Update()
+        {
+            try { Plugin.TickVRStart(); }
+            catch (System.Exception e) { if (loggedErrors++ < 3) Vars.Log.LogError("VR start step failed: " + e); }
+        }
 
         private void OnApplicationQuit()
         {

@@ -26,6 +26,10 @@ namespace VRBasePlugin.Systems.VRCamera
         {
             transform.position = Vector3.zero;
 
+            // this singleton persists and builds the trackers once; when VR starts late (headset turned on after the game),
+            // it can be created before SteamVR input exists, and trackers built then threw in OnEnable and never tracked
+            while (!SteamVR_Input.initialized) yield return null;
+
             SteamVR_Actions._default.Activate();
             yield return null;
 

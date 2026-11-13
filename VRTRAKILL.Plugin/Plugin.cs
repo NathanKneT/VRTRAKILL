@@ -63,6 +63,11 @@ namespace Plugin
         // Now a background thread asks SteamVR whether it runs and sees a headset (a "background" OpenVR app, which neither
         // starts SteamVR nor waits for it), and the real init runs on the main thread only once that answer is yes.
         // ModHost.Update drives it, every 2 s, until VR runs; there is no give-up, VR starts whenever the headset is ready.
+        // Time.realtimeSinceStartup is not usable at chainloader time (the first try runs in Awake, before the first
+        // frame): a retry scheduled from it never came, which is also why the old coroutine never resumed after its first
+        // wait. A Stopwatch is a plain monotonic clock that works from the first instant.
+        private static readonly System.Diagnostics.Stopwatch Clock = System.Diagnostics.Stopwatch.StartNew();
+        private static float Now => (float)Clock.Elapsed.TotalSeconds;
         private static int VRAttempt;
         private static float NextVRAttemptAt;
         private static bool VRStarted;
@@ -85,21 +90,37 @@ namespace Plugin
             if (VRStarted) { WatchVR(); return; }
             if (ProbeThread != null)
             {
-                if (!ProbeDone) return;
+                if (!ProbeDone)
+                {
+                    // SteamVR in an error state ("Unexpected SteamVR Error", headset unplugged) can keep the check waiting
+                    // for a long time; it runs on its own thread, so the game goes on, but say what is happening
+                    if (!ReportedSlowProbe && Now - ProbeStartedAt > 5f)
+                    {
+                        ReportedSlowProbe = true;
+                        LastInitError = "SteamVR is not answering. If it shows an error, check that the headset is connected and on (PS VR2: PlayStation VR2 App), then restart SteamVR.";
+                        StartupStatus.ReportAttempt(Math.Max(VRAttempt, 2), LastInitError);
+                        Log.LogWarning(LastInitError);
+                    }
+                    return;
+                }
                 ProbeThread = null;
                 HandleProbeResult();
                 return;
             }
-            if (Time.realtimeSinceStartup < NextVRAttemptAt) return;
+            if (Now < NextVRAttemptAt) return;
             if (ProbeException != null) { VRAttempt++; TryFullInit(); return; }
             StartProbe();
         }
 
         // Starts the background SteamVR check.
+        private static float ProbeStartedAt;
+        private static bool ReportedSlowProbe;
         private static void StartProbe()
         {
             VRAttempt++;
             ProbeDone = false;
+            ProbeStartedAt = Now;
+            ReportedSlowProbe = false;
             ProbeThread = new System.Threading.Thread(() =>
             {
                 try
@@ -132,7 +153,7 @@ namespace Plugin
                     // at startup, start at once as before; later, let a freshly started SteamVR settle first
                     if (VRAttempt > 1)
                     {
-                        float now = Time.realtimeSinceStartup;
+                        float now = Now;
                         if (ProbeOkSince < 0f) ProbeOkSince = now;
                         if (now - ProbeOkSince < SettleSeconds)
                         {
@@ -185,7 +206,7 @@ namespace Plugin
         {
             StartupStatus.ReportAttempt(VRAttempt, LastInitError);
             if (VRAttempt == 1 || VRAttempt % 30 == 0) Log.LogWarning($"VR is not running yet (try {VRAttempt}): {LastInitError} Trying again every {VRInitRetryDelay:0} s.");
-            NextVRAttemptAt = Time.realtimeSinceStartup + delay;
+            NextVRAttemptAt = Now + delay;
         }
 
         // After VR started: if SteamVR stops it (another VR app took over, SteamVR closed), say so instead of
@@ -194,8 +215,8 @@ namespace Plugin
         private static float NextWatchAt;
         private static void WatchVR()
         {
-            if (ReportedVRStopped || ActiveDisplay == null || Time.realtimeSinceStartup < NextWatchAt) return;
-            NextWatchAt = Time.realtimeSinceStartup + 1f;
+            if (ReportedVRStopped || ActiveDisplay == null || Now < NextWatchAt) return;
+            NextWatchAt = Now + 1f;
             if (ActiveDisplay.running) return;
             ReportedVRStopped = true;
             Log.LogError("SteamVR stopped VR for ULTRAKILL (another VR app started, or SteamVR closed). Restart ULTRAKILL to get VR back.");
@@ -287,6 +308,16 @@ namespace Plugin
                 if (display == null) throw new InvalidOperationException("OpenVR display subsystem is missing.");
                 if (!display.running) display.Start();
                 ActiveDisplay = display;
+
+                // a failed earlier try leaves the SteamVR plugin disabled (_enabled = false, initializedState =
+                // InitializeFailure), so SteamVR.instance stayed null even after VR started on a later try (seen:
+                // "Active: False Connected: InitializeFailure"). OpenVR is up now; turning it back on creates the instance.
+                if (!SteamVR.active)
+                {
+                    SteamVR.initializedState = SteamVR.InitializedStates.None;
+                    SteamVR.enabled = true;
+                    Log.LogMessage("SteamVR plugin restarted after an earlier failed try. Active: " + SteamVR.active + " Connected: " + SteamVR.initializedState);
+                }
 
                 // once per game: a second Init would add every SteamVR action listener twice (double key presses)
                 if (!InputInitialized)
