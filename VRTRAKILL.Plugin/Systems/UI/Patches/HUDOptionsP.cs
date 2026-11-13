@@ -77,13 +77,16 @@ namespace Plugin.Systems.UI.Patches
             UIConverter.RecursiveConvertCanvas();
         }
 
-        // Scales up white and black screen flashes so they cover the view.
+        // Scales up white and black screen flashes once so they cover the view. Scaling on every Flash compounded
+        // (20, 400, 8000, ...) and after about 30 flashes (parries, hits) the scale overflowed to infinity.
+        private static readonly System.Collections.Generic.HashSet<int> ScaledFlashes = new System.Collections.Generic.HashSet<int>();
         [HarmonyPostfix]
         [HarmonyPatch(typeof(FlashImage), nameof(FlashImage.Flash))]
         static void FlashImageTweak(FlashImage __instance)
         {
-            if (__instance.gameObject.name.Contains("White") || __instance.gameObject.name.Contains("Black"))
-                __instance.transform.localScale *= 20;
+            if (!(__instance.gameObject.name.Contains("White") || __instance.gameObject.name.Contains("Black"))) return;
+            if (!ScaledFlashes.Add(__instance.GetInstanceID())) return;
+            __instance.transform.localScale *= 20;
         }
     }
 }
