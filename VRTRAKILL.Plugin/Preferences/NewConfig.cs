@@ -28,11 +28,11 @@ namespace Plugin.Prefs
         // seated or standing; you still crouch and lean for real from there. false: your real height above the floor.
         [JsonProperty("Auto height")] public bool AutoHeight { get; set; } = true;
 
-        // Version of the defaults this file was written with; null for files from before 1.1.0. See Migrate.
+        // Version of the defaults this file was written with; null for files from before 2.0.0. See Migrate.
         [JsonProperty("Config version")] public int? ConfigVersion { get; set; }
-        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added. 4: auto height. 5: HUD on wrist. 6: "Left handed" renamed (was "Left handed (BROKEN)"). 7: "Windows key presses". 8: rumble settings.
+        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added. 4: auto height. 5: HUD on wrist. 6: "Left handed" renamed (was "Left handed (BROKEN)"). 7: "Windows key presses". 8: rumble settings. 9: comfort vignette.
         // Bump it when settings are added, so existing files are rewritten and show the new settings.
-        public const int CurrentConfigVersion = 8;
+        public const int CurrentConfigVersion = 9;
 
         // Moves values that are still the old defaults to the new defaults, once. Returns true when the file should be
         // rewritten (which also adds settings the file does not have yet).
@@ -134,6 +134,15 @@ namespace Plugin.Prefs
             }
         }
 
+        [JsonProperty("Comfort Settings")] public _Comfort Comfort { get; set; }
+        public class _Comfort
+        {
+            // darkens the edge of the view while moving fast or turning with the stick (Systems/VRCamera/ComfortVignette)
+            [JsonProperty("Comfort vignette")] public bool Vignette { get; set; } = false;
+            // how dark the edge gets, 0 to 1
+            [JsonProperty("Comfort vignette strength")] public float VignetteStrength { get; set; } = .85f;
+        }
+
         [JsonProperty("DesktopView Settings")] public _DesktopView DesktopView { get; set; }
         public class _DesktopView
         {
@@ -161,6 +170,7 @@ namespace Plugin.Prefs
             UIInteraction ??= new _UIInteraction();
             UIInteraction.ControllerLines ??= new _UIInteraction._ControllerLines();
             DesktopView ??= new _DesktopView();
+            Comfort ??= new _Comfort();
             Misc ??= new _Misc();
         }
 

@@ -9,7 +9,7 @@
     "Jump multiplier": 1.0,
     "Height offset (meters)": 0.0,
     "Auto height": true,
-    "Config version": 8,
+    "Config version": 9,
     "Controller Settings": {
       "Deadzone (from 0 to 1)": 0.4,
       "Smooth turning speed": 300.0,
@@ -50,6 +50,10 @@
         "Starting transparency (from 0 to 1)": 0.4,
         "End transparency (from 0 to 1)": 0.1
       }
+    },
+    "Comfort Settings": {
+      "Comfort vignette": false,
+      "Comfort vignette strength": 0.85
     },
     "DesktopView Settings": {
       "Enabled by default": false,

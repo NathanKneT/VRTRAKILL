@@ -21,14 +21,24 @@ namespace Plugin.Systems.UI
         private int FramesToMeasure;
         private readonly Vector3[] Corners = new Vector3[4];
 
+        // Always attached, so the setting can be switched in the VR settings column while playing.
         public static void Attach(Component Hud)
         {
-            if (!Vars.Config.UIInteraction.WristHud || Hud == null || Hud.GetComponent<WristHud>() != null) return;
+            if (Hud == null || Hud.GetComponent<WristHud>() != null) return;
             Hud.gameObject.AddComponent<WristHud>();
         }
 
+        private bool WasOn;
+
         private void LateUpdate()
         {
+            if (!Vars.Config.UIInteraction.WristHud)
+            {
+                // switched off: the game's HUDPos puts the panel back where it floats (only on CheckPos, not every frame)
+                if (WasOn) { WasOn = false; FramesToMeasure = 0; GetComponent<HUDPos>()?.CheckPos(); }
+                return;
+            }
+            WasOn = true;
             // Registered: never auto-create a hand-less arms system
             Controllers.VRArmsSystem Arms = Vars.Registered<Controllers.VRArmsSystem>();
             if (Arms == null) return;

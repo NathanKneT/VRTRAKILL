@@ -26,13 +26,13 @@ namespace Plugin.Systems.UI.Patches
         {
             if (__instance.GetComponent<Canvas>() == null) return;
             UIConverter.ConvertCanvas(__instance.GetComponent<Canvas>(), Force: true, DontAddComponent: true);
-            __instance.gameObject.AddComponent<HideWhenMenuActive>();
+            if (__instance.GetComponent<HideWhenMenuActive>() == null) __instance.gameObject.AddComponent<HideWhenMenuActive>();
 
             __instance.transform.localScale = new Vector3(.35f, .35f, .35f) * 0.1f;
             switch (__instance.gameObject.name)
             {
                 case "GunCanvas":
-                    WristHud.Attach(__instance); // on the wrist unless "HUD on wrist" is off; the positions below are the fallback
+                    WristHud.Attach(__instance); // on the wrist while "HUD on wrist" is on; the positions below are used when it is off
                     __instance.defaultPos = new Vector3(-440, -320, 120) * 0.1f;
                     __instance.defaultRot = new Vector3(0, -20, 0);
 

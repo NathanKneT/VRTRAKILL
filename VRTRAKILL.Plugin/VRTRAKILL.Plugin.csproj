@@ -113,6 +113,10 @@
       <HintPath>$(ULTRAKILLManaged)\Unity.InputSystem.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Unity.TextMeshPro">
+      <HintPath>$(ULTRAKILLManaged)\Unity.TextMeshPro.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Unity.Collections">
       <HintPath>$(ULTRAKILLManaged)\Unity.Collections.dll</HintPath>
       <Private>False</Private>
@@ -204,6 +208,9 @@
     <Compile Include="Systems\DevTestHooks.cs" />
     <Compile Include="Systems\UI\WhiplashAimMarker.cs" />
     <Compile Include="Systems\UI\WristHud.cs" />
+    <Compile Include="Systems\UI\VRSettingsMenu.cs" />
+    <Compile Include="Systems\VRCamera\ComfortVignette.cs" />
+    <Compile Include="Systems\UI\Patches\PauseMenuP.cs" />
     <Compile Include="Input\ControlMessages\MessageContainer.cs" />
     <Compile Include="Input\ControlMessages\Patches.cs" />
     <Compile Include="Input\InputMap.cs" />

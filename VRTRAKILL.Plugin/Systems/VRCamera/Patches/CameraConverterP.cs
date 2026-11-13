@@ -45,6 +45,7 @@ namespace Plugin.Systems.VRCamera.Patches
             VRTRAKILL.Utilities.Unity.CopyCameraValues(rightEye, cc.cam);
             rightEye.transform.SetParent(cc.transform.parent);
             rightEye.stereoTargetEye = StereoTargetEyeMask.Right;
+            ComfortVignette.Attach(leftEye, rightEye);
 
             SetupDesktopCameras(cc);
 
