@@ -33,6 +33,14 @@ namespace Plugin.Systems
             catch (System.Exception e) { if (loggedErrors++ < 3) Vars.Log.LogError("Virtual input step failed: " + e); }
         }
 
+        // Sends controller vibration once a frame, after the game's rumble and the mod's pulses for this frame are in.
+        private void LateUpdate()
+        {
+            if (Vars.Config == null) return;
+            try { Feedback.Haptics.Flush(); }
+            catch (System.Exception e) { if (loggedErrors++ < 3) Vars.Log.LogError("Haptics step failed: " + e); }
+        }
+
         private void OnApplicationQuit()
         {
             quitting = true;

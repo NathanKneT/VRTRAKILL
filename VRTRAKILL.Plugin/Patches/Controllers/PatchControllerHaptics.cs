@@ -14,14 +14,14 @@ internal sealed class PatchControllerHaptics
     static SteamVR_Action_Vibration HapticAction => SteamVR_Actions._default.Haptic;
     // RumbleManager.OnDisable runs at quit after OpenVR shut down (OpenVR.Input is null -> NRE in Execute)
     static bool Quitting;
-    // the last amplitude sent; -1 forces the first send
-    static float LastAmplitude = -1f;
     // Sets Quitting when the application starts to quit.
     static PatchControllerHaptics() { Application.quitting += () => Quitting = true; }
     // Runs the static constructor from Plugin.Awake, so the quit handler exists even if the first rumble comes during quit.
     internal static void WatchQuit() { }
 
-    // Replaces the gamepad rumble update: drops ended vibrations and sends the strongest one to its controller.
+    // Replaces the gamepad rumble update: drops ended vibrations and gives each hand the strongest rumble that belongs
+    // to it (Systems/Feedback/Haptics mixes it with the mod's own pulses and sends it). Before, only the strongest
+    // rumble of all played, on one controller: gunfire while sliding lost the slide.
     [HarmonyPrefix]
     [HarmonyPatch(nameof(RumbleManager.Update))]
     static bool Update(RumbleManager __instance)
@@ -38,23 +38,19 @@ internal sealed class PatchControllerHaptics
         foreach (RumbleKey discardedKey in __instance.discardedKeys)
             __instance.pendingVibrations.Remove(discardedKey);
 
-        float num = 0f;
-        SteamVR_Input_Sources source = 0;
+        float Left = 0f, Right = 0f;
         foreach (KeyValuePair<RumbleKey, PendingVibration> pendingVibration2 in __instance.pendingVibrations)
-            if (pendingVibration2.Value.Intensity > num)
-            {
-                num = pendingVibration2.Value.Intensity;
-                source = ResolveController(pendingVibration2.Key.name);
-            }
+        {
+            float Intensity = pendingVibration2.Value.Intensity;
+            SteamVR_Input_Sources Source = ResolveController(pendingVibration2.Key.name);
+            if (Source != SteamVR_Input_Sources.RightHand && Intensity > Left) Left = Intensity;
+            if (Source != SteamVR_Input_Sources.LeftHand && Intensity > Right) Right = Intensity;
+        }
 
-        num *= MonoSingleton<PrefsManager>.Instance.GetFloat("totalRumbleIntensity");
+        float Scale = MonoSingleton<PrefsManager>.Instance.GetFloat("totalRumbleIntensity") * Vars.Config.Controllers.RumbleStrength;
         if ((bool)MonoSingleton<OptionsManager>.Instance && MonoSingleton<OptionsManager>.Instance.paused)
-            num = 0f;
-        if (!Vars.Config.Controllers.EnableHaptics) num = 0f;
-
-        // a zero pulse is sent once, not every frame
-        if (num > 0f || LastAmplitude != 0f) Vibrate(1, num, num, source);
-
+            Scale = 0f;
+        Systems.Feedback.Haptics.SetGameRumble(Mathf.Clamp01(Left * Scale), Mathf.Clamp01(Right * Scale));
         return false;
     }
     // Stops controller vibration; StopVibration and StopAllVibrations then run so their pending vibrations are removed.
@@ -64,6 +60,7 @@ internal sealed class PatchControllerHaptics
     [HarmonyPatch(nameof(RumbleManager.StopAllVibrations))]
     static bool DisableRumble(MethodBase __originalMethod)
     {
+        Systems.Feedback.Haptics.SetGameRumble(0f, 0f);
         Vibrate(1, 0, 0, 0);
         // skipping all three left infinite rumbles (slide, whiplash, nailgun) on until the scene ended
         return __originalMethod.Name != nameof(RumbleManager.OnDisable);
@@ -74,7 +71,6 @@ internal sealed class PatchControllerHaptics
     {
         if (Quitting || !SteamVR_Input.initialized) return;
         HapticAction.Execute(0, Duration, Frequency, Amplitude, Source);
-        LastAmplitude = Amplitude;
     }
 
     // Returns the controller a rumble key belongs to: the arm hand, the gun hand or both.

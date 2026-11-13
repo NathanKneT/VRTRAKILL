@@ -9,7 +9,7 @@
     "Jump multiplier": 1.0,
     "Height offset (meters)": 0.0,
     "Auto height": true,
-    "Config version": 7,
+    "Config version": 8,
     "Controller Settings": {
       "Deadzone (from 0 to 1)": 0.4,
       "Smooth turning speed": 300.0,
@@ -17,6 +17,10 @@
       "Snap turning angles": 45.0,
       "Draw controller models": true,
       "Enable Controller Rumble": true,
+      "Rumble strength": 1.0,
+      "Hit and kill rumble": true,
+      "Damage rumble": true,
+      "Menu rumble": true,
       "Left handed": false,
       "Finger tracking": false,
       "Windows key presses": false

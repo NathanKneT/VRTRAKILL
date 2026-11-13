@@ -34,6 +34,7 @@ namespace Plugin.Systems
                     PauseView = Array.Exists(Lines, L => L.Trim().Equals("pauseview", StringComparison.OrdinalIgnoreCase));
                     InputTest = Array.Exists(Lines, L => L.Trim().Equals("inputtest", StringComparison.OrdinalIgnoreCase));
                     EndTest = Array.Exists(Lines, L => L.Trim().Equals("endtest", StringComparison.OrdinalIgnoreCase));
+                    HapticTest = Array.Exists(Lines, L => L.Trim().Equals("haptictest", StringComparison.OrdinalIgnoreCase));
                     Unfocused = Array.Exists(Lines, L => L.Trim().Equals("unfocused", StringComparison.OrdinalIgnoreCase));
                 }
             }
@@ -60,6 +61,7 @@ namespace Plugin.Systems
             SceneHelper.LoadScene(Scene);
             if (Unfocused) yield return LoseFocus(Clock);
             if (InputTest) yield return MeasureInput(Clock);
+            if (HapticTest) yield return MeasureHaptics(Clock);
             if (EndTest) yield return FinishLevel(Clock);
             if (JumpTest) yield return MeasureJumps(Clock);
             if (PunchTest) yield return MeasurePunches(Clock);
@@ -387,8 +389,37 @@ namespace Plugin.Systems
         // "End test: next" once the next level runs (each one a capture point). Checks the end of level and the level
         // change in VR (rank screen, "endless elevator" reports). The run is marked "major assists used" first, which
         // the game checks before submitting a score: nothing goes to the Steam leaderboards (the test stops if the game
-        // still says it could submit). The game still saves the rank and progress: back up the Saves folder around it.
+        // still says it could submit). The game saves the rank and progress, so the test copies the Saves folder first
+        // and puts it back while the game still runs: Steam Cloud syncs at exit, and a folder restored after exit got
+        // the test's files back from the cloud.
         private static bool EndTest;
+        private static string SavesPath => Path.Combine(PluginInfo.GamePath, "Saves");
+        private static string SavesCopy => Path.Combine(PluginInfo.PluginPath, "test_saves_copy");
+        private static void CopyTree(string From, string To)
+        {
+            foreach (string F in Directory.GetFiles(From, "*", SearchOption.AllDirectories))
+            {
+                string Target = Path.Combine(To, F.Substring(From.Length).TrimStart(Path.DirectorySeparatorChar));
+                Directory.CreateDirectory(Path.GetDirectoryName(Target));
+                File.Copy(F, Target, true);
+                File.SetLastWriteTimeUtc(Target, File.GetLastWriteTimeUtc(F));
+            }
+        }
+        // Puts the Saves folder back as it was copied: files the test added are deleted, changed ones copied back.
+        private static int RestoreSaves()
+        {
+            int Changed = 0;
+            foreach (string F in Directory.GetFiles(SavesPath, "*", SearchOption.AllDirectories))
+                if (!File.Exists(Path.Combine(SavesCopy, F.Substring(SavesPath.Length).TrimStart(Path.DirectorySeparatorChar)))) { File.Delete(F); Changed++; }
+            foreach (string F in Directory.GetFiles(SavesCopy, "*", SearchOption.AllDirectories))
+            {
+                string Target = Path.Combine(SavesPath, F.Substring(SavesCopy.Length).TrimStart(Path.DirectorySeparatorChar));
+                if (File.Exists(Target) && new FileInfo(Target).Length == new FileInfo(F).Length && System.Linq.Enumerable.SequenceEqual(File.ReadAllBytes(Target), File.ReadAllBytes(F))) continue;
+                File.Copy(F, Target, true); File.SetLastWriteTimeUtc(Target, File.GetLastWriteTimeUtc(F)); Changed++;
+            }
+            Directory.Delete(SavesCopy, true);
+            return Changed;
+        }
         private static string RankCanvasPlace(Component Fr)
         {
             Camera L = VRCamera.Patches.CameraConverterP.leftEye;
@@ -408,6 +439,8 @@ namespace Plugin.Systems
             if (SM == null || NM == null) { Vars.Log.LogWarning("End test: no stats manager or player. End test: done."); yield break; }
             SM.majorUsed = true;
             if (LeaderboardController.CanSubmitScores) { Vars.Log.LogWarning("End test: the game could still submit a score, stopped. End test: done."); yield break; }
+            if (Directory.Exists(SavesCopy)) Directory.Delete(SavesCopy, true);
+            CopyTree(SavesPath, SavesCopy);
             // the final room is often switched off until the player gets there: find the pit anyway and switch its room on
             FinalPit Pit = null;
             foreach (FinalPit P in Resources.FindObjectsOfTypeAll<FinalPit>())
@@ -446,7 +479,106 @@ namespace Plugin.Systems
             NewMovement Next = Vars.Registered<NewMovement>();
             Vars.Log.LogWarning($"End test: next (scene {SceneHelper.CurrentScene}, player {(Next != null ? "there" : "missing")}, VR eyes {VRCamera.Patches.CameraConverterP.leftEye != null}).");
             T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 4) yield return null;
-            Vars.Log.LogWarning("End test: done.");
+            Vars.Log.LogWarning($"End test: saves put back as they were ({RestoreSaves()} file(s) restored or removed). End test: done.");
+        }
+
+        // A line "haptictest": records the vibration the mod sends (the null headset has no controllers to feel it) and
+        // checks: the game's gunfire and slide rumble reach both hands at once; a revolver hit ticks the gun hand, a punch
+        // hit the arm hand, a kill knocks harder; getting hurt thuds both hands; sweeping the menu laser down the pause
+        // menu ticks once per item. Logs "Haptic test, <what>: ... -> OK" or "-> DIFFERENT".
+        private static bool HapticTest;
+        private static void HapticReport(string What, bool Ok, string Detail)
+            => Vars.Log.LogWarning($"Haptic test, {What}: {Detail} -> {(Ok ? "OK" : "DIFFERENT")}");
+        private static IEnumerator MeasureHaptics(System.Diagnostics.Stopwatch Clock)
+        {
+            double T = Clock.Elapsed.TotalSeconds;
+            while (Clock.Elapsed.TotalSeconds < T + 60 && (Vars.IsMainMenu || Vars.Registered<NewMovement>() == null)) yield return null;
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 3) yield return null;
+            Feedback.Haptics.Recording = true;
+            string Gun = Feedback.Haptics.ArmIsLeft ? "right" : "left", Arm = Feedback.Haptics.ArmIsLeft ? "left" : "right";
+
+            RumbleManager RM = MonoSingleton<RumbleManager>.Instance;
+            RM.SetVibration(RumbleProperties.GunFire);
+            RM.SetVibration(RumbleProperties.Slide);
+            yield return null; yield return null; yield return null;
+            float L = Feedback.Haptics.LastLeft, R = Feedback.Haptics.LastRight;
+            HapticReport("gunfire + slide rumble", L > 0f && R > 0f, $"left {L:0.00}, right {R:0.00}");
+            RM.StopVibration(RumbleProperties.Slide);
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + .5) yield return null;
+
+            EnemyIdentifier E = null;
+            foreach (EnemyIdentifier C in UnityEngine.Object.FindObjectsOfType<EnemyIdentifier>()) if (!C.dead) { E = C; break; }
+            if (E == null)
+                foreach (EnemyIdentifier C in Resources.FindObjectsOfTypeAll<EnemyIdentifier>())
+                    if (C.gameObject.scene.isLoaded && !C.dead)
+                    {
+                        for (Transform A = C.transform; A != null; A = A.parent) if (!A.gameObject.activeSelf) A.gameObject.SetActive(true);
+                        E = C; break;
+                    }
+            if (E == null) HapticReport("hits", false, "no enemy in this level");
+            else
+            {
+                T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 1) yield return null;
+                Feedback.Haptics.TestLog.Clear();
+                E.hitter = "revolver"; E.DeliverDamage(E.gameObject, Vector3.zero, E.transform.position, .01f, false);
+                T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + .1) yield return null;
+                E.hitter = "punch"; E.DeliverDamage(E.gameObject, Vector3.zero, E.transform.position, .01f, false);
+                T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + .1) yield return null;
+                E.hitter = "revolver"; E.DeliverDamage(E.gameObject, Vector3.zero, E.transform.position, 1000f, false);
+                T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + .1) yield return null;
+                string Log = string.Join("; ", Feedback.Haptics.TestLog);
+                bool Ok = Log.Contains("hit revolver " + Gun) && Log.Contains("hit punch " + Arm) && Log.Contains("kill revolver " + Gun);
+                HapticReport($"hits on {E.enemyType}", Ok, Log);
+            }
+
+            NewMovement NM = Vars.Registered<NewMovement>();
+            Feedback.Haptics.TestLog.Clear();
+            NM.GetHurt(10, false);
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + .2) yield return null;
+            string Hurt = string.Join("; ", Feedback.Haptics.TestLog);
+            HapticReport("hurt", Hurt.Contains("hurt 10 both"), Hurt);
+            NM.hp = 100;
+
+            // pause, then aim the laser (it starts at the gun hand's muzzle, 45 degrees below the controller) at each
+            // pause menu button in turn: one tick per button
+            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestLeftPose = null;
+            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestRightPose = null;
+            Valve.VR.SteamVR_Input_Sources GunSource = Feedback.Haptics.ArmIsLeft ? Valve.VR.SteamVR_Input_Sources.RightHand : Valve.VR.SteamVR_Input_Sources.LeftHand;
+            Pose Rest = new Pose(new Vector3(Feedback.Haptics.ArmIsLeft ? .08f : -.08f, -.08f, .3f), Quaternion.identity);
+            Pose Down = new Pose(new Vector3(Feedback.Haptics.ArmIsLeft ? -.25f : .25f, -.6f, .1f), Quaternion.Euler(60, 0, 0));
+            if (Feedback.Haptics.ArmIsLeft) { VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestRightPose = Rest; VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestLeftPose = Down; }
+            else { VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestLeftPose = Rest; VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestRightPose = Down; }
+            MonoSingleton<OptionsManager>.Instance.Pause();
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 1.5) yield return null;
+            Controllers.VRControllersSystem Hand = Controllers.VRControllersSystem.Get(GunSource);
+            GameObject Menu = MonoSingleton<OptionsManager>.Instance.pauseMenu;
+            if (Hand == null || Menu == null) HapticReport("menu laser", false, $"gun hand {Hand != null}, pause menu {Menu != null}");
+            else
+            {
+                Quaternion Rig = Hand.transform.rotation * Quaternion.Inverse(Rest.rotation);
+                Quaternion Off = Quaternion.Inverse(Hand.transform.rotation) * Hand.GunOffset.transform.rotation;
+                Feedback.Haptics.TestLog.Clear();
+                int Aimed = 0;
+                foreach (UnityEngine.UI.Selectable B in Menu.GetComponentsInChildren<UnityEngine.UI.Selectable>())
+                {
+                    if (!B.IsInteractable()) continue;
+                    RectTransform RT = (RectTransform)B.transform;
+                    Vector3 Target = RT.TransformPoint(RT.rect.center);
+                    Quaternion Want = Quaternion.LookRotation(Target - Hand.GunOffset.transform.position, Rig * Vector3.up) * Quaternion.Inverse(Off);
+                    Pose P = new Pose(Rest.position, Quaternion.Inverse(Rig) * Want);
+                    if (Feedback.Haptics.ArmIsLeft) VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestRightPose = P;
+                    else VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestLeftPose = P;
+                    Aimed++;
+                    T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + .35) yield return null;
+                }
+                int Ticks = Feedback.Haptics.TestLog.FindAll(S => S.StartsWith("menu hover " + Gun)).Count;
+                HapticReport("menu laser", Ticks >= 2 && Ticks >= Aimed - 1, $"aimed at {Aimed} button(s), {Ticks} hover tick(s) on the {Gun} hand: {string.Join("; ", Feedback.Haptics.TestLog)}");
+            }
+            MonoSingleton<OptionsManager>.Instance.UnPause();
+            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestLeftPose = null;
+            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestRightPose = null;
+            Feedback.Haptics.Recording = false;
+            Vars.Log.LogWarning("Haptic test: done.");
         }
 
         // A second line "jumptest" in the file: once the player has stood on the ground for 2 s, jump three times through

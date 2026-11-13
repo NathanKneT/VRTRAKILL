@@ -30,9 +30,9 @@ namespace Plugin.Prefs
 
         // Version of the defaults this file was written with; null for files from before 1.1.0. See Migrate.
         [JsonProperty("Config version")] public int? ConfigVersion { get; set; }
-        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added. 4: auto height. 5: HUD on wrist. 6: "Left handed" renamed (was "Left handed (BROKEN)"). 7: "Windows key presses".
+        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added. 4: auto height. 5: HUD on wrist. 6: "Left handed" renamed (was "Left handed (BROKEN)"). 7: "Windows key presses". 8: rumble settings.
         // Bump it when settings are added, so existing files are rewritten and show the new settings.
-        public const int CurrentConfigVersion = 7;
+        public const int CurrentConfigVersion = 8;
 
         // Moves values that are still the old defaults to the new defaults, once. Returns true when the file should be
         // rewritten (which also adds settings the file does not have yet).
@@ -59,6 +59,14 @@ namespace Plugin.Prefs
 
             [JsonProperty("Draw controller models")] public bool DrawControllers { get; set; } = true;
             [JsonProperty("Enable Controller Rumble")] public bool EnableHaptics { get; set; } = true;
+            // scales all controller vibration (the game's rumble and the mod's pulses); 0 to 2
+            [JsonProperty("Rumble strength")] public float RumbleStrength { get; set; } = 1f;
+            // a tick in the hand that hits, a knock on a kill (Patches/Controllers/PatchHitFeedback)
+            [JsonProperty("Hit and kill rumble")] public bool HitRumble { get; set; } = true;
+            // a thud in both hands when hurt, stronger with the damage
+            [JsonProperty("Damage rumble")] public bool DamageRumble { get; set; } = true;
+            // ticks when the menu laser reaches an item and when it clicks
+            [JsonProperty("Menu rumble")] public bool MenuRumble { get; set; } = true;
             // guns in the left hand, arm in the right, and the buttons mirrored (Input/LeftHandedBindings)
             [JsonProperty("Left handed")] public bool LeftHanded { get; set; } = false;
             // the 1.0.x name, read so the choice survives the rename; never written back

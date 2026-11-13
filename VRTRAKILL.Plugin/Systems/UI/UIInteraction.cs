@@ -27,6 +27,8 @@ namespace Plugin.Systems.UI
         private readonly List<RaycastResult> Results = new List<RaycastResult>();
 
         private GameObject Hovered;
+        private Component TickedItem;
+        private static Feedback.Haptics.Hand LaserHand => ActiveHand == SteamVR_Input_Sources.LeftHand ? Feedback.Haptics.Hand.Left : Feedback.Haptics.Hand.Right;
         private bool HoverMuted;
         private SteamVR_Input_Sources PressHand = SteamVR_Input_Sources.Any;
         private Vector3 PressForward;
@@ -136,6 +138,11 @@ namespace Plugin.Systems.UI
             if (Target == Hovered) return;
             HoverMuted = false;
             OverItem = Target != null && (Target.GetComponentInParent<Selectable>() != null || Target.GetComponentInParent<ControllerPointer>() != null);
+            // a light tick in the laser hand each time the laser reaches another item
+            Component Item = Target == null ? null : (Component)Target.GetComponentInParent<Selectable>() ?? Target.GetComponentInParent<ControllerPointer>();
+            if (Item != null && Item != TickedItem && Vars.Config.Controllers.MenuRumble)
+                Feedback.Haptics.Add(LaserHand, .15f, .015f, Feedback.Haptics.Tick, "menu hover");
+            TickedItem = Item;
             SetHover(Target);
 
             // pointing at an item also selects it, so the stick and confirm continue from there
@@ -187,6 +194,7 @@ namespace Plugin.Systems.UI
 
             PressHand = ActiveHand;
             PressForward = transform.forward;
+            if (Vars.Config.Controllers.MenuRumble) Feedback.Haptics.Add(LaserHand, .35f, .025f, Feedback.Haptics.Tick, "menu click");
             Pointer.eligibleForClick = true;
             Pointer.dragging = false;
             Pointer.useDragThreshold = true;
