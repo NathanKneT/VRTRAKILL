@@ -33,6 +33,7 @@ namespace Plugin.Systems
                     WristView = Array.Exists(Lines, L => L.Trim().Equals("wristview", StringComparison.OrdinalIgnoreCase));
                     PauseView = Array.Exists(Lines, L => L.Trim().Equals("pauseview", StringComparison.OrdinalIgnoreCase));
                     InputTest = Array.Exists(Lines, L => L.Trim().Equals("inputtest", StringComparison.OrdinalIgnoreCase));
+                    EndTest = Array.Exists(Lines, L => L.Trim().Equals("endtest", StringComparison.OrdinalIgnoreCase));
                     Unfocused = Array.Exists(Lines, L => L.Trim().Equals("unfocused", StringComparison.OrdinalIgnoreCase));
                 }
             }
@@ -59,6 +60,7 @@ namespace Plugin.Systems
             SceneHelper.LoadScene(Scene);
             if (Unfocused) yield return LoseFocus(Clock);
             if (InputTest) yield return MeasureInput(Clock);
+            if (EndTest) yield return FinishLevel(Clock);
             if (JumpTest) yield return MeasureJumps(Clock);
             if (PunchTest) yield return MeasurePunches(Clock);
             if (ShortcutTest) yield return PressSlideDashPause(Clock);
@@ -378,6 +380,73 @@ namespace Plugin.Systems
             Report("unpause", PausedAfter && !Vars.IsPaused, $"paused {PausedAfter} -> {Vars.IsPaused}");
             H.UnpatchSelf();
             Vars.Log.LogWarning("Input test: done.");
+        }
+
+        // A line "endtest": finishes the level the way a player does, by putting the player in the final pit, then logs
+        // "End test: rank" when the rank screen is up, presses shoot through the mod's handler to go on, and logs
+        // "End test: next" once the next level runs (each one a capture point). Checks the end of level and the level
+        // change in VR (rank screen, "endless elevator" reports). The run is marked "major assists used" first, which
+        // the game checks before submitting a score: nothing goes to the Steam leaderboards (the test stops if the game
+        // still says it could submit). The game still saves the rank and progress: back up the Saves folder around it.
+        private static bool EndTest;
+        private static string RankCanvasPlace(Component Fr)
+        {
+            Camera L = VRCamera.Patches.CameraConverterP.leftEye;
+            Canvas C = Fr != null ? Fr.GetComponentInParent<Canvas>() : null;
+            if (C != null) C = C.rootCanvas;
+            if (L == null || C == null) return "no canvas";
+            Vector3 Dir = Fr.transform.position - L.transform.position;
+            return $"canvas {C.name} {C.renderMode}, layer {LayerMask.LayerToName(C.gameObject.layer)}, {Dir.magnitude:0.0} m away, {Vector3.Angle(L.transform.forward, Dir):0} deg off the gaze";
+        }
+        private static IEnumerator FinishLevel(System.Diagnostics.Stopwatch Clock)
+        {
+            double T = Clock.Elapsed.TotalSeconds;
+            while (Clock.Elapsed.TotalSeconds < T + 60 && (Vars.IsMainMenu || Vars.Registered<NewMovement>() == null)) yield return null;
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 3) yield return null;
+            StatsManager SM = MonoSingleton<StatsManager>.Instance;
+            NewMovement NM = Vars.Registered<NewMovement>();
+            if (SM == null || NM == null) { Vars.Log.LogWarning("End test: no stats manager or player. End test: done."); yield break; }
+            SM.majorUsed = true;
+            if (LeaderboardController.CanSubmitScores) { Vars.Log.LogWarning("End test: the game could still submit a score, stopped. End test: done."); yield break; }
+            // the final room is often switched off until the player gets there: find the pit anyway and switch its room on
+            FinalPit Pit = null;
+            foreach (FinalPit P in Resources.FindObjectsOfTypeAll<FinalPit>())
+                if (P.gameObject.scene.isLoaded && !P.fakeEnd && !P.secondPit && !P.rankless) { Pit = P; break; }
+            if (Pit == null) { Vars.Log.LogWarning("End test: no final pit in this level. End test: done."); yield break; }
+            int Switched = 0;
+            for (Transform A = Pit.transform; A != null; A = A.parent)
+                if (!A.gameObject.activeSelf) { A.gameObject.SetActive(true); Switched++; }
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 1) yield return null;
+            Collider PitCollider = Pit.GetComponent<Collider>();
+            if (PitCollider == null) { Vars.Log.LogWarning("End test: the final pit has no collider. End test: done."); yield break; }
+            Vars.Log.LogWarning($"End test: found the final pit {Pit.name} ({Switched} switched-off object(s) turned on).");
+            string Scene = SceneHelper.CurrentScene;
+            NM.rb.velocity = Vector3.zero;
+            NM.rb.position = PitCollider.bounds.center;
+            NM.transform.position = PitCollider.bounds.center;
+            Vars.Log.LogWarning($"End test: pit (scene {Scene}, leaderboard submit possible {LeaderboardController.CanSubmitScores}).");
+
+            T = Clock.Elapsed.TotalSeconds;
+            while (Clock.Elapsed.TotalSeconds < T + 20 && (SM.fr == null || !SM.fr.gameObject.activeInHierarchy)) yield return null;
+            if (SM.fr == null || !SM.fr.gameObject.activeInHierarchy) { Vars.Log.LogWarning($"End test: no rank screen after 20 s (level over {NM.levelOver}). End test: done."); yield break; }
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 4) yield return null;
+            Vars.Log.LogWarning($"End test: rank ({RankCanvasPlace(SM.fr)}).");
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 4) yield return null;
+
+            // the first press finishes the rank screen; once the player reached the second pit, the next one loads the next level
+            double Start = Clock.Elapsed.TotalSeconds;
+            while (Clock.Elapsed.TotalSeconds < Start + 40 && SceneHelper.CurrentScene == Scene)
+            {
+                yield return Press(Clock, "shoot", 2);
+            }
+            if (SceneHelper.CurrentScene == Scene) { Vars.Log.LogWarning($"End test: still in {Scene} after 40 s (second pit reached {SM.fr != null && SM.fr.reachedSecondPit}, player y {NM.transform.position.y:0}). End test: done."); yield break; }
+            T = Clock.Elapsed.TotalSeconds;
+            while (Clock.Elapsed.TotalSeconds < T + 60 && (Vars.IsMainMenu || Vars.Registered<NewMovement>() == null)) yield return null;
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 6) yield return null;
+            NewMovement Next = Vars.Registered<NewMovement>();
+            Vars.Log.LogWarning($"End test: next (scene {SceneHelper.CurrentScene}, player {(Next != null ? "there" : "missing")}, VR eyes {VRCamera.Patches.CameraConverterP.leftEye != null}).");
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 4) yield return null;
+            Vars.Log.LogWarning("End test: done.");
         }
 
         // A second line "jumptest" in the file: once the player has stood on the ground for 2 s, jump three times through
