@@ -56,6 +56,7 @@ namespace VRBasePlugin.Systems.VRCamera
             r.gameObject.SetActive(true);
         }
 
+        internal static Pose? TestLeftPose, TestRightPose; // set only by the developer test hook (DevTestHooks)
         private bool IsTurning; private float SnapTurnTimer;
         // Reads the head and hand poses, updates the runtime-built actions and updates the turn offset for smooth or snap turning.
         public void Update()
@@ -72,6 +73,9 @@ namespace VRBasePlugin.Systems.VRCamera
                 rightPos = _right.position;
                 rightRot = _right.rotation;
             }
+            // developer test hook only (DevTestHooks): fixed hand poses in tracking space, for headsets without controllers
+            if (TestLeftPose.HasValue) { leftPos = TestLeftPose.Value.position; leftRot = TestLeftPose.Value.rotation; }
+            if (TestRightPose.HasValue) { rightPos = TestRightPose.Value.position; rightRot = TestRightPose.Value.rotation; }
 
             SVRActionsManager.UpdateRuntimeActions();
 

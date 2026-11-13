@@ -29,6 +29,7 @@ namespace Plugin.Systems
                     ShortcutTest = Array.Exists(Lines, L => L.Trim().Equals("shortcuttest", StringComparison.OrdinalIgnoreCase));
                     AimTest = Array.Exists(Lines, L => L.Trim().Equals("aimtest", StringComparison.OrdinalIgnoreCase));
                     WhiplashTest = Array.Exists(Lines, L => L.Trim().Equals("whiplashtest", StringComparison.OrdinalIgnoreCase));
+                    WeaponView = Array.Exists(Lines, L => L.Trim().Equals("weaponview", StringComparison.OrdinalIgnoreCase));
                 }
             }
             catch (Exception e) { Vars.Log.LogWarning("Test scene file unreadable: " + e.Message); }
@@ -57,6 +58,37 @@ namespace Plugin.Systems
             if (ShortcutTest) yield return PressSlideDashPause(Clock);
             if (AimTest) yield return MeasureAim(Clock);
             if (WhiplashTest) yield return MeasureWhiplash(Clock);
+            if (WeaponView) yield return ShowWeapons(Clock);
+        }
+
+        // A line "weaponview": puts both hands at a natural holding pose in front of the body (tracking space, head at
+        // the origin like SteamVR's null headset) and shows each weapon family for 4 s, logging "Weapon view: <name>"
+        // so a script can capture the headset window. For checking where the models sit in the hand.
+        private static bool WeaponView;
+        private static IEnumerator ShowWeapons(System.Diagnostics.Stopwatch Clock)
+        {
+            double T = Clock.Elapsed.TotalSeconds;
+            while (Clock.Elapsed.TotalSeconds < T + 60 && (Vars.IsMainMenu || Vars.Registered<NewMovement>() == null)) yield return null;
+            GunControl Guns = null;
+            while (Clock.Elapsed.TotalSeconds < T + 60 && (Guns == null || Guns.allWeapons.Count == 0)) { Guns = Vars.Registered<GunControl>(); yield return null; }
+            if (Guns == null) { Vars.Log.LogWarning("Weapon view: no guns."); yield break; }
+            // controller pitched up 45 degrees: the gun offset (45 degrees down from the controller) then aims level
+            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestRightPose = new Pose(new Vector3(.22f, -.38f, .38f), Quaternion.Euler(-45, 0, 0));
+            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestLeftPose = new Pose(new Vector3(-.22f, -.38f, .38f), Quaternion.Euler(-45, 0, 0));
+            var Shown = new System.Collections.Generic.HashSet<string>();
+            foreach (GameObject Weapon in new System.Collections.Generic.List<GameObject>(Guns.allWeapons))
+            {
+                if (Weapon == null) continue;
+                string Family = Weapon.name.Split(' ')[0];
+                if (!Shown.Add(Family)) continue;
+                Guns.ForceWeapon(Weapon);
+                T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 1.5) yield return null;
+                Vars.Log.LogWarning("Weapon view: " + Weapon.name);
+                T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 4) yield return null;
+            }
+            Vars.Log.LogWarning("Weapon view: done.");
+            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestRightPose = null;
+            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestLeftPose = null;
         }
 
         // A line "whiplashtest": checks the whiplash aim marker (visible, on the arm hand's aim line) and throws the

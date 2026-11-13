@@ -124,7 +124,7 @@ internal class PatchGunTransform
     [HarmonyPatch(typeof(RocketLauncher))]
     static class RocketLauncherT
     {
-        static Vector3 Position = new Vector3(-.3f, .3f, -.1f),
+        static Vector3 Position = new Vector3(0f, .15f, -.1f),
                        Rotation = new Vector3(),
                        Scale = new Vector3(.65f, .65f, .65f);
 

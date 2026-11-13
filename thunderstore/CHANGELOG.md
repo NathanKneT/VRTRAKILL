@@ -25,6 +25,7 @@ Fixes for the problems players reported most (from the 171 issues of the origina
 - VR buttons are not sent to other programs when the game window does not have focus, and held buttons are released when the game loses focus or quits.
 - Left handed: the arm and the guns are no longer swapped twice (flipped revolver). The buttons stay right handed; swap them in SteamVR's binding screen.
 - The crosshair sits on the real shot line. Every gun fires from the gun hand, but the crosshair was placed from the gun rig, or from the model for the rocket launcher and jackhammer: measured in game it was 3 degrees off for every gun and 5.6 for the rocket launcher ("rocket launcher off-centred", #165, #195). Now 0.
+- The rocket launcher model sits in the gun hand like the other guns. It was drawn about 30 cm toward the middle of the view and up from the hand (#195).
 - A small blue marker ahead of the arm hand shows where the whiplash will go while it is ready to throw ("Whiplash aim marker" in the CBS settings).
 - White and black screen flashes no longer grow without limit over a session.
 - The end-of-level rank screen no longer fails when its canvas is not where the mod expected.
