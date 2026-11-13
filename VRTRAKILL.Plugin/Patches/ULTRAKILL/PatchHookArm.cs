@@ -21,6 +21,7 @@ internal sealed class PatchHookArm
         VRArmTransformer AR = __instance.gameObject.AddComponent<VRArmTransformer>();
         VRArmController AC = __instance.gameObject.AddComponent<VRArmController>();
         AR.Arm = A; AC.Arm = A;
+        Systems.UI.WhiplashAimMarker.Attach(__instance);
     }
 
     // Moves the whiplash throw origin from the arm to the VR hand; the native Update stays for portals and the line renderer.

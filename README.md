@@ -181,9 +181,10 @@ The settings players ask about most, in `BepInEx/plugins/VRTRAKILL/VRTRAKILL_Con
 | `Enable movement-based punching` | `true` | `true`: hold punch and swing your fist. `false`: the punch button alone punches, like the flat game. |
 | `Required speed to punch` | `4.0` | Twice the hand speed in m/s that a swing needs (4 = 2 m/s). Lower it if punches do not register. |
 | `Snap turning` / `Smooth turning speed` | `false` / `300` | Snap or smooth turning on the right stick. |
+| `Whiplash aim marker` | `true` | A small blue marker ahead of the arm hand where the whiplash will go, while it is ready to throw. |
 | `Left handed (BROKEN)` | `false` | Puts the guns in the left hand and the arm in the right hand. The button layout stays right handed: swap the buttons in SteamVR > Settings > Controllers > Manage Controller Bindings > ULTRAKILL. (The name is kept so existing config files keep working.) |
 
-When you update from an older version, the mod changes the old defaults in your file once (movement multiplier 0.575 to 1.0, punch speed 7.5 to 4.0) and writes `"Config version": 2`. Values you changed yourself are kept.
+When you update from an older version, the mod changes the old defaults in your file once (movement multiplier 0.575 to 1.0, punch speed 7.5 to 4.0), adds the new settings to the file and writes its `"Config version"`. Values you changed yourself are kept.
 
 ## Troubleshooting
 
@@ -210,6 +211,7 @@ Fixes for the problems players reported most. The full list is in [CHANGELOG.md]
 - New "Height offset (meters)".
 - Task Manager no longer opens mid-fight (slide + dash + pause sent Ctrl+Shift+Esc).
 - Left handed mode no longer swaps the hands twice.
+- A whiplash aim marker on the arm hand.
 - Screen flashes and the end-of-level rank screen fixes.
 
 ## Changes in 1.0.2

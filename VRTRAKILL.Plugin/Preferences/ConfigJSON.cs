@@ -44,7 +44,7 @@ namespace Plugin.Prefs
                 Config.Config.FillMissingSections();
                 if (Config.Config.Migrate())
                 {
-                    Vars.Log.LogMessage($"VRTRAKILL_Config.json updated to config version {NewConfig.CurrentConfigVersion} (old default movement multiplier and punch speed replaced; values you changed were kept).");
+                    Vars.Log.LogMessage($"VRTRAKILL_Config.json updated to config version {NewConfig.CurrentConfigVersion}: new settings added, old defaults moved to the new ones, values you changed kept.");
                     Serialize(Config);
                 }
                 return Config;

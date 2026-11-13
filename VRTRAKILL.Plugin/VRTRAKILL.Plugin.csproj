@@ -201,6 +201,7 @@
   <ItemGroup>
     <Compile Include="Systems\StartupStatus.cs" />
     <Compile Include="Systems\ModHost.cs" />
+    <Compile Include="Systems\UI\WhiplashAimMarker.cs" />
     <Compile Include="Input\ControlMessages\MessageContainer.cs" />
     <Compile Include="Input\ControlMessages\Patches.cs" />
     <Compile Include="Input\InputMap.cs" />

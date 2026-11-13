@@ -25,15 +25,21 @@ namespace Plugin.Prefs
 
         // Version of the defaults this file was written with; null for files from before 1.1.0. See Migrate.
         [JsonProperty("Config version")] public int? ConfigVersion { get; set; }
-        public const int CurrentConfigVersion = 2;
+        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added.
+        // Bump it when settings are added, so existing files are rewritten and show the new settings.
+        public const int CurrentConfigVersion = 3;
 
-        // Moves values that are still the old defaults to the new defaults, once. Returns true when the file should be rewritten.
+        // Moves values that are still the old defaults to the new defaults, once. Returns true when the file should be
+        // rewritten (which also adds settings the file does not have yet).
         public bool Migrate()
         {
             if (ConfigVersion >= CurrentConfigVersion) return false;
-            // only exact old defaults change; a value the player chose stays
-            if (System.Math.Abs(MovementMultiplier - 0.575f) < 0.0001f) MovementMultiplier = 1f;
-            if (System.Math.Abs(MBP.PunchingSpeed - 7.5f) < 0.0001f) MBP.PunchingSpeed = new _MBP().PunchingSpeed;
+            if ((ConfigVersion ?? 1) < 2)
+            {
+                // only exact old defaults change; a value the player chose stays
+                if (System.Math.Abs(MovementMultiplier - 0.575f) < 0.0001f) MovementMultiplier = 1f;
+                if (System.Math.Abs(MBP.PunchingSpeed - 7.5f) < 0.0001f) MBP.PunchingSpeed = new _MBP().PunchingSpeed;
+            }
             ConfigVersion = CurrentConfigVersion;
             return true;
         }
@@ -58,6 +64,8 @@ namespace Plugin.Prefs
         {
             [JsonProperty("Enable Crosshair")] public bool EnableCrosshair { get; set; } = true;
             [JsonProperty("Crosshair distance")] public float CrosshairDistance { get; set; } = 8;
+            // a small marker ahead of the arm hand where the whiplash will go, shown while it is ready to throw
+            [JsonProperty("Whiplash aim marker")] public bool WhiplashMarker { get; set; } = true;
         }
 
         // true: hold punch and swing the fist. false: the punch button alone punches, like the flat game.
