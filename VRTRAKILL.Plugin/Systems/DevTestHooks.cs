@@ -37,6 +37,9 @@ namespace Plugin.Systems
                     HapticTest = Array.Exists(Lines, L => L.Trim().Equals("haptictest", StringComparison.OrdinalIgnoreCase));
                     RangeView = Array.Exists(Lines, L => L.Trim().Equals("rangeview", StringComparison.OrdinalIgnoreCase));
                     PerfTest = Array.Exists(Lines, L => L.Trim().Equals("perftest", StringComparison.OrdinalIgnoreCase));
+                    LevelSweep = Array.Exists(Lines, L => L.Trim().Equals("levelsweep", StringComparison.OrdinalIgnoreCase));
+                    PauseDump = Array.Exists(Lines, L => L.Trim().Equals("pausedump", StringComparison.OrdinalIgnoreCase));
+                    VRSettingsTest = Array.Exists(Lines, L => L.Trim().Equals("vrsettingstest", StringComparison.OrdinalIgnoreCase));
                     Unfocused = Array.Exists(Lines, L => L.Trim().Equals("unfocused", StringComparison.OrdinalIgnoreCase));
                 }
             }
@@ -46,7 +49,7 @@ namespace Plugin.Systems
             // the plugin filters Unity's exceptions out (filterLogType Warning); a test must see them
             Debug.unityLogger.filterLogType = LogType.Exception;
             Application.logMessageReceived += (Message, Stack, Type) =>
-            { if (Type == LogType.Exception) Vars.Log.LogError("Test run exception: " + Message + " | " + Stack); };
+            { if (Type == LogType.Exception) { Exceptions++; Vars.Log.LogError("Test run exception: " + Message + " | " + Stack); } };
             Vars.Log.LogWarning($"Developer test hook: loading scene \"{Scene}\" once the main menu is up (VRTRAKILL_TEST_SCENE).");
             ModHost.Instance.StartCoroutine(LoadWhenMenuReady(Scene));
         }
@@ -66,6 +69,9 @@ namespace Plugin.Systems
             if (HapticTest) yield return MeasureHaptics(Clock);
             if (RangeView) yield return ShowRange(Clock);
             if (PerfTest) yield return MeasurePerformance(Clock);
+            if (LevelSweep) yield return SweepLevels(Clock);
+            if (PauseDump) yield return DumpPause(Clock);
+            if (VRSettingsTest) yield return CheckVRSettings(Clock);
             if (EndTest) yield return FinishLevel(Clock);
             if (JumpTest) yield return MeasureJumps(Clock);
             if (PunchTest) yield return MeasurePunches(Clock);
@@ -695,6 +701,201 @@ namespace Plugin.Systems
                               + $"SteamVR presents {After.m_nNumFramePresents - Before.m_nNumFramePresents}, dropped {After.m_nNumDroppedFrames - Before.m_nNumDroppedFrames}, reprojected {After.m_nNumReprojectedFrames - Before.m_nNumReprojectedFrames}; "
                               + $"mod per-frame code {ModMs / Math.Max(1, Frames.Count):0.000} ms/frame over {Patched} methods; top: {TopText}");
             Vars.Log.LogWarning("Perf test: done.");
+        }
+
+        // A line "levelsweep": loads every level of the game in turn (the scene in the first line only starts it) and,
+        // for each, logs whether it loaded, the player and the VR eyes are there, the exceptions it raised, and the
+        // frame time, plus "Sweep view: <scene>" for a capture. Catches level-specific breakage: portals, special
+        // cameras, the platformer and fishing levels, Cyber Grind, the sandbox. Also shows a subtitle in the first one.
+        private static bool LevelSweep;
+        private static int Exceptions;
+        private static readonly string[] SweepScenes =
+        {
+            "Tutorial", "Level 0-1", "Level 0-2", "Level 0-3", "Level 0-4", "Level 0-5", "Level 1-1", "Level 1-2", "Level 1-3", "Level 1-4",
+            "Level 2-1", "Level 2-2", "Level 2-3", "Level 2-4", "Level 3-1", "Level 3-2", "Level 4-1", "Level 4-2", "Level 4-3", "Level 4-4",
+            "Level 5-1", "Level 5-2", "Level 5-3", "Level 5-4", "Level 6-1", "Level 6-2", "Level 7-1", "Level 7-2", "Level 7-3", "Level 7-4",
+            "Level 8-1", "Level 8-2", "Level 8-3", "Level 8-4", "Level 9-1", "Level 9-2", "Level P-1", "Level P-2", "Level P-3",
+            "Endless", "uk_construct", "Level 0-S", "Level 1-S", "Level 2-S", "Level 3-S", "Level 4-S", "Level 5-S", "Level 6-S", "Level 7-S",
+        };
+        private static IEnumerator SweepLevels(System.Diagnostics.Stopwatch Clock)
+        {
+            double T = Clock.Elapsed.TotalSeconds;
+            while (Clock.Elapsed.TotalSeconds < T + 60 && (Vars.IsMainMenu || Vars.Registered<NewMovement>() == null)) yield return null;
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 3) yield return null;
+            if (SubtitleController.Instance != null)
+            {
+                SubtitleController.Instance.DisplaySubtitle("VR subtitle check: can you read this line?");
+                T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + .5) yield return null;
+                Vars.Log.LogWarning("Sweep view: subtitle");
+                T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 3) yield return null;
+            }
+            int Problems = 0;
+            if (Directory.Exists(SavesCopy)) Directory.Delete(SavesCopy, true);
+            CopyTree(SavesPath, SavesCopy);
+            foreach (string S in SweepScenes)
+            {
+                int Before = Exceptions;
+                try { SceneHelper.LoadScene(S); }
+                catch (Exception E) { Vars.Log.LogWarning($"Sweep: {S} could not start loading: {E.Message}"); Problems++; continue; }
+                T = Clock.Elapsed.TotalSeconds;
+                while (Clock.Elapsed.TotalSeconds < T + 45 && SceneHelper.CurrentScene != S) yield return null;
+                bool Loaded = SceneHelper.CurrentScene == S;
+                T = Clock.Elapsed.TotalSeconds;
+                while (Loaded && Clock.Elapsed.TotalSeconds < T + 15 && Vars.Registered<NewMovement>() == null && MonoSingleton<PlatformerMovement>.Instance == null) yield return null;
+                T = Clock.Elapsed.TotalSeconds;
+                int Frames = 0; float Worst = 0f;
+                while (Clock.Elapsed.TotalSeconds < T + 6) { yield return null; Frames++; Worst = Mathf.Max(Worst, Time.unscaledDeltaTime * 1000f); }
+                Camera L = VRCamera.Patches.CameraConverterP.leftEye;
+                bool Eyes = L != null && L.isActiveAndEnabled;
+                bool Player = Vars.Registered<NewMovement>() != null || MonoSingleton<PlatformerMovement>.Instance != null;
+                int New = Exceptions - Before;
+                bool Ok = Loaded && Eyes && New == 0;
+                if (!Ok) Problems++;
+                Vars.Log.LogWarning($"Sweep: {S} -> {(Ok ? "OK" : "PROBLEM")} (loaded {Loaded}, player {Player}, VR eyes {Eyes}, exceptions {New}, {Frames / 6f:0} fps, worst frame {Worst:0} ms)");
+                if (Loaded) Vars.Log.LogWarning($"Sweep view: {S}");
+                T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 2.5) yield return null;
+            }
+            Vars.Log.LogWarning($"Sweep: {SweepScenes.Length} scenes, {Problems} with a problem; saves put back as they were ({RestoreSaves()} file(s) restored or removed). Sweep: done.");
+        }
+
+        // A line "pausedump": opens the pause menu and logs its object tree (names, active state, rect sizes, and the
+        // UI components), to build UI that matches it.
+        private static bool PauseDump;
+        private static void DumpTree(Transform T, int Depth, System.Text.StringBuilder SB)
+        {
+            if (Depth > 6) return;
+            RectTransform R = T as RectTransform;
+            string Comps = string.Join(",", Array.ConvertAll(T.GetComponents<Component>(), C => C == null ? "?" : C.GetType().Name));
+            string Text = T.GetComponent<TMPro.TMP_Text>() is TMPro.TMP_Text TT ? $" \"{TT.text}\" size {TT.fontSize}" : T.GetComponent<UnityEngine.UI.Text>() is UnityEngine.UI.Text UT ? $" \"{UT.text}\"" : "";
+            SB.Append(new string(' ', Depth * 2)).Append(T.name).Append(T.gameObject.activeSelf ? "" : " (off)")
+              .Append(R != null ? $" rect {R.rect.width:0}x{R.rect.height:0} pos {R.anchoredPosition.x:0},{R.anchoredPosition.y:0} anchors {R.anchorMin}-{R.anchorMax} pivot {R.pivot}" : "")
+              .Append(" [").Append(Comps).Append("]").Append(Text).Append('\n');
+            foreach (Transform C in T) DumpTree(C, Depth + 1, SB);
+        }
+        private static IEnumerator DumpPause(System.Diagnostics.Stopwatch Clock)
+        {
+            double T = Clock.Elapsed.TotalSeconds;
+            while (Clock.Elapsed.TotalSeconds < T + 60 && (Vars.IsMainMenu || Vars.Registered<NewMovement>() == null)) yield return null;
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 3) yield return null;
+            MonoSingleton<OptionsManager>.Instance.Pause();
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 1.5) yield return null;
+            GameObject PM = MonoSingleton<OptionsManager>.Instance.pauseMenu;
+            var SB = new System.Text.StringBuilder();
+            if (PM != null)
+            {
+                Transform Top = PM.transform.parent != null ? PM.transform.parent : PM.transform;
+                SB.Append($"pause menu {PM.name}, parent {Top.name}, canvas {PM.GetComponentInParent<Canvas>()?.rootCanvas?.name}\n");
+                DumpTree(Top, 0, SB);
+            }
+            Vars.Log.LogWarning("Pause dump:\n" + SB);
+            MonoSingleton<OptionsManager>.Instance.UnPause();
+            Vars.Log.LogWarning("Pause dump: done.");
+        }
+
+        // A line "vrsettingstest": pauses, logs "VR settings: open" (capture) with where the VR column is, aims the laser
+        // at each of its buttons (a hover tick each), then presses each one and checks its label changed and the config
+        // file was saved. It changes the config file: back it up and restore it afterwards.
+        private static bool VRSettingsTest;
+        private static IEnumerator CheckVRSettings(System.Diagnostics.Stopwatch Clock)
+        {
+            double T = Clock.Elapsed.TotalSeconds;
+            while (Clock.Elapsed.TotalSeconds < T + 60 && (Vars.IsMainMenu || Vars.Registered<NewMovement>() == null)) yield return null;
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 3) yield return null;
+            bool ArmLeft = Feedback.Haptics.ArmIsLeft;
+            Pose Rest = new Pose(new Vector3(ArmLeft ? .08f : -.08f, -.08f, .3f), Quaternion.identity);
+            Pose Down = new Pose(new Vector3(ArmLeft ? -.25f : .25f, -.6f, .1f), Quaternion.Euler(60, 0, 0));
+            if (ArmLeft) { VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestRightPose = Rest; VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestLeftPose = Down; }
+            else { VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestLeftPose = Rest; VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestRightPose = Down; }
+            MonoSingleton<OptionsManager>.Instance.Pause();
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 1.5) yield return null;
+            UI.VRSettingsMenu Menu = MonoSingleton<OptionsManager>.Instance.GetComponent<UI.VRSettingsMenu>();
+            Transform Column = Menu != null ? MonoSingleton<OptionsManager>.Instance.pauseMenu.transform.parent.Find("VR Settings") : null;
+            Camera L = VRCamera.Patches.CameraConverterP.leftEye;
+            if (Column == null) { Vars.Log.LogWarning("VR settings test: no VR column. VR settings test: done."); yield break; }
+            Vector3 Dir = Column.position - L.transform.position;
+            UnityEngine.UI.Button[] Buttons = Column.GetComponentsInChildren<UnityEngine.UI.Button>();
+            Vars.Log.LogWarning($"VR settings: open ({Buttons.Length} buttons, {Dir.magnitude:0.0} m away, {Vector3.Angle(L.transform.forward, Dir):0} deg off the gaze, shown {Column.GetComponent<CanvasGroup>().alpha})");
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 3) yield return null;
+
+            // laser hover over each VR button
+            Valve.VR.SteamVR_Input_Sources GunSource = ArmLeft ? Valve.VR.SteamVR_Input_Sources.RightHand : Valve.VR.SteamVR_Input_Sources.LeftHand;
+            Controllers.VRControllersSystem Hand = Controllers.VRControllersSystem.Get(GunSource);
+            Quaternion Rig = Hand.transform.rotation * Quaternion.Inverse(Rest.rotation);
+            Quaternion Off = Quaternion.Inverse(Hand.transform.rotation) * Hand.GunOffset.transform.rotation;
+            Feedback.Haptics.Recording = true; Feedback.Haptics.TestLog.Clear();
+            foreach (UnityEngine.UI.Button B in Buttons)
+            {
+                RectTransform RT = (RectTransform)B.transform;
+                Vector3 Target = RT.TransformPoint(RT.rect.center);
+                Quaternion Want = Quaternion.LookRotation(Target - Hand.GunOffset.transform.position, Rig * Vector3.up) * Quaternion.Inverse(Off);
+                Pose P = new Pose(Rest.position, Quaternion.Inverse(Rig) * Want);
+                if (ArmLeft) VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestRightPose = P; else VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestLeftPose = P;
+                T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + .35) yield return null;
+            }
+            int Ticks = Feedback.Haptics.TestLog.FindAll(S => S.StartsWith("menu hover")).Count;
+            Vars.Log.LogWarning($"VR settings test, laser: {Ticks} hover tick(s) over {Buttons.Length} buttons -> {(Ticks >= Buttons.Length ? "OK" : "DIFFERENT")}");
+            Feedback.Haptics.Recording = false;
+
+            // press each button: its label must change (except the recenter action) and the file must be written
+            string File_ = Prefs.ConfigMaster.ConfigPath;
+            DateTime Written = File.GetLastWriteTimeUtc(File_);
+            int Changed = 0;
+            var Report = new System.Text.StringBuilder();
+            foreach (UnityEngine.UI.Button B in Buttons)
+            {
+                TMPro.TMP_Text Label = B.GetComponentInChildren<TMPro.TMP_Text>();
+                string Before = Label.text;
+                B.onClick.Invoke();
+                yield return null;
+                if (Label.text != Before || Before.StartsWith("RECENTER")) Changed++;
+                Report.Append($"[{Before} -> {Label.text}] ");
+            }
+            bool Saved = File.GetLastWriteTimeUtc(File_) > Written;
+            Vars.Log.LogWarning($"VR settings test, presses: {Changed} of {Buttons.Length} changed, config saved {Saved}: {Report} -> {(Changed == Buttons.Length && Saved ? "OK" : "DIFFERENT")}");
+            Vars.Log.LogWarning("VR settings: pressed");
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 3) yield return null;
+            MonoSingleton<OptionsManager>.Instance.UnPause();
+            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestLeftPose = null;
+            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestRightPose = null;
+            // the comfort vignette: the same still view with it off, then at full strength (amount forced), for an A/B
+            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestLeftPose = new Pose(new Vector3(-.25f, -.6f, .1f), Quaternion.Euler(60, 0, 0));
+            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestRightPose = new Pose(new Vector3(.25f, -.6f, .1f), Quaternion.Euler(60, 0, 0));
+            Vars.Config.Comfort.Vignette = true; Vars.Config.Comfort.VignetteStrength = 1f;
+            VRCamera.ComfortVignette.TestAmount = 0f;
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 1) yield return null;
+            Vars.Log.LogWarning("VR settings: vigoff");
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 3.5) yield return null;
+            VRCamera.ComfortVignette.TestAmount = 1f;
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 1) yield return null;
+            Vars.Log.LogWarning("VR settings: vigon");
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 3.5) yield return null;
+            VRCamera.ComfortVignette.TestAmount = null;
+            Vars.Config.Comfort.Vignette = false;
+            // a subtitle, switched on in memory only (the player's preference is not changed), hands lowered
+            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestLeftPose = new Pose(new Vector3(-.25f, -.6f, .1f), Quaternion.Euler(60, 0, 0));
+            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestRightPose = new Pose(new Vector3(.25f, -.6f, .1f), Quaternion.Euler(60, 0, 0));
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 1.5) yield return null;
+            if (SubtitleController.Instance != null)
+            {
+                bool Was = SubtitleController.Instance.SubtitlesEnabled;
+                SubtitleController.Instance.SubtitlesEnabled = true;
+                SubtitleController.Instance.DisplaySubtitle("Subtitle check: can you read this line in the headset?");
+                T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + .6) yield return null;
+                Subtitle Line = UnityEngine.Object.FindObjectOfType<Subtitle>();
+                Camera Eye = VRCamera.Patches.CameraConverterP.leftEye;
+                if (Line != null && Eye != null)
+                {
+                    Vector3 D = Line.transform.position - Eye.transform.position;
+                    Canvas SC = Line.GetComponentInParent<Canvas>();
+                    Vars.Log.LogWarning($"VR settings: subtitle ({D.magnitude:0.0} m away, {Vector3.Angle(Eye.transform.forward, D):0} deg off the gaze, {Vector3.SignedAngle(Eye.transform.forward, D, Eye.transform.right):0} deg below, canvas {SC?.rootCanvas?.name} {SC?.rootCanvas?.renderMode})");
+                }
+                else Vars.Log.LogWarning("VR settings: subtitle (no subtitle object found)");
+                T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 3) yield return null;
+                SubtitleController.Instance.SubtitlesEnabled = Was;
+            }
+            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestLeftPose = null;
+            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestRightPose = null;
+            Vars.Log.LogWarning("VR settings test: done.");
         }
 
         // A second line "jumptest" in the file: once the player has stood on the ground for 2 s, jump three times through
