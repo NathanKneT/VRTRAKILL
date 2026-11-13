@@ -13,7 +13,8 @@ namespace Plugin.Systems.Updates
         private const float MaxWaitSeconds = 600f;
 
         // Waits for the main menu, shows the text there for 15 seconds, then removes it; gives up after 10 minutes.
-        public static IEnumerator ShowOnMainMenu(string text)
+        // bottomOffset lifts the strip so two notices (update and startup warning) do not overlap.
+        public static IEnumerator ShowOnMainMenu(string text, float bottomOffset = 40)
         {
             for (float waited = 0; !IsMainMenuReady(); waited += 1f)
             {
@@ -24,7 +25,7 @@ namespace Plugin.Systems.Updates
             yield return new WaitForSecondsRealtime(2f);
 
             GameObject notice = null;
-            try { notice = Create(text); }
+            try { notice = Create(text, bottomOffset); }
             catch (Exception e) { Vars.Log.LogWarning("Could not show the update notice: " + e.Message); }
             if (notice == null) yield break;
 
@@ -44,7 +45,7 @@ namespace Plugin.Systems.Updates
         }
 
         // Builds the notice canvas and converts it to a VR canvas like the game menus.
-        private static GameObject Create(string text)
+        private static GameObject Create(string text, float bottomOffset)
         {
             GameObject root = new GameObject("VRTRAKILL Update Notice");
             Canvas canvas = root.AddComponent<Canvas>();
@@ -59,7 +60,7 @@ namespace Plugin.Systems.Updates
             RectTransform panelRect = (RectTransform)panel.transform;
             panelRect.anchorMin = panelRect.anchorMax = new Vector2(.5f, 0);
             panelRect.pivot = new Vector2(.5f, 0);
-            panelRect.anchoredPosition = new Vector2(0, 40);
+            panelRect.anchoredPosition = new Vector2(0, bottomOffset);
             panelRect.sizeDelta = new Vector2(1300, 70);
             Image background = panel.AddComponent<Image>();
             background.color = new Color(0, 0, 0, .8f);

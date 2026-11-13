@@ -20,7 +20,6 @@ namespace Plugin
         private static XRGeneralSettings generalSettings;
         private static XRManagerSettings managerSettings;
         private static OpenVRLoader xrLoader;
-        private const int VRInitAttempts = 90;
         private const float VRInitRetryDelay = 2f;
         // PreInitialize creates new action objects; a second call orphans the ones already handed out
         private static bool ActionsPreInitialized;
@@ -30,32 +29,153 @@ namespace Plugin
         {
             Log = Logger;
             Debug.unityLogger.filterLogType = LogType.Warning;
+            // a VR game must keep running when its desktop window loses focus (SteamVR windows, dashboard, alt-tab):
+            // with Unity's default the game froze, the headset image froze, and the SteamVR retry loop stopped
+            Application.runInBackground = true;
 
             // a setup failure must not stop VR init, or the game falls back to SteamVR theater mode;
             // each step has its own try so a bad config or Binds.json does not also skip the patches
             Patches.Controllers.PatchControllerHaptics.WatchQuit();
+            // coroutines and the overlay run on our own hidden object: the game destroys this plugin's GameObject
+            // right after startup, which used to kill the SteamVR retry loop (see ModHost)
+            ModHost host = ModHost.Create();
+            try { StartupStatus.Install(host.gameObject); }
+            catch (Exception e) { Log.LogError("VRTRAKILL startup status overlay failed: " + e); }
             try { Prefs.ConfigMaster.Init(); }
             catch (Exception e) { Log.LogError("VRTRAKILL config setup failed: " + e); }
             try { PatchStuff(); }
             catch (Exception e) { Log.LogError("VRTRAKILL patching failed: " + e); }
-            try { SceneWorker.Init(this); }
+            try { SceneWorker.Init(host); }
             catch (Exception e) { Log.LogError("VRTRAKILL scene setup failed: " + e); }
 
-            Systems.Updates.UpdateService.Begin(this); // background update check; never throws
-            StartCoroutine(InitVRWhenReady());
+            Systems.Updates.UpdateService.Begin(host); // background update check; never throws
+
+            // first try now, before the first scene, like before: when SteamVR is up with a headset the probe answers at
+            // once and VR starts here; otherwise ModHost.Update keeps trying in the background
+            StartProbe();
+            if (ProbeThread.Join(3000)) TickVRStart();
         }
 
-        // Retries VR init every 2 seconds for up to 3 minutes, as SteamVR may still be starting.
-        private IEnumerator InitVRWhenReady()
+        // ---- VR start ----
+        // The old start called the blocking OpenVR init on the main thread every 2 s. With SteamVR not ready (headset off,
+        // SteamVR in an error state) each call froze the game, seen for 40 s and more on the boot screen ("black screen,
+        // won't load"), and the coroutine that ran the retries never resumed after its first wait at chainloader time.
+        // Now a background thread asks SteamVR whether it runs and sees a headset (a "background" OpenVR app, which neither
+        // starts SteamVR nor waits for it), and the real init runs on the main thread only once that answer is yes.
+        // ModHost.Update drives it, every 2 s, until VR runs; there is no give-up, VR starts whenever the headset is ready.
+        private static int VRAttempt;
+        private static float NextVRAttemptAt;
+        private static bool VRStarted;
+        private static System.Threading.Thread ProbeThread;
+        private static volatile bool ProbeDone;
+        private static EVRInitError ProbeResult;
+        private static string ProbeException; // the probe could not run (missing openvr_api, ...): fall back to the plain init
+        private static bool SteamVRLaunchRequested;
+
+        // Runs one step of the VR start: collects a finished probe, or starts the next one when the retry delay has passed.
+        internal static void TickVRStart()
         {
-            for (int attempt = 1; attempt <= VRInitAttempts; attempt++)
+            if (VRStarted) return;
+            if (ProbeThread != null)
             {
-                if (InitVRLoader(attempt == 1)) yield break;
-                if (attempt == 1) Log.LogWarning("OpenVR is not ready yet, retrying until SteamVR responds.");
-                yield return new WaitForSecondsRealtime(VRInitRetryDelay);
+                if (!ProbeDone) return;
+                ProbeThread = null;
+                HandleProbeResult();
+                return;
             }
-            Log.LogError("OpenVR did not respond after three minutes. Keep SteamVR open and restart the game.");
+            if (Time.realtimeSinceStartup < NextVRAttemptAt) return;
+            if (ProbeException != null) { VRAttempt++; TryFullInit(); return; }
+            StartProbe();
         }
+
+        // Starts the background SteamVR check.
+        private static void StartProbe()
+        {
+            VRAttempt++;
+            ProbeDone = false;
+            ProbeThread = new System.Threading.Thread(() =>
+            {
+                try
+                {
+                    EVRInitError Error = EVRInitError.None;
+                    OpenVR.InitInternal(ref Error, EVRApplicationType.VRApplication_Background);
+                    if (Error == EVRInitError.None) OpenVR.ShutdownInternal();
+                    ProbeResult = Error;
+                }
+                catch (Exception e) { ProbeException = e.GetType().Name + ": " + e.Message; }
+                finally { ProbeDone = true; }
+            })
+            { IsBackground = true, Name = "VRTRAKILL SteamVR check" };
+            ProbeThread.Start();
+        }
+
+        // Starts VR when SteamVR is ready, or records why not and schedules the next try.
+        private static void HandleProbeResult()
+        {
+            if (ProbeException != null)
+            {
+                Log.LogWarning("The SteamVR check could not run (" + ProbeException + "); trying the full VR start instead.");
+                TryFullInit();
+                return;
+            }
+            switch (ProbeResult)
+            {
+                case EVRInitError.None:
+                    TryFullInit();
+                    return;
+                case EVRInitError.Init_NoServerForBackgroundApp:
+                    LastInitError = "SteamVR is not running. Starting it...";
+                    LaunchSteamVROnce();
+                    break;
+                case EVRInitError.Init_HmdNotFound:
+                case EVRInitError.Init_HmdNotFoundPresenceFailed:
+                    LastInitError = "SteamVR does not see a headset. Turn the headset on (PS VR2: start the PlayStation VR2 App).";
+                    break;
+                default:
+                    LastInitError = "SteamVR is not ready (" + ProbeResult + ").";
+                    break;
+            }
+            RetryLater();
+        }
+
+        // Runs the real VR init on the main thread.
+        private static void TryFullInit()
+        {
+            if (InitVRLoader(VRAttempt == 1 || VRAttempt % 30 == 0))
+            {
+                VRStarted = true;
+                StartupStatus.ReportRunning();
+                if (VRAttempt > 1) Log.LogMessage($"VR started on try {VRAttempt}.");
+                string warning = StartupStatus.HeadsetWarning();
+                if (warning != null) ModHost.Instance.StartCoroutine(Systems.Updates.UpdateNotice.ShowOnMainMenu(warning, 130));
+                return;
+            }
+            RetryLater();
+        }
+
+        private static void RetryLater()
+        {
+            StartupStatus.ReportAttempt(VRAttempt, LastInitError);
+            if (VRAttempt == 1 || VRAttempt % 30 == 0) Log.LogWarning($"VR is not running yet (try {VRAttempt}): {LastInitError} Trying again every {VRInitRetryDelay:0} s.");
+            NextVRAttemptAt = Time.realtimeSinceStartup + VRInitRetryDelay;
+        }
+
+        // Asks Steam to start SteamVR once, as the old blocking init did by itself.
+        private static void LaunchSteamVROnce()
+        {
+            if (SteamVRLaunchRequested) return;
+            SteamVRLaunchRequested = true;
+            try
+            {
+                if (System.Diagnostics.Process.GetProcessesByName("vrmonitor").Length > 0) return;
+                Log.LogMessage("SteamVR is not running; asking Steam to start it.");
+                System.Diagnostics.Process.Start("steam://run/250820");
+            }
+            catch (Exception e) { Log.LogWarning("Could not start SteamVR: " + e.Message); }
+        }
+
+        // The last VR init failure, in short, for the desktop status overlay.
+        private static string LastInitError = "";
 
         // Applies the Harmony patches in the mod patch namespaces, and the avatar patches when the avatar is enabled.
         private void PatchStuff()
@@ -77,12 +197,15 @@ namespace Plugin
             // the avatar is opt-in; with it off nothing in its namespace is patched
             if (Vars.Config.EnableVRBody) Namespaces.Add(typeof(Systems.VRAvatar.Patches.A).Namespace);
 
-            new Patcher(new HarmonyLib.Harmony(PluginInfo.PLUGIN_GUID))
+            Patcher patcher = new Patcher(new HarmonyLib.Harmony(PluginInfo.PLUGIN_GUID))
             {
                 Namespaces = Namespaces.ToArray(),
                 Types = Types.ToArray(),
                 Log = Vars.Log,
-            }.PatchAll();
+            };
+            patcher.PatchAll();
+            StartupStatus.PatchProblems += patcher.Failures;
+            if (patcher.Failures > 0) Log.LogError($"{patcher.Failures} patch type(s) failed to apply; the game may have been updated.");
         }
 
         // Starts OpenVR through XR Management and SteamVR, then SteamVR input; returns false on failure.
@@ -144,6 +267,7 @@ namespace Plugin
             catch (Exception e)
             {
                 CleanupVRLoader();
+                LastInitError = e.Message;
                 if (logFailure) Log.LogWarning("OpenVR is not available yet: " + e.GetType().Name + " - " + e.Message);
                 return false;
             }

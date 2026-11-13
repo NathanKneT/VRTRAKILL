@@ -36,7 +36,11 @@ namespace Plugin.Systems
 
         // Returns a CodeMatcher not-found action that logs which transpiler pattern found nothing in which method.
         public static System.Action<string> NoMatch(System.Reflection.MethodBase Original, string Pattern)
-            => _ => Log.LogWarning($"Transpiler pattern \"{Pattern}\" found nothing in {Original?.DeclaringType?.Name}.{Original?.Name}; that VR change is missing.");
+            => _ =>
+            {
+                StartupStatus.PatchProblems++;
+                Log.LogWarning($"Transpiler pattern \"{Pattern}\" found nothing in {Original?.DeclaringType?.Name}.{Original?.Name}; that VR change is missing.");
+            };
 
         #region Checks
         // Returns the registered instance of a game singleton or null; unlike Instance it never spends the one-shot Find (see c427221) or auto-creates.

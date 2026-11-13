@@ -64,15 +64,64 @@ namespace Plugin.Systems.Input
             if (KeyCode != null) TriggerKey((VirtualKeyCode)KeyCode, Started, Ended);
             if (Button != null) TriggerKey((MouseButton)Button, Started, Ended);
         }
+        // The presses are real Windows input (SendInput): they go to whatever window has focus, and Windows reads
+        // combinations. Two problems players reported (issue #117, 14 comments): with the default binds, slide (Ctrl) +
+        // dash (Shift) + pause (Escape) is Ctrl+Shift+Esc and opens Task Manager mid-fight; and presses with the game
+        // unfocused land in other programs (a mouse press clicks the desktop). So: track what we hold, send nothing while
+        // the game is unfocused, release the modifiers before Escape, and release everything when focus goes.
+        private static readonly System.Collections.Generic.HashSet<VirtualKeyCode> HeldKeys = new System.Collections.Generic.HashSet<VirtualKeyCode>();
+        private static readonly System.Collections.Generic.HashSet<MouseButton> HeldButtons = new System.Collections.Generic.HashSet<MouseButton>();
+        private static readonly VirtualKeyCode[] Modifiers =
+        {
+            VirtualKeyCode.CONTROL, VirtualKeyCode.LCONTROL, VirtualKeyCode.RCONTROL,
+            VirtualKeyCode.SHIFT, VirtualKeyCode.LSHIFT, VirtualKeyCode.RSHIFT,
+            VirtualKeyCode.MENU, VirtualKeyCode.LMENU, VirtualKeyCode.RMENU,
+            VirtualKeyCode.LWIN, VirtualKeyCode.RWIN,
+        };
+        private static bool WarnedUnfocused;
+
+        // True when a press may be sent: the game window has focus. Logs once per focus loss when a press is dropped.
+        private static bool CanSend()
+        {
+            if (Application.isFocused) { WarnedUnfocused = false; return true; }
+            if (!WarnedUnfocused)
+            {
+                WarnedUnfocused = true;
+                Vars.Log.LogWarning("The ULTRAKILL window does not have focus, so VR button presses are not sent (they would go to another program). Click the ULTRAKILL window to give it focus.");
+            }
+            return false;
+        }
+
+        // Releases every key and mouse button the mod is holding. Called when the game loses focus and when it quits.
+        public static void ReleaseAll()
+        {
+            foreach (VirtualKeyCode Key in HeldKeys) InpSim.Keyboard.KeyUp(Key);
+            HeldKeys.Clear();
+            foreach (MouseButton Button in new System.Collections.Generic.List<MouseButton>(HeldButtons)) TriggerKey(Button, false, true);
+            HeldButtons.Clear();
+        }
+
         // Presses the key when the action starts and releases it when the action ends.
         private static void TriggerKey(VirtualKeyCode KeyCode, bool Started, bool Ended)
         {
-            if (Started) InpSim.Keyboard.KeyDown(KeyCode);
-            else if (Ended) InpSim.Keyboard.KeyUp(KeyCode);
+            if (Started)
+            {
+                if (!CanSend()) return;
+                if (KeyCode == VirtualKeyCode.ESCAPE)
+                    foreach (VirtualKeyCode Modifier in Modifiers)
+                        if (HeldKeys.Remove(Modifier)) InpSim.Keyboard.KeyUp(Modifier); // Esc with Ctrl/Shift/Alt held is a Windows shortcut
+                InpSim.Keyboard.KeyDown(KeyCode);
+                HeldKeys.Add(KeyCode);
+            }
+            // only release what we pressed: a stray key up would reach another program
+            else if (Ended && HeldKeys.Remove(KeyCode)) InpSim.Keyboard.KeyUp(KeyCode);
         }
         // Presses or releases a mouse button; 3 is XBUTTON1, 4 is XBUTTON2 and 10 scrolls up with no release.
         private static void TriggerKey(MouseButton Button, bool Started, bool Ended)
         {
+            if (Started && !CanSend()) return;
+            if (Started && (int)Button != 10) HeldButtons.Add(Button);
+            if (Ended && !HeldButtons.Remove(Button)) return;
             if (Started)
                 switch (Button)
                 {
@@ -104,9 +153,10 @@ namespace Plugin.Systems.Input
                         InpSim.Mouse.XButtonUp(2); break;
                 }
         }
-        // Scrolls the mouse wheel by the given amount.
+        // Scrolls the mouse wheel by the given amount, only while the game has focus.
         private static void MouseScroll(int Amount)
         {
+            if (!CanSend()) return;
             InpSim.Mouse.VerticalScroll(Amount);
         }
 

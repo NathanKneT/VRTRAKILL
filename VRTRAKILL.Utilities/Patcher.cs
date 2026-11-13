@@ -20,6 +20,8 @@ namespace VRTRAKILL.Utilities
         public Type[] Types { get; set; }
 
         public BepInEx.Logging.ManualLogSource Log { get; set; }
+        // Patch types that threw while patching (usually a game update renamed or removed the target).
+        public int Failures { get; private set; }
 
         // Creates a patcher that applies every patch Harmony finds.
         public Patcher(Harmony _Harmony) { Harmony = _Harmony; }
@@ -113,7 +115,7 @@ namespace VRTRAKILL.Utilities
         {
             foreach (Type T in _T)
                 try { Harmony.PatchAll(T); }
-                catch (Exception E) { Log.LogError($"Patching {T.FullName} failed: {E}"); }
+                catch (Exception E) { Failures++; Log.LogError($"Patching {T.FullName} failed: {E}"); }
         }
 
         // Removes every patch this Harmony instance applied.

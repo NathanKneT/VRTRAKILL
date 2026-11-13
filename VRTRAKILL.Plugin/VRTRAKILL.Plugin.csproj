@@ -145,6 +145,10 @@
       <HintPath>$(ULTRAKILLManaged)\UnityEngine.InputModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>$(ULTRAKILLManaged)\UnityEngine.IMGUIModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="UnityEngine.ParticleSystemModule">
       <HintPath>$(ULTRAKILLManaged)\UnityEngine.ParticleSystemModule.dll</HintPath>
       <Private>False</Private>
@@ -195,6 +199,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Systems\StartupStatus.cs" />
+    <Compile Include="Systems\ModHost.cs" />
     <Compile Include="Input\ControlMessages\MessageContainer.cs" />
     <Compile Include="Input\ControlMessages\Patches.cs" />
     <Compile Include="Input\InputMap.cs" />
