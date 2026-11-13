@@ -7,13 +7,15 @@ internal class VRArmController : VRArmControllerBase
 {
     public Transform RawTarget { get; set; }
     private bool IsHookArm;
-    // Picks the hand the arm follows: the gun hand for left handed or sandbox arms, else the arm hand.
+    // Picks the hand the arm follows: the gun hand for sandbox arms, else the arm hand.
+    // Left handed needs no swap here: PatchControllerAdder already puts the arms system on the right controller,
+    // so NonDominantHand is the right hand. Swapping again put the arm on the gun hand (issue #62).
     public override void Start()
     {
         base.Start();
         IsHookArm = gameObject.HasComponent<HookArm>();
 
-        if (Vars.Config.Controllers.LeftHanded || gameObject.HasComponent<Sandbox.Arm.SandboxArm>())
+        if (gameObject.HasComponent<Sandbox.Arm.SandboxArm>())
         { Target = Vars.DominantHand.transform; RawTarget = Vars.NDHC.transform; }
         else { Target = Vars.NonDominantHand.transform; RawTarget = Vars.DHC.transform; }
     }

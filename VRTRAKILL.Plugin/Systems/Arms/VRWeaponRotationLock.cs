@@ -7,13 +7,13 @@ namespace Plugin.Systems.Arms;
 internal class VRWeaponRotationLock : VRArmControllerBase
 {
     private Revolver Revolver;
-    // Sets the target to the gun hand, or to the arm hand when left handed, and finds the revolver if this is one.
+    // Sets the target to the gun hand and finds the revolver if this is one. DominantHand is already the left
+    // controller when left handed (PatchControllerAdder); swapping again turned the guns with the arm hand (issue #62).
     public override void Start()
     {
         base.Start();
         Revolver = GetComponent<Revolver>();
-        if (Vars.Config.Controllers.LeftHanded) Target = Vars.NonDominantHand.transform;
-        else Target = Vars.DominantHand.transform;
+        Target = Vars.DominantHand.transform;
     }
     // Turns the hand with the target; on the revolver, only while it spins.
     public override void LateUpdate()
