@@ -53,7 +53,11 @@ namespace Plugin.Systems.UI.Patches
         [HarmonyPatch(typeof(FinalRank), nameof(FinalRank.Start))]
         static void CFinalRank(FinalRank __instance)
         {
-            UIConverter.ConvertCanvas(__instance.transform.parent.GetComponent<Canvas>(), Force: true);
+            // the canvas is normally the direct parent; search up the tree so a different layout does not throw here
+            // (an exception left the rank screen unconverted, so it never showed in the headset: end-of-level issues)
+            Canvas RankCanvas = __instance.transform.parent != null ? __instance.transform.parent.GetComponentInParent<Canvas>() : null;
+            if (RankCanvas == null) { Vars.Log.LogWarning("Final rank screen: no canvas found above it; it is left as the game made it."); return; }
+            UIConverter.ConvertCanvas(RankCanvas, Force: true);
             __instance.transform.localPosition = Vector3.zero;
             __instance.transform.localScale = new Vector3(8, 4, 4) * 0.3f;
         }

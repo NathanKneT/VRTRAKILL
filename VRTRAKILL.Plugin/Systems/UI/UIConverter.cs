@@ -63,6 +63,7 @@ namespace Plugin.Systems.UI
         // Sets the UI event camera on a canvas and turns a screen space overlay canvas into a world space VR canvas.
         public static void ConvertCanvas(Canvas C, bool Force = false, bool DontAddComponent = false)
         {
+            if (C == null) return; // callers pass GetComponent results; a missing canvas must not throw inside a game method
             C.worldCamera = UIEventCamera;
             if (!Force && C.renderMode != RenderMode.ScreenSpaceOverlay) return;
             C.gameObject.layer = (int)Layers.UI;
