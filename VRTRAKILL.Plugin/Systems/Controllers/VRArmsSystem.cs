@@ -12,6 +12,10 @@ namespace Plugin.Systems.Controllers
         public Vector3 ArmIKOffset = new Vector3(0, .05f, -.11f);
 
         private Vector3 _PreviousPosition; private bool _HasPreviousPosition; public float Speed = 0; // for punch detection
+        // the fastest hand speed of the last PunchWindow seconds: a punch press that comes a few frames after the
+        // swing's peak (or a swing that peaks between frames) still counts, instead of needing both on the same frame
+        public float PeakSpeed = 0; private float _PeakTime;
+        private const float PunchWindow = 0.15f;
         private Vector3 LastPosition; // for direction
         // Measures the hand speed since the last frame in tracking space, for punch detection.
         private void CalculateSpeed()
@@ -21,6 +25,9 @@ namespace Plugin.Systems.Controllers
             float Delta = Time.unscaledDeltaTime;
             if (_HasPreviousPosition && Delta > 0f) Speed = (Position - _PreviousPosition).magnitude / Delta;
             _PreviousPosition = Position; _HasPreviousPosition = true;
+
+            float Now = Time.unscaledTime;
+            if (Speed >= PeakSpeed || Now - _PeakTime > PunchWindow) { PeakSpeed = Speed; _PeakTime = Now; }
         }
 
         // Gets the controller and gun offset, and puts the UI event camera on the hand for controller based UI.

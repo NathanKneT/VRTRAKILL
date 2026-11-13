@@ -13,7 +13,26 @@ namespace Plugin.Prefs
             [JsonProperty("Toggle Size Adjustment")] public string ToggleAvatarSizeAdj { get; set; } = "J";
         }
 
-        [JsonProperty("Movement multiplier")] public float MovementMultiplier { get; set; } = 0.575f;
+        // 1 = the game's own speed. The old default 0.575 also cut jump and wall jump power, so jumps reached about a third
+        // of their height (gravity is unchanged) and tutorial jumps were impossible: the most reported gameplay complaint.
+        [JsonProperty("Movement multiplier")] public float MovementMultiplier { get; set; } = 1f;
+        // Applies to jump and wall jump power only. Below 1 some jumps in the levels cannot be made.
+        [JsonProperty("Jump multiplier")] public float JumpMultiplier { get; set; } = 1f;
+
+        // Version of the defaults this file was written with; null for files from before 1.1.0. See Migrate.
+        [JsonProperty("Config version")] public int? ConfigVersion { get; set; }
+        public const int CurrentConfigVersion = 2;
+
+        // Moves values that are still the old defaults to the new defaults, once. Returns true when the file should be rewritten.
+        public bool Migrate()
+        {
+            if (ConfigVersion >= CurrentConfigVersion) return false;
+            // only exact old defaults change; a value the player chose stays
+            if (System.Math.Abs(MovementMultiplier - 0.575f) < 0.0001f) MovementMultiplier = 1f;
+            if (System.Math.Abs(MBP.PunchingSpeed - 7.5f) < 0.0001f) MBP.PunchingSpeed = new _MBP().PunchingSpeed;
+            ConfigVersion = CurrentConfigVersion;
+            return true;
+        }
 
         [JsonProperty("Controller Settings")] public _Controllers Controllers { get; set; }
         public class _Controllers
@@ -37,11 +56,13 @@ namespace Plugin.Prefs
             [JsonProperty("Crosshair distance")] public float CrosshairDistance { get; set; } = 8;
         }
 
+        // true: hold punch and swing the fist. false: the punch button alone punches, like the flat game.
         [JsonProperty("Enable movement-based punching")] public bool EnableMBP { get; set; } = true;
         [JsonProperty("MBP Settings")] public _MBP MBP { get; set; }
         public class _MBP
         {
-            [JsonProperty("Required speed to punch")] public float PunchingSpeed { get; set; } = 7.5f;
+            // twice the hand speed in m/s; 4 = a 2 m/s swing (the old 7.5 needed 3.75 m/s, and most presses did nothing)
+            [JsonProperty("Required speed to punch")] public float PunchingSpeed { get; set; } = 4f;
             [JsonProperty("WHIPLASH: camera-based aiming")] public bool CameraWhiplash { get; set; } = false;
         }
 

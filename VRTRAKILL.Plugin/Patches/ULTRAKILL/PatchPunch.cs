@@ -43,8 +43,10 @@ public sealed class PatchPunch
     {
         __state = __instance.ready;
         if (MonoSingleton<OptionsManager>.Instance.paused) return;
+        // movement-based punching off: leave the punch to the game, so the button alone punches (from the hand, see ActiveFrame)
+        if (!Vars.Config.EnableMBP) return;
 
-        if (Vars.NDHC.Speed * 2 >= Vars.Config.MBP.PunchingSpeed
+        if (Vars.NDHC.PeakSpeed * 2 >= Vars.Config.MBP.PunchingSpeed
             && MonoSingleton<InputManager>.Instance.InputSource.Punch.IsPressed
             && __instance.ready && !__instance.shopping
             // the game's own gate (Punch.Update); without it stamina went negative

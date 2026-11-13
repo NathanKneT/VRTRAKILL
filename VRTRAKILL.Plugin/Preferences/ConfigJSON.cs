@@ -17,6 +17,14 @@ namespace Plugin.Prefs
             Config = new NewConfig();
         }
 
+        // A default config marked with the current config version, for a newly written file.
+        private static ConfigJSON NewDefault()
+        {
+            ConfigJSON C = new ConfigJSON();
+            C.Config.ConfigVersion = NewConfig.CurrentConfigVersion;
+            return C;
+        }
+
         // Returns the loaded config, reading the file on first use.
         public static ConfigJSON GetConfig()
         {
@@ -34,6 +42,11 @@ namespace Plugin.Prefs
                 // an empty file or "null" deserializes to null, and a section set to null stays null
                 if (Config?.Config == null) throw new JsonSerializationException("The file is empty or has no \"VRTRAKILL Settings\" object.");
                 Config.Config.FillMissingSections();
+                if (Config.Config.Migrate())
+                {
+                    Vars.Log.LogMessage($"VRTRAKILL_Config.json updated to config version {NewConfig.CurrentConfigVersion} (old default movement multiplier and punch speed replaced; values you changed were kept).");
+                    Serialize(Config);
+                }
                 return Config;
             }
             catch (FileNotFoundException)
@@ -41,7 +54,7 @@ namespace Plugin.Prefs
                 Vars.Log.LogError("Unable to find VRTRAKILL_Config.json.\n" +
                                      "Generating a new one. Please quit the game and fill it out.\n" +
                                      "Starting up using default settings.");
-                Serialize(new ConfigJSON()); return new ConfigJSON();
+                Serialize(NewDefault()); return NewDefault();
             }
             catch (Exception E) when (E is IOException || E is UnauthorizedAccessException)
             {
