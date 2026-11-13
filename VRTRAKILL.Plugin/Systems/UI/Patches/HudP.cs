@@ -32,6 +32,7 @@ namespace Plugin.Systems.UI.Patches
             switch (__instance.gameObject.name)
             {
                 case "GunCanvas":
+                    WristHud.Attach(__instance); // on the wrist unless "HUD on wrist" is off; the positions below are the fallback
                     __instance.defaultPos = new Vector3(-440, -320, 120) * 0.1f;
                     __instance.defaultRot = new Vector3(0, -20, 0);
 

@@ -30,9 +30,9 @@ namespace Plugin.Prefs
 
         // Version of the defaults this file was written with; null for files from before 1.1.0. See Migrate.
         [JsonProperty("Config version")] public int? ConfigVersion { get; set; }
-        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added. 4: auto height.
+        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added. 4: auto height. 5: HUD on wrist.
         // Bump it when settings are added, so existing files are rewritten and show the new settings.
-        public const int CurrentConfigVersion = 4;
+        public const int CurrentConfigVersion = 5;
 
         // Moves values that are still the old defaults to the new defaults, once. Returns true when the file should be
         // rewritten (which also adds settings the file does not have yet).
@@ -102,6 +102,8 @@ namespace Plugin.Prefs
         {
             [JsonProperty("UI Size (from 0 to 0.1)")] public float UISize { get; set; } = 0.0625f;
             [JsonProperty("Controller-based")] public bool ControllerBased { get; set; } = true;
+            // health and stamina on the back of the arm-hand wrist, like a watch; false keeps them floating in the view
+            [JsonProperty("HUD on wrist")] public bool WristHud { get; set; } = true;
 
             [JsonProperty("Controller Lines")] public _ControllerLines ControllerLines { get; set; }
             public class _ControllerLines

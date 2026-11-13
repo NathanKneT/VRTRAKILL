@@ -30,6 +30,7 @@ namespace Plugin.Systems
                     AimTest = Array.Exists(Lines, L => L.Trim().Equals("aimtest", StringComparison.OrdinalIgnoreCase));
                     WhiplashTest = Array.Exists(Lines, L => L.Trim().Equals("whiplashtest", StringComparison.OrdinalIgnoreCase));
                     WeaponView = Array.Exists(Lines, L => L.Trim().Equals("weaponview", StringComparison.OrdinalIgnoreCase));
+                    WristView = Array.Exists(Lines, L => L.Trim().Equals("wristview", StringComparison.OrdinalIgnoreCase));
                 }
             }
             catch (Exception e) { Vars.Log.LogWarning("Test scene file unreadable: " + e.Message); }
@@ -59,6 +60,30 @@ namespace Plugin.Systems
             if (AimTest) yield return MeasureAim(Clock);
             if (WhiplashTest) yield return MeasureWhiplash(Clock);
             if (WeaponView) yield return ShowWeapons(Clock);
+            if (WristView) yield return ShowWrist(Clock);
+        }
+
+        // A line "wristview": raises the arm hand in front of the face like looking at a watch, with the gun hand lowered,
+        // and logs "Wrist view: ready" for 6 s so a script can capture the headset window (the wrist HUD).
+        private static bool WristView;
+        private static IEnumerator ShowWrist(System.Diagnostics.Stopwatch Clock)
+        {
+            double T = Clock.Elapsed.TotalSeconds;
+            while (Clock.Elapsed.TotalSeconds < T + 60 && (Vars.IsMainMenu || Vars.Registered<NewMovement>() == null)) yield return null;
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 4) yield return null;
+            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestLeftPose = new Pose(new Vector3(.02f, -.12f, .46f), Quaternion.Euler(-15, 75, 0));
+            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestRightPose = new Pose(new Vector3(.25f, -.45f, .25f), Quaternion.Euler(-45, 0, 0));
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 1.5) yield return null;
+            UI.WristHud Hud = UnityEngine.Object.FindObjectOfType<UI.WristHud>();
+            Controllers.VRArmsSystem Arms = Vars.Registered<Controllers.VRArmsSystem>();
+            Canvas HudCanvas = Hud != null ? Hud.GetComponent<Canvas>() : null;
+            Vars.Log.LogWarning("Wrist view: ready" + (Hud != null && Arms != null
+                ? $" (panel {Vector3.Distance(Hud.transform.position, Arms.transform.position):0.00} m from the arm controller, canvas shown {(HudCanvas != null && HudCanvas.enabled)}, scale {Hud.transform.lossyScale.x:0.00000})"
+                : " (no wrist HUD)"));
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 6) yield return null;
+            Vars.Log.LogWarning("Wrist view: done.");
+            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestLeftPose = null;
+            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestRightPose = null;
         }
 
         // A line "weaponview": puts both hands at a natural holding pose in front of the body (tracking space, head at

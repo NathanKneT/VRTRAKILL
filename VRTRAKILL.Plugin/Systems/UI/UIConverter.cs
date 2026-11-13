@@ -17,6 +17,8 @@ namespace Plugin.Systems.UI
             UICamera = new GameObject("UI Camera").AddComponent<Camera>();
             UICamera.cullingMask = 1 << (int)Layers.UI;
             UICamera.clearFlags = CameraClearFlags.Depth; UICamera.depth = 1;
+            // the default 0.3 m near plane clipped UI held close, like the wrist HUD read as a watch (~0.3 m from the eyes)
+            UICamera.nearClipPlane = .02f;
             UICamera.transform.parent = Vars.MainCamera.transform;
             UICamera.transform.localPosition = Vector3.zero;
             UICamera.transform.rotation = Vars.MainCamera.transform.rotation;

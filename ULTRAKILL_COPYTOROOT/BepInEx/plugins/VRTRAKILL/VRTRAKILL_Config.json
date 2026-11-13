@@ -9,7 +9,7 @@
     "Jump multiplier": 1.0,
     "Height offset (meters)": 0.0,
     "Auto height": true,
-    "Config version": 4,
+    "Config version": 5,
     "Controller Settings": {
       "Deadzone (from 0 to 1)": 0.4,
       "Smooth turning speed": 300.0,
@@ -39,6 +39,7 @@
     "UI Interaction Settings": {
       "UI Size (from 0 to 0.1)": 0.0625,
       "Controller-based": true,
+      "HUD on wrist": true,
       "Controller Lines": {
         "Enabled": true,
         "Starting transparency (from 0 to 1)": 0.4,
