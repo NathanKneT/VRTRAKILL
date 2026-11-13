@@ -62,12 +62,17 @@ namespace Plugin.Systems.VRCamera.Patches
             if (__instance.oneTime && __instance.activated) return false;
             __instance.activated = true;
 
-            // apply to both eyes
+            // apply to both eyes, the desktop view, and the game's own camera: eyes made later (a new portal manager)
+            // copy it, and they kept the sky of the level start
             CameraClearFlags flags = (!__instance.disable) ? CameraClearFlags.Skybox : CameraClearFlags.Color;
             if (CameraConverterP.leftEye != null)
                 CameraConverterP.leftEye.clearFlags = flags;
             if (CameraConverterP.rightEye != null)
                 CameraConverterP.rightEye.clearFlags = flags;
+            if (CameraConverterP.DesktopWorldCam != null)
+                CameraConverterP.DesktopWorldCam.clearFlags = flags;
+            if (MonoSingleton<CameraController>.Instance != null && MonoSingleton<CameraController>.Instance.cam != null)
+                MonoSingleton<CameraController>.Instance.cam.clearFlags = flags;
 
             if (__instance.changeSkybox)
                 RenderSettings.skybox = new Material(__instance.changeSkybox);

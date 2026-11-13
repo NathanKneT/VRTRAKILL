@@ -35,6 +35,7 @@ namespace Plugin.Systems
                     InputTest = Array.Exists(Lines, L => L.Trim().Equals("inputtest", StringComparison.OrdinalIgnoreCase));
                     EndTest = Array.Exists(Lines, L => L.Trim().Equals("endtest", StringComparison.OrdinalIgnoreCase));
                     HapticTest = Array.Exists(Lines, L => L.Trim().Equals("haptictest", StringComparison.OrdinalIgnoreCase));
+                    RangeView = Array.Exists(Lines, L => L.Trim().Equals("rangeview", StringComparison.OrdinalIgnoreCase));
                     Unfocused = Array.Exists(Lines, L => L.Trim().Equals("unfocused", StringComparison.OrdinalIgnoreCase));
                 }
             }
@@ -62,6 +63,7 @@ namespace Plugin.Systems
             if (Unfocused) yield return LoseFocus(Clock);
             if (InputTest) yield return MeasureInput(Clock);
             if (HapticTest) yield return MeasureHaptics(Clock);
+            if (RangeView) yield return ShowRange(Clock);
             if (EndTest) yield return FinishLevel(Clock);
             if (JumpTest) yield return MeasureJumps(Clock);
             if (PunchTest) yield return MeasurePunches(Clock);
@@ -579,6 +581,58 @@ namespace Plugin.Systems
             VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestRightPose = null;
             Feedback.Haptics.Recording = false;
             Vars.Log.LogWarning("Haptic test: done.");
+        }
+
+        // A line "rangeview": logs how far the eyes draw compared with the game's camera (near and far planes, clear
+        // flags, fog), then turns the view to four directions with the hands lowered, logging "Range view: <direction>"
+        // for a capture each. For checking big levels: is the far scenery drawn, cut off, or flickering?
+        private static bool RangeView;
+        private static IEnumerator ShowRange(System.Diagnostics.Stopwatch Clock)
+        {
+            double T = Clock.Elapsed.TotalSeconds;
+            while (Clock.Elapsed.TotalSeconds < T + 60 && (Vars.IsMainMenu || Vars.Registered<NewMovement>() == null)) yield return null;
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 5) yield return null;
+            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestLeftPose = new Pose(new Vector3(-.25f, -.6f, .1f), Quaternion.Euler(60, 0, 0));
+            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestRightPose = new Pose(new Vector3(.25f, -.6f, .1f), Quaternion.Euler(60, 0, 0));
+            Camera Main = MonoSingleton<CameraController>.Instance != null ? MonoSingleton<CameraController>.Instance.cam : null;
+            Camera L = VRCamera.Patches.CameraConverterP.leftEye;
+            if (Main != null && L != null)
+                Vars.Log.LogWarning($"Range: scene {SceneHelper.CurrentScene}; game camera near {Main.nearClipPlane} far {Main.farClipPlane} clear {Main.clearFlags}; "
+                                  + $"left eye near {L.nearClipPlane} far {L.farClipPlane} clear {L.clearFlags} mask same {L.cullingMask == Main.cullingMask}; "
+                                  + $"fog {RenderSettings.fog} {RenderSettings.fogMode} {RenderSettings.fogStartDistance:0}-{RenderSettings.fogEndDistance:0} density {RenderSettings.fogDensity:0.0000}; "
+                                  + $"depth buffer {(L.targetTexture != null ? L.targetTexture.depth.ToString() : "XR")}, sky enablers {Resources.FindObjectsOfTypeAll<SkyboxEnabler>().Length}");
+            // every level starts in the same small room: measure the whole level, then look across it from a high corner
+            Bounds B = default; bool Any = false;
+            foreach (Renderer R in UnityEngine.Object.FindObjectsOfType<Renderer>())
+            {
+                if (!(R is MeshRenderer) || !R.enabled || R.gameObject.layer == (int)Layers.UI) continue;
+                if (R.bounds.size.magnitude > 20000f) continue; // sky domes
+                if (!Any) { B = R.bounds; Any = true; } else B.Encapsulate(R.bounds);
+            }
+            NewMovement NM = Vars.Registered<NewMovement>();
+            if (Any && Main != null && NM != null)
+            {
+                float Diagonal = B.size.magnitude;
+                Vars.Log.LogWarning($"Range: level geometry {B.size.x:0} x {B.size.y:0} x {B.size.z:0} m, diagonal {Diagonal:0} m; the eyes draw to {L.farClipPlane:0} m -> {(Diagonal < L.farClipPlane ? "the whole level fits" : "parts can be cut off")}.");
+                foreach (OutOfBounds O in UnityEngine.Object.FindObjectsOfType<OutOfBounds>()) O.gameObject.SetActive(false);
+                foreach (DeathZone Z in UnityEngine.Object.FindObjectsOfType<DeathZone>()) Z.gameObject.SetActive(false);
+                Vector3 Corner = B.center + new Vector3(-B.extents.x * .8f, B.extents.y * .5f, -B.extents.z * .8f);
+                NM.rb.isKinematic = true;
+                NM.rb.position = Corner; NM.transform.position = Corner;
+                Vector3 ToCenter = B.center - Corner;
+                Input.InputVars.TurnOffset = Mathf.Atan2(ToCenter.x, ToCenter.z) * Mathf.Rad2Deg;
+            }
+            string[] Names = { "across", "right", "behind", "left" };
+            for (int i = 0; i < 4; i++)
+            {
+                T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 2) yield return null;
+                Vars.Log.LogWarning($"Range view: {Names[i]}");
+                T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 3) yield return null;
+                Input.InputVars.TurnOffset += 90f;
+            }
+            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestLeftPose = null;
+            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestRightPose = null;
+            Vars.Log.LogWarning("Range view: done.");
         }
 
         // A second line "jumptest" in the file: once the player has stood on the ground for 2 s, jump three times through
