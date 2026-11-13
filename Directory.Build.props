@@ -7,6 +7,10 @@
     <ULTRAKILLManaged>$([MSBuild]::EnsureTrailingSlash('$(ULTRAKILLDir)'))ULTRAKILL_Data\Managed</ULTRAKILLManaged>
     <BepInExCore>$([MSBuild]::EnsureTrailingSlash('$(ULTRAKILLDir)'))BepInEx\core</BepInExCore>
   </PropertyGroup>
+  <!-- No .NET Framework 4.7.2 Developer Pack installed? tools/setup-dev.ps1 puts the reference assemblies from NuGet in .tools/netfx-ref; use them. -->
+  <PropertyGroup Condition="'$(TargetFrameworkRootPath)' == '' And Exists('$(MSBuildThisFileDirectory).tools\netfx-ref\build\.NETFramework\v4.7.2')">
+    <TargetFrameworkRootPath>$(MSBuildThisFileDirectory).tools\netfx-ref\build</TargetFrameworkRootPath>
+  </PropertyGroup>
   <Target Name="CheckULTRAKILLDir" BeforeTargets="ResolveAssemblyReferences">
     <Error Condition="!Exists('$(ULTRAKILLManaged)\Assembly-CSharp.dll')" Text="ULTRAKILL not found at $(ULTRAKILLDir). Set ULTRAKILLDir to the game folder." />
     <Error Condition="!Exists('$(BepInExCore)\BepInEx.dll')" Text="BepInEx not found in $(BepInExCore). Install BepInEx 5.4.23.5 into the game first." />

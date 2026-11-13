@@ -372,3 +372,6 @@ globalgamemanagers.*
 release_signing_key*
 *.pem
 *.key
+
+# local dev tools (tools/setup-dev.ps1)
+.tools/
