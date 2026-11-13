@@ -36,6 +36,7 @@ namespace Plugin.Systems
                     EndTest = Array.Exists(Lines, L => L.Trim().Equals("endtest", StringComparison.OrdinalIgnoreCase));
                     HapticTest = Array.Exists(Lines, L => L.Trim().Equals("haptictest", StringComparison.OrdinalIgnoreCase));
                     RangeView = Array.Exists(Lines, L => L.Trim().Equals("rangeview", StringComparison.OrdinalIgnoreCase));
+                    PerfTest = Array.Exists(Lines, L => L.Trim().Equals("perftest", StringComparison.OrdinalIgnoreCase));
                     Unfocused = Array.Exists(Lines, L => L.Trim().Equals("unfocused", StringComparison.OrdinalIgnoreCase));
                 }
             }
@@ -64,6 +65,7 @@ namespace Plugin.Systems
             if (InputTest) yield return MeasureInput(Clock);
             if (HapticTest) yield return MeasureHaptics(Clock);
             if (RangeView) yield return ShowRange(Clock);
+            if (PerfTest) yield return MeasurePerformance(Clock);
             if (EndTest) yield return FinishLevel(Clock);
             if (JumpTest) yield return MeasureJumps(Clock);
             if (PunchTest) yield return MeasurePunches(Clock);
@@ -633,6 +635,66 @@ namespace Plugin.Systems
             VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestLeftPose = null;
             VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestRightPose = null;
             Vars.Log.LogWarning("Range view: done.");
+        }
+
+        // A line "perftest": times every per-frame method of the mod (Update, LateUpdate, FixedUpdate of its
+        // MonoBehaviours, and the camera postfix that places the eyes) with test-only Harmony timers, records frame
+        // times and SteamVR's dropped and reprojected frames over 10 s, and logs the totals and the top costs.
+        private static bool PerfTest;
+        private static readonly System.Collections.Generic.Dictionary<string, double> PerfTicks = new System.Collections.Generic.Dictionary<string, double>();
+        private static void PerfStart(out long __state) => __state = System.Diagnostics.Stopwatch.GetTimestamp();
+        private static void PerfStop(long __state, System.Reflection.MethodBase __originalMethod)
+        {
+            string Key = __originalMethod.DeclaringType.Name + "." + __originalMethod.Name;
+            PerfTicks.TryGetValue(Key, out double V);
+            PerfTicks[Key] = V + (System.Diagnostics.Stopwatch.GetTimestamp() - __state);
+        }
+        private static IEnumerator MeasurePerformance(System.Diagnostics.Stopwatch Clock)
+        {
+            double T = Clock.Elapsed.TotalSeconds;
+            while (Clock.Elapsed.TotalSeconds < T + 60 && (Vars.IsMainMenu || Vars.Registered<NewMovement>() == null)) yield return null;
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 5) yield return null;
+
+            var H = new HarmonyLib.Harmony("vrtrakill.devtest.perf");
+            var Pre = new HarmonyLib.HarmonyMethod(typeof(DevTestHooks), nameof(PerfStart));
+            var Post = new HarmonyLib.HarmonyMethod(typeof(DevTestHooks), nameof(PerfStop));
+            int Patched = 0;
+            foreach (Type Ty in typeof(DevTestHooks).Assembly.GetTypes())
+            {
+                if (!typeof(MonoBehaviour).IsAssignableFrom(Ty) || Ty.IsAbstract || Ty.ContainsGenericParameters) continue;
+                foreach (string Name in new[] { "Update", "LateUpdate", "FixedUpdate", "OnPreRender", "OnPostRender" })
+                {
+                    var M = Ty.GetMethod(Name, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.DeclaredOnly);
+                    if (M == null || M.GetMethodBody() == null) continue;
+                    try { H.Patch(M, prefix: Pre, postfix: Post); Patched++; } catch { }
+                }
+            }
+            foreach (var M in new[] { HarmonyLib.AccessTools.Method(typeof(VRCamera.Patches.CameraConverterP), "HandleRotationsAndPositions") })
+                if (M != null) { H.Patch(M, prefix: Pre, postfix: Post); Patched++; }
+
+            Valve.VR.Compositor_CumulativeStats Before = new Valve.VR.Compositor_CumulativeStats(), After = new Valve.VR.Compositor_CumulativeStats();
+            uint Size = (uint)System.Runtime.InteropServices.Marshal.SizeOf(typeof(Valve.VR.Compositor_CumulativeStats));
+            Valve.VR.OpenVR.Compositor?.GetCumulativeStats(ref Before, Size);
+            PerfTicks.Clear();
+            var Frames = new System.Collections.Generic.List<float>();
+            double Start = Clock.Elapsed.TotalSeconds;
+            while (Clock.Elapsed.TotalSeconds < Start + 10) { yield return null; Frames.Add(Time.unscaledDeltaTime * 1000f); }
+            Valve.VR.OpenVR.Compositor?.GetCumulativeStats(ref After, Size);
+            H.UnpatchSelf();
+
+            Frames.Sort();
+            float Avg = 0f; foreach (float F in Frames) Avg += F; Avg /= Mathf.Max(1, Frames.Count);
+            float P95 = Frames.Count > 0 ? Frames[(int)(Frames.Count * .95f)] : 0f, Max = Frames.Count > 0 ? Frames[Frames.Count - 1] : 0f;
+            int Over = Frames.FindAll(F => F > 11.2f).Count;
+            double TickMs = 1000.0 / System.Diagnostics.Stopwatch.Frequency;
+            double ModMs = 0; foreach (double V in PerfTicks.Values) ModMs += V * TickMs;
+            var Top = new System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<string, double>>(PerfTicks);
+            Top.Sort((A, B) => B.Value.CompareTo(A.Value));
+            string TopText = string.Join(", ", Top.GetRange(0, Math.Min(6, Top.Count)).ConvertAll(K => $"{K.Key} {K.Value * TickMs / Frames.Count:0.000} ms"));
+            Vars.Log.LogWarning($"Perf: scene {SceneHelper.CurrentScene}, {Frames.Count} frames in 10 s, frame avg {Avg:0.00} ms, 95% {P95:0.00} ms, max {Max:0.0} ms, {Over} over 11.2 ms; "
+                              + $"SteamVR presents {After.m_nNumFramePresents - Before.m_nNumFramePresents}, dropped {After.m_nNumDroppedFrames - Before.m_nNumDroppedFrames}, reprojected {After.m_nNumReprojectedFrames - Before.m_nNumReprojectedFrames}; "
+                              + $"mod per-frame code {ModMs / Math.Max(1, Frames.Count):0.000} ms/frame over {Patched} methods; top: {TopText}");
+            Vars.Log.LogWarning("Perf test: done.");
         }
 
         // A second line "jumptest" in the file: once the player has stood on the ground for 2 s, jump three times through
