@@ -46,6 +46,9 @@ namespace Plugin.Systems.UI
         // Moves the laser to the active hand, handles hover, press, drag and release, and handles stick navigation and jump select in menus.
         public void LateUpdate()
         {
+            // before VR starts the SteamVR actions do not exist yet; reading them threw every frame (hundreds of
+            // NullReferenceExceptions while the game waited for the headset)
+            if (!SteamVR_Input.initialized) return;
             if (EventSystem.current == null || Cam == null) return;
             if (ES != EventSystem.current || Pointer == null) ResetPointer(EventSystem.current);
             HideModuleMouse();

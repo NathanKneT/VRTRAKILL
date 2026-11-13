@@ -13,7 +13,7 @@ namespace Plugin.Systems
         // the Steam build this release was tested on; README and CHANGELOG name the same build
         public const string TestedGameBuild = "22957324";
 
-        public enum VRState { Starting, Waiting, Running }
+        public enum VRState { Starting, Waiting, Running, Stopped }
 
         public static VRState State { get; private set; } = VRState.Starting;
         public static int Attempt { get; private set; }
@@ -44,6 +44,8 @@ namespace Plugin.Systems
             if (!string.IsNullOrEmpty(error)) LastError = error;
         }
         public static void ReportRunning() { State = VRState.Running; LastError = ""; }
+        // VR ran and SteamVR took it away; shown on the desktop until the game restarts.
+        public static void ReportStopped(string reason) { State = VRState.Stopped; LastError = reason; }
 
         private bool loggedDraw;
 
@@ -94,6 +96,9 @@ namespace Plugin.Systems
                     text = "VRTRAKILL is waiting for SteamVR.\n"
                          + (LastError.Length > 0 ? LastError + "\n" : "")
                          + "VR starts by itself as soon as SteamVR sees the headset; you do not need to restart the game.";
+                    break;
+                case VRState.Stopped:
+                    text = "VRTRAKILL: " + LastError;
                     break;
             }
             if (State == VRState.Running) return null; // the player is in the headset; the main menu notice covers the rest

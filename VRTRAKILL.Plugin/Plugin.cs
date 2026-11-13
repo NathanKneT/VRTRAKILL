@@ -70,12 +70,19 @@ namespace Plugin
         private static volatile bool ProbeDone;
         private static EVRInitError ProbeResult;
         private static string ProbeException; // the probe could not run (missing openvr_api, ...): fall back to the plain init
-        private static bool SteamVRLaunchRequested;
+        // When SteamVR has just started, it may still be launching its own app (SteamVR Home, Room Setup). A game that
+        // connects before that app finishes gets a Quit event from SteamVR and loses VR (seen in vrserver.txt). So a late
+        // start waits until SteamVR has answered for a few seconds in a row.
+        private const float SettleSeconds = 5f;
+        private static float ProbeOkSince = -1f;
+        private static XRDisplaySubsystem ActiveDisplay;
+        private static bool ReportedVRStopped;
+        private static bool InputInitialized;
 
         // Runs one step of the VR start: collects a finished probe, or starts the next one when the retry delay has passed.
         internal static void TickVRStart()
         {
-            if (VRStarted) return;
+            if (VRStarted) { WatchVR(); return; }
             if (ProbeThread != null)
             {
                 if (!ProbeDone) return;
@@ -118,14 +125,35 @@ namespace Plugin
                 TryFullInit();
                 return;
             }
+            if (ProbeResult != EVRInitError.None) ProbeOkSince = -1f;
             switch (ProbeResult)
             {
                 case EVRInitError.None:
+                    // at startup, start at once as before; later, let a freshly started SteamVR settle first
+                    if (VRAttempt > 1)
+                    {
+                        float now = Time.realtimeSinceStartup;
+                        if (ProbeOkSince < 0f) ProbeOkSince = now;
+                        if (now - ProbeOkSince < SettleSeconds)
+                        {
+                            LastInitError = "SteamVR sees the headset. Starting VR in a few seconds...";
+                            RetryLater(1f);
+                            return;
+                        }
+                    }
                     TryFullInit();
                     return;
                 case EVRInitError.Init_NoServerForBackgroundApp:
-                    LastInitError = "SteamVR is not running. Starting it...";
-                    LaunchSteamVROnce();
+                    if (VRAttempt == 1)
+                    {
+                        // the game's own (scene) init starts SteamVR with the game as its startup app, so SteamVR does not
+                        // also launch Home or Room Setup, which would take VR away from the game; it blocks while SteamVR
+                        // starts, like any VR game, and only on this first try
+                        LastInitError = "SteamVR is not running.";
+                        TryFullInit();
+                        return;
+                    }
+                    LastInitError = "SteamVR is not running. Start SteamVR (PS VR2: start the PlayStation VR2 App).";
                     break;
                 case EVRInitError.Init_HmdNotFound:
                 case EVRInitError.Init_HmdNotFoundPresenceFailed:
@@ -153,25 +181,25 @@ namespace Plugin
             RetryLater();
         }
 
-        private static void RetryLater()
+        private static void RetryLater(float delay = VRInitRetryDelay)
         {
             StartupStatus.ReportAttempt(VRAttempt, LastInitError);
             if (VRAttempt == 1 || VRAttempt % 30 == 0) Log.LogWarning($"VR is not running yet (try {VRAttempt}): {LastInitError} Trying again every {VRInitRetryDelay:0} s.");
-            NextVRAttemptAt = Time.realtimeSinceStartup + VRInitRetryDelay;
+            NextVRAttemptAt = Time.realtimeSinceStartup + delay;
         }
 
-        // Asks Steam to start SteamVR once, as the old blocking init did by itself.
-        private static void LaunchSteamVROnce()
+        // After VR started: if SteamVR stops it (another VR app took over, SteamVR closed), say so instead of
+        // leaving a frozen headset image. Restarting XR in the same process is not safe with the SteamVR input
+        // plugin, so the message asks for a game restart.
+        private static float NextWatchAt;
+        private static void WatchVR()
         {
-            if (SteamVRLaunchRequested) return;
-            SteamVRLaunchRequested = true;
-            try
-            {
-                if (System.Diagnostics.Process.GetProcessesByName("vrmonitor").Length > 0) return;
-                Log.LogMessage("SteamVR is not running; asking Steam to start it.");
-                System.Diagnostics.Process.Start("steam://run/250820");
-            }
-            catch (Exception e) { Log.LogWarning("Could not start SteamVR: " + e.Message); }
+            if (ReportedVRStopped || ActiveDisplay == null || Time.realtimeSinceStartup < NextWatchAt) return;
+            NextWatchAt = Time.realtimeSinceStartup + 1f;
+            if (ActiveDisplay.running) return;
+            ReportedVRStopped = true;
+            Log.LogError("SteamVR stopped VR for ULTRAKILL (another VR app started, or SteamVR closed). Restart ULTRAKILL to get VR back.");
+            StartupStatus.ReportStopped("SteamVR stopped VR for ULTRAKILL (another VR app started, or SteamVR closed). Restart ULTRAKILL to get VR back.");
         }
 
         // The last VR init failure, in short, for the desktop status overlay.
@@ -258,9 +286,15 @@ namespace Plugin
                 var display = loader.GetLoadedSubsystem<XRDisplaySubsystem>();
                 if (display == null) throw new InvalidOperationException("OpenVR display subsystem is missing.");
                 if (!display.running) display.Start();
+                ActiveDisplay = display;
 
-                SteamVR_Input.Initialize();
-                Systems.Input.SVRActionsManager.Init();
+                // once per game: a second Init would add every SteamVR action listener twice (double key presses)
+                if (!InputInitialized)
+                {
+                    SteamVR_Input.Initialize();
+                    Systems.Input.SVRActionsManager.Init();
+                    InputInitialized = true;
+                }
                 Log.LogMessage("DONE");
                 return true;
             }

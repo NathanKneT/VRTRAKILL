@@ -7,7 +7,10 @@ Fixes for the problems players reported most (from the 171 issues of the origina
 - VR start (the most reported problem, "the game does not start in VR"):
   - The game no longer freezes on the boot screen when SteamVR or the headset is not ready. A background check asks SteamVR whether it runs and sees a headset, and VR starts only then.
   - VR starts by itself as soon as the headset is ready, at any time. You no longer need to restart the game, and there is no 3-minute limit.
-  - If SteamVR is not running, the mod asks Steam to start it.
+  - If SteamVR is not running when the game starts, the game starts it the way a VR game does, with the game as SteamVR's startup app (as before).
+  - When SteamVR has only just started, VR waits a few seconds before starting, so SteamVR Home or Room Setup, which SteamVR may still be launching, do not take VR away from the game.
+  - If SteamVR stops VR for the game later (another VR app started, SteamVR closed), the desktop window says so instead of leaving a frozen headset image.
+  - The menu laser no longer throws an error every frame while VR is not running.
   - The retries really run now. Before, the game destroyed the object that ran them right after startup, so only the first try happened.
   - The desktop window says why VR is not running: SteamVR closed, no headset, or a game build other than 22957324.
   - The game keeps running when its window loses focus, so the headset image no longer freezes when a SteamVR window or another program takes focus.

@@ -190,7 +190,9 @@ When you update from an older version, the mod changes the old defaults in your 
 
 While VR is not running, a box at the top of the game window on your monitor says why:
 
-- "SteamVR is not running. Starting it...": the mod asked Steam to start SteamVR. Wait a few seconds.
+- "SteamVR is not running": start SteamVR (PS VR2: start the PlayStation VR2 App). If SteamVR is not running when the game starts, the game starts it itself, like any VR game.
+- "SteamVR sees the headset. Starting VR in a few seconds...": SteamVR has just started; VR waits a moment so SteamVR's own apps (Home, Room Setup) do not take it away.
+- "SteamVR stopped VR for ULTRAKILL": another VR app started or SteamVR closed. Restart ULTRAKILL.
 - "SteamVR does not see a headset": turn the headset on. For PS VR2, start the PlayStation VR2 App and wait until it shows the headset as connected.
 - "ULTRAKILL was updated (build ...)": the game build is not the one this release was tested on. The mod still starts, but some VR features may not work.
 
@@ -205,7 +207,7 @@ Other problems:
 
 Fixes for the problems players reported most. The full list is in [CHANGELOG.md](CHANGELOG.md).
 
-- The game no longer freezes on the boot screen when the headset is not ready, VR starts by itself whenever the headset is ready, SteamVR is started if needed, and the game window says why VR is not running.
+- The game no longer freezes on the boot screen when the headset is not ready, VR starts by itself whenever the headset is ready, and the game window says why VR is not running.
 - Movement and jumps at the game's speed by default (the old 0.575 multiplier made jumps about a third as high).
 - Easier punches (2 m/s swing), and a button-only punch option.
 - New "Height offset (meters)".
