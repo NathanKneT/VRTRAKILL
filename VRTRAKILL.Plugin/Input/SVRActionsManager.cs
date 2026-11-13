@@ -304,6 +304,7 @@ namespace Plugin.Systems.Input
                 case "slide": SlideH(null, SteamVR_Input_Sources.Any, Down); break;
                 case "dash": DashH(null, SteamVR_Input_Sources.Any, Down); break;
                 case "escape": EscapeH(null, SteamVR_Input_Sources.Any, Down); break;
+                case "whiplash": WhiplashH(null, SteamVR_Input_Sources.Any, Down); break;
             }
         }
         private static void PunchH(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)

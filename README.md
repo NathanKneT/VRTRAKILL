@@ -216,6 +216,7 @@ Fixes for the problems players reported most. The full list is in [CHANGELOG.md]
 - Task Manager no longer opens mid-fight (slide + dash + pause sent Ctrl+Shift+Esc).
 - Left handed mode no longer swaps the hands twice.
 - A whiplash aim marker on the arm hand.
+- The crosshair sits on the real shot line for every gun (it was 3 to 5.6 degrees off).
 - Screen flashes and the end-of-level rank screen fixes.
 
 ## Changes in 1.0.2
@@ -291,7 +292,7 @@ The game folder comes from the `ULTRAKILLDir` property. The default is `C:\Progr
 dotnet build VRTRAKILL.sln -c Release -p:ULTRAKILLDir="E:\SteamLibrary\steamapps\common\ULTRAKILL"
 ```
 
-To check a level in VR without controllers (for example with SteamVR's null headset driver), put a file `BepInEx/plugins/VRTRAKILL/VRTRAKILL_TEST_SCENE.txt` containing a scene name such as `Level 0-1` in the game folder: the mod loads that scene once, a few seconds after VR starts in the main menu. Extra lines run in-game checks, logged to `BepInEx/LogOutput.log`: `jumptest` (jumps three times through the game's own jump and logs the height), `punchtest` (presses punch through the mod's SteamVR handler with simulated hand speeds and counts the punches; the game window needs focus) and `shortcuttest` (holds slide and dash, then pauses; check that Task Manager did not open). Delete the file afterwards. Without it nothing happens.
+To check a level in VR without controllers (for example with SteamVR's null headset driver), put a file `BepInEx/plugins/VRTRAKILL/VRTRAKILL_TEST_SCENE.txt` containing a scene name such as `Level 0-1` in the game folder: the mod loads that scene once, a few seconds after VR starts in the main menu. Extra lines run in-game checks, logged to `BepInEx/LogOutput.log`: `jumptest` (jumps three times through the game's own jump and logs the height), `punchtest` (presses punch through the mod's SteamVR handler with simulated hand speeds and counts the punches; the game window needs focus) and `shortcuttest` (holds slide and dash, then pauses; check that Task Manager did not open), `aimtest` (for each weapon in the save, the angle between the crosshair and the shot line; with the rocket launcher, fires a rocket and measures it) and `whiplashtest` (checks the whiplash marker and throws the whiplash through the mod's handler). Weapons appear from Level 1-1 on; Level 0-1 starts empty-handed. Delete the file afterwards. Without it nothing happens.
 
 To make the release zips, run:
 

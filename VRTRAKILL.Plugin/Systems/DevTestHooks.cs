@@ -27,11 +27,17 @@ namespace Plugin.Systems
                     JumpTest = Array.Exists(Lines, L => L.Trim().Equals("jumptest", StringComparison.OrdinalIgnoreCase));
                     PunchTest = Array.Exists(Lines, L => L.Trim().Equals("punchtest", StringComparison.OrdinalIgnoreCase));
                     ShortcutTest = Array.Exists(Lines, L => L.Trim().Equals("shortcuttest", StringComparison.OrdinalIgnoreCase));
+                    AimTest = Array.Exists(Lines, L => L.Trim().Equals("aimtest", StringComparison.OrdinalIgnoreCase));
+                    WhiplashTest = Array.Exists(Lines, L => L.Trim().Equals("whiplashtest", StringComparison.OrdinalIgnoreCase));
                 }
             }
             catch (Exception e) { Vars.Log.LogWarning("Test scene file unreadable: " + e.Message); }
             if (string.IsNullOrEmpty(Scene)) return;
             Done = true;
+            // the plugin filters Unity's exceptions out (filterLogType Warning); a test must see them
+            Debug.unityLogger.filterLogType = LogType.Exception;
+            Application.logMessageReceived += (Message, Stack, Type) =>
+            { if (Type == LogType.Exception) Vars.Log.LogError("Test run exception: " + Message + " | " + Stack); };
             Vars.Log.LogWarning($"Developer test hook: loading scene \"{Scene}\" once the main menu is up (VRTRAKILL_TEST_SCENE).");
             ModHost.Instance.StartCoroutine(LoadWhenMenuReady(Scene));
         }
@@ -49,6 +55,82 @@ namespace Plugin.Systems
             if (JumpTest) yield return MeasureJumps(Clock);
             if (PunchTest) yield return MeasurePunches(Clock);
             if (ShortcutTest) yield return PressSlideDashPause(Clock);
+            if (AimTest) yield return MeasureAim(Clock);
+            if (WhiplashTest) yield return MeasureWhiplash(Clock);
+        }
+
+        // A line "whiplashtest": checks the whiplash aim marker (visible, on the arm hand's aim line) and throws the
+        // whiplash through the mod's SteamVR whiplash handler, then compares the game's throw direction with that aim.
+        private static bool WhiplashTest;
+        private static IEnumerator MeasureWhiplash(System.Diagnostics.Stopwatch Clock)
+        {
+            // wait for the level: the main menu's objects are still registered for a moment after LoadScene
+            double T = Clock.Elapsed.TotalSeconds;
+            while (Clock.Elapsed.TotalSeconds < T + 60 && (Vars.IsMainMenu || Vars.Registered<NewMovement>() == null)) yield return null;
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 5) yield return null;
+            HookArm Hook = null;
+            while (Clock.Elapsed.TotalSeconds < T + 35 && (Hook == null || !Hook.equipped)) { Hook = Vars.Registered<HookArm>(); yield return null; }
+            if (Hook == null || !Hook.equipped) { Vars.Log.LogWarning("Whiplash test: no equipped whiplash in this save or level."); yield break; }
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 1) yield return null;
+            Hook = Vars.Registered<HookArm>();
+            if (Hook == null) { Vars.Log.LogWarning("Whiplash test: the whiplash went away."); yield break; }
+            Transform Aim = Vars.Registered<Controllers.VRArmsSystem>()?.GunOffset?.transform;
+            UI.WhiplashAimMarker Marker = Hook.GetComponentInChildren<UI.WhiplashAimMarker>(true);
+            LineRenderer LR = Marker != null ? Marker.GetComponent<LineRenderer>() : null;
+            if (Aim == null || LR == null) { Vars.Log.LogWarning($"Whiplash test: arm hand {Aim != null}, marker {LR != null}."); yield break; }
+            Vector3 Center = Vector3.zero; for (int i = 0; i < LR.positionCount; i++) Center += LR.GetPosition(i); Center /= Mathf.Max(1, LR.positionCount);
+            Vars.Log.LogWarning($"Whiplash test: marker shown {LR.enabled}, {Vector3.Angle(Center - Aim.position, Aim.forward):0.00} deg off the arm hand's aim, "
+                              + $"{Vector3.Distance(Center, Aim.position):0.00} m ahead (crosshair distance {Vars.Config.CBS.CrosshairDistance}).");
+            Vector3 AimAtThrow = Aim.forward;
+            Input.SVRActionsManager.TestButton("whiplash", true);
+            T = Clock.Elapsed.TotalSeconds;
+            while (Clock.Elapsed.TotalSeconds < T + 1 && Hook.state == HookState.Ready) yield return null;
+            Input.SVRActionsManager.TestButton("whiplash", false);
+            bool AutoAimed = MonoSingleton<CameraFrustumTargeter>.Instance != null && MonoSingleton<CameraFrustumTargeter>.Instance.CurrentTarget && MonoSingleton<CameraFrustumTargeter>.Instance.IsAutoAimed;
+            Vars.Log.LogWarning($"Whiplash test: state {Hook.state}, throw direction {Vector3.Angle(Hook.throwDirection, AimAtThrow):0.00} deg off the arm hand's aim (game auto-aim on a target: {AutoAimed}), marker shown while throwing {LR.enabled}.");
+        }
+
+        // A line "aimtest": every gun fires from the gun hand along its aim (the shot code's camera reads are redirected
+        // to the hand). For each weapon the save has, measures the angle between the crosshair and that shot line, and,
+        // with the rocket launcher, fires a rocket and measures its start point and direction against the hand.
+        private static bool AimTest;
+        private static IEnumerator MeasureAim(System.Diagnostics.Stopwatch Clock)
+        {
+            double T = Clock.Elapsed.TotalSeconds;
+            while (Clock.Elapsed.TotalSeconds < T + 3) yield return null;
+            GunControl Guns = Vars.Registered<GunControl>();
+            // wait for the level to hand out weapons
+            while (Clock.Elapsed.TotalSeconds < T + 30 && (Guns == null || Guns.allWeapons.Count == 0)) { Guns = Vars.Registered<GunControl>(); yield return null; }
+            if (Guns == null) { Vars.Log.LogWarning("Aim test: no GunControl."); yield break; }
+            // the level's crosshair may not exist yet; a CrosshairController of our own runs the same placement code
+            UI.CrosshairController Cross = new GameObject("VRTRAKILL aim test crosshair").AddComponent<UI.CrosshairController>();
+            Vars.Log.LogWarning($"Aim test: {Guns.allWeapons.Count} weapon(s) in the save.");
+            foreach (GameObject Weapon in new System.Collections.Generic.List<GameObject>(Guns.allWeapons))
+            {
+                if (Weapon == null) continue;
+                Guns.ForceWeapon(Weapon);
+                T = Clock.Elapsed.TotalSeconds;
+                while (Clock.Elapsed.TotalSeconds < T + 0.8) yield return null;
+                Cross.LateUpdate();
+                Transform Hand = Vars.DominantHand.transform;
+                float CrossError = Vector3.Angle(Cross.transform.position - Hand.position, Hand.forward);
+                string Line = $"Aim test, {Weapon.name}: crosshair {CrossError:0.00} deg off the shot line, model origin {Vector3.Distance(Weapon.transform.position, Hand.position):0.00} m from the hand";
+                RocketLauncher RL = Weapon.GetComponent<RocketLauncher>();
+                if (RL != null)
+                {
+                    var Before = new System.Collections.Generic.HashSet<Grenade>(UnityEngine.Object.FindObjectsOfType<Grenade>());
+                    RL.Shoot();
+                    yield return null;
+                    foreach (Grenade G in UnityEngine.Object.FindObjectsOfType<Grenade>())
+                        if (!Before.Contains(G))
+                        {
+                            Line += $"; rocket fired {Vector3.Distance(G.transform.position, Hand.position):0.00} m from the hand, {Vector3.Angle(G.transform.forward, Hand.forward):0.00} deg off the hand's aim, "
+                                  + $"{Vector3.Angle(G.transform.forward, Cross.transform.position - G.transform.position):0.00} deg off the crosshair";
+                            break;
+                        }
+                }
+                Vars.Log.LogWarning(Line + ".");
+            }
         }
 
         // A line "shortcuttest": holds slide and dash, then presses pause, through the mod's SteamVR handlers, like a
