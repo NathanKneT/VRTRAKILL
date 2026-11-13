@@ -140,6 +140,16 @@ namespace Plugin.Systems.VRCamera.Patches
             PortalAwareSetTransformFromBody(rightEye.transform, InputTracking.GetLocalPosition(XRNode.RightEye), __instance.transform.rotation);
         }
 
+        // Logs the eye height above the player body once, so a player can set "Height offset" from a number.
+        private static bool LoggedTrackedHeight;
+        private static void LogTrackedHeightOnce(Vector3 eyeLocalPosition, bool hands)
+        {
+            if (LoggedTrackedHeight || hands || eyeLocalPosition == Vector3.zero) return;
+            LoggedTrackedHeight = true;
+            Vars.Log.LogInfo($"Eye height above the player body: {eyeLocalPosition.y:0.00} m (includes \"Height offset\" {Vars.Config.HeightOffset:0.00} m). "
+                           + "If the view is too low or too high, change \"Height offset\" in VRTRAKILL_Config.json.");
+        }
+
         // Places a transform at a pose relative to the player body, with turn and gravity applied, then moves it through crossed portals.
         public static void PortalAwareSetTransformFromBody(Transform t, Vector3 localPosition, Quaternion worldRotation, bool hands = false)
         {
@@ -148,6 +158,11 @@ namespace Plugin.Systems.VRCamera.Patches
             Quaternion parentRot =
                 cc.gravityRotation *
                 Quaternion.AngleAxis(InputVars.TurnOffset, Vector3.up);
+
+            // "Height offset" moves the eyes and the hands together, along the player's up (10 issues about wrong height,
+            // constant crouch or seated play had no remedy short of editing code)
+            localPosition.y += Vars.Config.HeightOffset;
+            LogTrackedHeightOnce(localPosition, hands);
 
             Vector3 transformedLocalPos = parentRot * localPosition;
             t.position = cc.transform.parent.position + transformedLocalPos;

@@ -19,6 +19,10 @@ namespace Plugin.Prefs
         // Applies to jump and wall jump power only. Below 1 some jumps in the levels cannot be made.
         [JsonProperty("Jump multiplier")] public float JumpMultiplier { get; set; } = 1f;
 
+        // Moves the view and the hands up (positive) or down (negative), in meters. For seated play or a view that sits
+        // too low or too high; the log prints the eye height at the first level.
+        [JsonProperty("Height offset (meters)")] public float HeightOffset { get; set; } = 0f;
+
         // Version of the defaults this file was written with; null for files from before 1.1.0. See Migrate.
         [JsonProperty("Config version")] public int? ConfigVersion { get; set; }
         public const int CurrentConfigVersion = 2;
