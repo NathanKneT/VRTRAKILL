@@ -104,6 +104,17 @@ namespace Plugin.Systems
             Vars.Log.LogWarning("Pause view: done.");
         }
 
+        // Places the arm hand and the gun hand, given as poses for a right-handed player. With "Left handed" the arm hand
+        // is the right controller, so both poses are mirrored across the middle of the body.
+        private static void PlaceHands(Pose ArmHand, Pose GunHand)
+        {
+            bool Left = Vars.Config.Controllers.LeftHanded;
+            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestLeftPose = Left ? Mirror(GunHand) : ArmHand;
+            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestRightPose = Left ? Mirror(ArmHand) : GunHand;
+        }
+        private static Pose Mirror(Pose P)
+            => new Pose(new Vector3(-P.position.x, P.position.y, P.position.z), new Quaternion(P.rotation.x, -P.rotation.y, -P.rotation.z, P.rotation.w));
+
         // A line "wristview": raises the arm hand in front of the face like looking at a watch, with the gun hand lowered,
         // and logs "Wrist view: ready" for 6 s so a script can capture the headset window (the wrist HUD).
         private static bool WristView;
@@ -112,8 +123,7 @@ namespace Plugin.Systems
             double T = Clock.Elapsed.TotalSeconds;
             while (Clock.Elapsed.TotalSeconds < T + 60 && (Vars.IsMainMenu || Vars.Registered<NewMovement>() == null)) yield return null;
             T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 4) yield return null;
-            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestLeftPose = new Pose(new Vector3(.02f, -.12f, .46f), Quaternion.Euler(-15, 75, 0));
-            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestRightPose = new Pose(new Vector3(.25f, -.45f, .25f), Quaternion.Euler(-45, 0, 0));
+            PlaceHands(new Pose(new Vector3(.02f, -.12f, .46f), Quaternion.Euler(-15, 75, 0)), new Pose(new Vector3(.25f, -.45f, .25f), Quaternion.Euler(-45, 0, 0)));
             T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 1.5) yield return null;
             UI.WristHud Hud = UnityEngine.Object.FindObjectOfType<UI.WristHud>();
             Controllers.VRArmsSystem Arms = Vars.Registered<Controllers.VRArmsSystem>();

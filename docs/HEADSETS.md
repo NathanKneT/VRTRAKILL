@@ -103,7 +103,7 @@ If the buttons still act like an older version, reset SteamVR to the default bin
 - Quest: the (L) menu button opens the SteamVR menu. Games cannot use it, so pause is a double tap of (R) B.
 - WMR: the binding was checked against Valve's WMR example binding and ALVR's WMR controller profile, not against Microsoft's own driver profile.
 - The weapon wheel button presses the key the game uses for "Last Used Weapon". The game has no keyboard key for it by default, so the mod presses the "Previous Variation" key (Q) instead, which opens the wheel when held. Bind a keyboard key to "Last Used Weapon" in the game's controls to get quick swap.
-- Left-handed mode is marked as broken in the config file ("Left handed (BROKEN)").
+- Left-handed layouts ("Left handed" in the config) are mirrored from the right-handed ones with each driver's mirror table and checked against the driver input profiles. They are not tested on hardware yet. A layout you saved yourself in SteamVR wins over them.
 - After an update that changes a default binding, SteamVR can keep the old one. Select the default binding again in the binding screen.
 - Issues in the game itself (portals, stains, 4-S, desktop view) are listed in the [README](../README.md#known-issues).
 

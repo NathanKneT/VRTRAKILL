@@ -208,6 +208,7 @@
     <Compile Include="Input\ControlMessages\Patches.cs" />
     <Compile Include="Input\InputMap.cs" />
     <Compile Include="Input\InputVars.cs" />
+    <Compile Include="Input\LeftHandedBindings.cs" />
     <Compile Include="Input\SkeletonInput.cs" />
     <Compile Include="Input\SVRActionsManager.cs" />
     <Compile Include="Patches\Controllers\A.cs" />

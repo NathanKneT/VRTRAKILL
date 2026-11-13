@@ -13,7 +13,7 @@ namespace Plugin.Systems.UI
     {
         public Camera Cam;
 
-        // hand that owns the laser; the last trigger pressed takes it over
+        // hand that owns the laser; the last trigger pressed takes it over. It starts on the gun hand (Start).
         public static SteamVR_Input_Sources ActiveHand = SteamVR_Input_Sources.RightHand;
         public static bool HasHit { get; private set; }
         public static Vector3 HitPoint { get; private set; }
@@ -41,6 +41,7 @@ namespace Plugin.Systems.UI
         public void Start()
         {
             if (Cam == null) Cam = GetComponent<Camera>();
+            ActiveHand = Vars.Config.Controllers.LeftHanded ? SteamVR_Input_Sources.LeftHand : SteamVR_Input_Sources.RightHand;
         }
 
         // Moves the laser to the active hand, handles hover, press, drag and release, and handles stick navigation and jump select in menus.

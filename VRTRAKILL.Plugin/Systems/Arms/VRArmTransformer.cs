@@ -8,6 +8,8 @@ internal class VRArmTransformer : MonoBehaviour
 {
     public Arm Arm;
     Vector3 ArmSize, HandSize;
+    // the fist and the whiplash, which the arm hand holds; the revolver, fishing rod and sandbox arm are in the gun hand
+    bool OnArmHand;
 
     // Picks the arm preset and sizes for the weapon or fist on this object, and makes it render through portals.
     public void Start()
@@ -33,6 +35,7 @@ internal class VRArmTransformer : MonoBehaviour
                     }
                 case Punch _:
                     {
+                        OnArmHand = true;
                         ArmSize = new Vector3(.001f, .001f, .001f);
                         switch (GetComponent<Punch>().type)
                         {
@@ -55,6 +58,7 @@ internal class VRArmTransformer : MonoBehaviour
                     }
                 case HookArm _:
                     {
+                        OnArmHand = true;
                         Arm = Arm ?? Arm.WhiplashPreset(transform);
                         ArmSize = new Vector3(.01f, .01f, .01f);
                         HandSize = new Vector3(35, 35, 35);
@@ -69,7 +73,10 @@ internal class VRArmTransformer : MonoBehaviour
                         break;
                     }
             }
-        if (Vars.Config.Controllers.LeftHanded)
+        // Left handed, the arm is on the right controller, so its left arm model is mirrored into a right one. Gun hand
+        // items are not: a flip of their own x axis turned the revolver around (it pointed up, away from the hand), and
+        // the other guns are not mirrored either.
+        if (Vars.Config.Controllers.LeftHanded && OnArmHand)
             transform.localScale = new Vector3(transform.localScale.x * -1, transform.localScale.y, transform.localScale.z);
 
 

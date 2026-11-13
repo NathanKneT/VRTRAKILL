@@ -30,9 +30,9 @@ namespace Plugin.Prefs
 
         // Version of the defaults this file was written with; null for files from before 1.1.0. See Migrate.
         [JsonProperty("Config version")] public int? ConfigVersion { get; set; }
-        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added. 4: auto height. 5: HUD on wrist.
+        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added. 4: auto height. 5: HUD on wrist. 6: "Left handed" renamed (was "Left handed (BROKEN)").
         // Bump it when settings are added, so existing files are rewritten and show the new settings.
-        public const int CurrentConfigVersion = 5;
+        public const int CurrentConfigVersion = 6;
 
         // Moves values that are still the old defaults to the new defaults, once. Returns true when the file should be
         // rewritten (which also adds settings the file does not have yet).
@@ -59,7 +59,10 @@ namespace Plugin.Prefs
 
             [JsonProperty("Draw controller models")] public bool DrawControllers { get; set; } = true;
             [JsonProperty("Enable Controller Rumble")] public bool EnableHaptics { get; set; } = true;
-            [JsonProperty("Left handed (BROKEN)")] public bool LeftHanded { get; set; } = false;
+            // guns in the left hand, arm in the right, and the buttons mirrored (Input/LeftHandedBindings)
+            [JsonProperty("Left handed")] public bool LeftHanded { get; set; } = false;
+            // the 1.0.x name, read so the choice survives the rename; never written back
+            [JsonProperty("Left handed (BROKEN)")] private bool LegacyLeftHanded { set { if (value) LeftHanded = true; } }
             [JsonProperty("Finger tracking")] public bool FingerTracking { get; set; } = false;
         }
 

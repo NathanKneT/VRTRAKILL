@@ -264,6 +264,8 @@ namespace Plugin
             try
             {
                 Log.LogMessage("INITILIZING");
+                // must run before the XR loader reads the manifest path
+                Systems.Input.LeftHandedBindings.SelectManifest();
                 if (!ActionsPreInitialized) { SteamVR_Actions.PreInitialize(); ActionsPreInitialized = true; }
 
                 generalSettings = ScriptableObject.CreateInstance<XRGeneralSettings>();

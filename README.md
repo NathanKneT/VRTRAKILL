@@ -105,6 +105,8 @@ Air Link and Virtual Desktop (in SteamVR mode) also connect a Quest over Wi-Fi, 
 
 (R) is the right controller, (L) is the left controller. You can change any binding in SteamVR > Settings > Controllers > Manage Controller Bindings > ULTRAKILL.
 
+With `Left handed` on, every button and stick below swaps sides: you shoot with the left trigger, punch with the right one, move with the right stick and turn with the left. On PS VR2, Cross becomes Square, Circle becomes Triangle and Options becomes Create. On Quest, A becomes X and B becomes Y.
+
 ### PS VR2 Sense controllers
 
 | Action | Button |
@@ -184,7 +186,7 @@ The settings players ask about most, in `BepInEx/plugins/VRTRAKILL/VRTRAKILL_Con
 | `Snap turning` / `Smooth turning speed` | `false` / `300` | Snap or smooth turning on the right stick. |
 | `HUD on wrist` | `true` | Health, stamina and the weapon panel sit on your arm-hand forearm, facing you, like a watch: raise your wrist to read them. `false` brings back the panel floating low in the view. |
 | `Whiplash aim marker` | `true` | A small blue marker ahead of the arm hand where the whiplash will go, while it is ready to throw. |
-| `Left handed (BROKEN)` | `false` | Puts the guns in the left hand and the arm in the right hand. The button layout stays right handed: swap the buttons in SteamVR > Settings > Controllers > Manage Controller Bindings > ULTRAKILL. (The name is kept so existing config files keep working.) |
+| `Left handed` | `false` | Puts the guns in the left hand and the arm in the right hand, and mirrors the buttons (see Controls). Takes effect the next time VR starts. A layout you made yourself in SteamVR's binding screen still wins; pick the default there to get the mirrored one. Config files with the old name, `Left handed (BROKEN)`, are read and renamed. |
 
 When you update from an older version, the mod changes the old defaults in your file once (movement multiplier 0.575 to 1.0, punch speed 7.5 to 4.0), adds the new settings to the file and writes its `"Config version"`. Values you changed yourself are kept.
 
@@ -215,7 +217,7 @@ Fixes for the problems players reported most. The full list is in [CHANGELOG.md]
 - Easier punches (2 m/s swing), and a button-only punch option.
 - "Auto height": your head at the game's eye height whatever your height or seated/standing, recalibrated each level and with H; plus "Height offset (meters)".
 - Task Manager no longer opens mid-fight (slide + dash + pause sent Ctrl+Shift+Esc).
-- Left handed mode no longer swaps the hands twice.
+- Left handed mode works: the buttons swap hands too (mirrored layouts for PS VR2, Quest, Index, Vive and WMR), the guns are no longer swapped twice, and the revolver is no longer turned around.
 - A whiplash aim marker on the arm hand.
 - The crosshair sits on the real shot line for every gun (it was 3 to 5.6 degrees off).
 - The rocket launcher sits in the gun hand instead of 30 cm off it.
@@ -290,13 +292,15 @@ The other files the zip added under `ULTRAKILL_Data` can stay. Only the mod star
 
 You need a .NET SDK, 7.0.400 or later (`global.json` rolls forward, .NET 8 works), and ULTRAKILL build 22957324 with BepInEx 5.4.23.5 installed in it. On a PC without Visual Studio or the .NET Framework 4.7.2 Developer Pack, run `pwsh tools/setup-dev.ps1 -ULTRAKILLDir "<game folder>"` once: it installs the .NET 8 SDK for your user if no SDK is found, puts the .NET Framework 4.7.2 reference assemblies from NuGet in `.tools/netfx-ref` (the build uses them automatically), and installs BepInEx 5.4.23.5 in the game folder if it is missing. To test a build in the game, `pwsh tools/deploy-local.ps1 -ULTRAKILLDir "<game folder>" -Build` builds and copies it into the game folder and keeps your config. The game's DLLs are not in this repo. The build reads Assembly-CSharp, the Unity DLLs and the BepInEx core from your game folder, and publicizes Assembly-CSharp at build time.
 
+The left-handed layouts (`bindings_*_lefthanded.json` and `actions_lefthanded.json` in `ULTRAKILL_COPYTOROOT/ULTRAKILL_Data/StreamingAssets/SteamVR`) are generated from the right-handed ones. After changing a binding, run `python tools/make-lefthanded-bindings.py` from the repository root. It mirrors buttons and sticks with each controller driver's own mirror table, leaves hand poses, finger tracking and rumble on their physical hand, and checks every path against the installed SteamVR input profiles.
+
 The game folder comes from the `ULTRAKILLDir` property. The default is `C:\Program Files (x86)\Steam\steamapps\common\ULTRAKILL`. Set it if your game is somewhere else, either as an environment variable or on the command line:
 
 ```
 dotnet build VRTRAKILL.sln -c Release -p:ULTRAKILLDir="E:\SteamLibrary\steamapps\common\ULTRAKILL"
 ```
 
-To check a level in VR without controllers (for example with SteamVR's null headset driver), put a file `BepInEx/plugins/VRTRAKILL/VRTRAKILL_TEST_SCENE.txt` containing a scene name such as `Level 0-1` in the game folder: the mod loads that scene once, a few seconds after VR starts in the main menu. Extra lines run in-game checks, logged to `BepInEx/LogOutput.log`: `jumptest` (jumps three times through the game's own jump and logs the height), `punchtest` (presses punch through the mod's SteamVR handler with simulated hand speeds and counts the punches; the game window needs focus) and `shortcuttest` (holds slide and dash, then pauses; check that Task Manager did not open), `aimtest` (for each weapon in the save, the angle between the crosshair and the shot line; with the rocket launcher, fires a rocket and measures it) `whiplashtest` (checks the whiplash marker and throws the whiplash through the mod's handler) `wristview` (raises the arm hand like reading a watch and logs `Wrist view: ready` for a capture of the wrist HUD) `pauseview` (opens the pause menu, logs `Pause view: open`, turns 60 degrees, logs `Pause view: turned` with where the menu is, then closes it) and `weaponview` (puts both hands at a fixed holding pose and shows each weapon family for 4 s, logging `Weapon view: <name>` so the headset window can be captured). Weapons appear from Level 1-1 on; Level 0-1 starts empty-handed. Delete the file afterwards. Without it nothing happens.
+To check a level in VR without controllers (for example with SteamVR's null headset driver), put a file `BepInEx/plugins/VRTRAKILL/VRTRAKILL_TEST_SCENE.txt` containing a scene name such as `Level 0-1` in the game folder: the mod loads that scene once, a few seconds after VR starts in the main menu. Extra lines run in-game checks, logged to `BepInEx/LogOutput.log`: `jumptest` (jumps three times through the game's own jump and logs the height), `punchtest` (presses punch through the mod's SteamVR handler with simulated hand speeds and counts the punches; the game window needs focus) and `shortcuttest` (holds slide and dash, then pauses; check that Task Manager did not open), `aimtest` (for each weapon in the save, the angle between the crosshair and the shot line; with the rocket launcher, fires a rocket and measures it) `whiplashtest` (checks the whiplash marker and throws the whiplash through the mod's handler) `wristview` (raises the arm hand like reading a watch and logs `Wrist view: ready` for a capture of the wrist HUD) `pauseview` (opens the pause menu, logs `Pause view: open`, turns 60 degrees, logs `Pause view: turned` with where the menu is, then closes it) and `weaponview` (puts both hands at a fixed holding pose and shows each weapon family for 4 s, logging `Weapon view: <name>` so the headset window can be captured). With `Left handed` on, the hand poses are mirrored. Weapons appear from Level 1-1 on; Level 0-1 starts empty-handed. Delete the file afterwards. Without it nothing happens.
 
 To make the release zips, run:
 
