@@ -31,6 +31,7 @@ namespace Plugin.Systems
                     WhiplashTest = Array.Exists(Lines, L => L.Trim().Equals("whiplashtest", StringComparison.OrdinalIgnoreCase));
                     WeaponView = Array.Exists(Lines, L => L.Trim().Equals("weaponview", StringComparison.OrdinalIgnoreCase));
                     WristView = Array.Exists(Lines, L => L.Trim().Equals("wristview", StringComparison.OrdinalIgnoreCase));
+                    PauseView = Array.Exists(Lines, L => L.Trim().Equals("pauseview", StringComparison.OrdinalIgnoreCase));
                 }
             }
             catch (Exception e) { Vars.Log.LogWarning("Test scene file unreadable: " + e.Message); }
@@ -61,6 +62,46 @@ namespace Plugin.Systems
             if (WhiplashTest) yield return MeasureWhiplash(Clock);
             if (WeaponView) yield return ShowWeapons(Clock);
             if (WristView) yield return ShowWrist(Clock);
+            if (PauseView) yield return ShowPause(Clock);
+        }
+
+        // Where the pause menu is, seen from the left eye: distance and angle off the gaze.
+        private static string PauseMenuPlace()
+        {
+            Camera L = VRCamera.Patches.CameraConverterP.leftEye;
+            GameObject PM = MonoSingleton<OptionsManager>.Instance != null ? MonoSingleton<OptionsManager>.Instance.pauseMenu : null;
+            if (L == null || PM == null) return "no pause menu";
+            Vector3 Dir = PM.transform.position - L.transform.position;
+            return $"menu active {PM.activeInHierarchy}, {Dir.magnitude:0.0} m away, {Vector3.Angle(L.transform.forward, Dir):0} deg off the gaze, "
+                 + $"UI camera occlusion culling {(UI.UIConverter.UICamera != null && UI.UIConverter.UICamera.useOcclusionCulling)}";
+        }
+
+        // A line "pauseview": opens the pause menu (OptionsManager.Pause), logs "Pause view: open" (capture),
+        // turns the player 60 degrees with the turn offset like the turn stick, logs "Pause view: turned" (capture),
+        // then closes the menu. Shows whether the menu stays put in the world and how the level behind it looks.
+        private static bool PauseView;
+        private static IEnumerator ShowPause(System.Diagnostics.Stopwatch Clock)
+        {
+            double T = Clock.Elapsed.TotalSeconds;
+            while (Clock.Elapsed.TotalSeconds < T + 60 && (Vars.IsMainMenu || Vars.Registered<NewMovement>() == null)) yield return null;
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 4) yield return null;
+            // hands down along the body, out of the view
+            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestLeftPose = new Pose(new Vector3(-.25f, -.6f, .1f), Quaternion.Euler(60, 0, 0));
+            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestRightPose = new Pose(new Vector3(.25f, -.6f, .1f), Quaternion.Euler(60, 0, 0));
+            // the game's own pause (this checks where the menu goes, not the pause button)
+            MonoSingleton<OptionsManager>.Instance.Pause();
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 2) yield return null;
+            Vars.Log.LogWarning($"Pause view: open (paused {Vars.IsPaused}, frozen {Vars.IsPlayerFrozen}; {PauseMenuPlace()})");
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 4) yield return null;
+            Input.InputVars.TurnOffset += 60f;
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 1.5) yield return null;
+            Vars.Log.LogWarning($"Pause view: turned (paused {Vars.IsPaused}, frozen {Vars.IsPlayerFrozen}; {PauseMenuPlace()})");
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 4) yield return null;
+            Input.InputVars.TurnOffset -= 60f;
+            MonoSingleton<OptionsManager>.Instance.UnPause();
+            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestLeftPose = null;
+            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestRightPose = null;
+            Vars.Log.LogWarning("Pause view: done.");
         }
 
         // A line "wristview": raises the arm hand in front of the face like looking at a watch, with the gun hand lowered,

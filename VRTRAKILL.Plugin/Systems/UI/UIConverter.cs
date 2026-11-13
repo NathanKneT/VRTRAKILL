@@ -22,6 +22,11 @@ namespace Plugin.Systems.UI
             UICamera.transform.parent = Vars.MainCamera.transform;
             UICamera.transform.localPosition = Vector3.zero;
             UICamera.transform.rotation = Vars.MainCamera.transform.rotation;
+            // The menus and the floating HUD sit 72 m away. With occlusion culling on, this camera skipped them whenever
+            // a level's walls stood in between, which in a level is nearly always: the pause menu never showed, and the
+            // floating HUD came and went (measured in Level 1-1: a UI square showed at 30 m but not at 50 m with a wall
+            // at 41.5 m; the pause menu shows once culling is off). UI must never be culled by the level.
+            UICamera.useOcclusionCulling = false;
 
             if (Vars.Config.UIInteraction.ControllerBased)
             {
