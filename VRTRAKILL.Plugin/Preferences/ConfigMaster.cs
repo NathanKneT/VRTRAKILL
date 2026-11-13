@@ -49,7 +49,9 @@ namespace Plugin.Prefs
             TPCamRight = UnityEngine.KeyCode.Joystick8Button9,
             TPCamHoldMoveMode = UnityEngine.KeyCode.Joystick8Button9,
 
-            ToggleAvatarSizeAdj = UnityEngine.KeyCode.Joystick8Button9;
+            ToggleAvatarSizeAdj = UnityEngine.KeyCode.Joystick8Button9,
+
+            RecalibrateHeight = UnityEngine.KeyCode.Joystick8Button9;
 
         // Converts the game and VR binds in the config to key codes.
         public static void Init()
@@ -139,6 +141,7 @@ namespace Plugin.Prefs
                 // a miss would store null, and VRKeybindsController's (KeyCode) cast of null throws every frame
                 ToggleDesktopView = UnityKey(VRConfig.ToggleDV);
                 ToggleAvatarSizeAdj = UnityKey(VRConfig.ToggleAvatarSizeAdj);
+                RecalibrateHeight = UnityKey(VRConfig.RecalibrateHeight);
             }
             catch (Exception E)
             {

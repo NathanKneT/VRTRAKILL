@@ -177,7 +177,8 @@ The settings players ask about most, in `BepInEx/plugins/VRTRAKILL/VRTRAKILL_Con
 |---|---|---|
 | `Movement multiplier` | `1.0` | Walk speed. 1 is the game's speed. Lower it if fast movement makes you sick; jumps are not affected. |
 | `Jump multiplier` | `1.0` | Jump and wall jump power. Below 1 some jumps in the levels cannot be made. |
-| `Height offset (meters)` | `0.0` | Moves the view and the hands up (positive) or down (negative). Use it for seated play or if the view is too low or too high. `BepInEx/LogOutput.log` prints your eye height at the first level. |
+| `Auto height` | `true` | At the start of each level, your head is put at the game's own eye height, whatever your real height, seated or standing. Crouching and leaning stay real. Press `H` ("Recalibrate height" in the keybinds) to measure again while standing or sitting as you play. `false` uses your real height above the floor. |
+| `Height offset (meters)` | `0.0` | Moves the view and the hands up (positive) or down (negative), on top of auto height. `BepInEx/LogOutput.log` prints your eye height at the first level. |
 | `Enable movement-based punching` | `true` | `true`: hold punch and swing your fist. `false`: the punch button alone punches, like the flat game. |
 | `Required speed to punch` | `4.0` | Twice the hand speed in m/s that a swing needs (4 = 2 m/s). Lower it if punches do not register. |
 | `Snap turning` / `Smooth turning speed` | `false` / `300` | Snap or smooth turning on the right stick. |
@@ -211,7 +212,7 @@ Fixes for the problems players reported most. The full list is in [CHANGELOG.md]
 - The game no longer freezes on the boot screen when the headset is not ready, VR starts by itself whenever the headset is ready, and the game window says why VR is not running.
 - Movement and jumps at the game's speed by default (the old 0.575 multiplier made jumps about a third as high).
 - Easier punches (2 m/s swing), and a button-only punch option.
-- New "Height offset (meters)".
+- "Auto height": your head at the game's eye height whatever your height or seated/standing, recalibrated each level and with H; plus "Height offset (meters)".
 - Task Manager no longer opens mid-fight (slide + dash + pause sent Ctrl+Shift+Esc).
 - Left handed mode no longer swaps the hands twice.
 - A whiplash aim marker on the arm hand.
@@ -289,6 +290,8 @@ The game folder comes from the `ULTRAKILLDir` property. The default is `C:\Progr
 ```
 dotnet build VRTRAKILL.sln -c Release -p:ULTRAKILLDir="E:\SteamLibrary\steamapps\common\ULTRAKILL"
 ```
+
+To check a level in VR without controllers (for example with SteamVR's null headset driver), put a file `BepInEx/plugins/VRTRAKILL/VRTRAKILL_TEST_SCENE.txt` containing a scene name such as `Level 0-1` in the game folder: the mod loads that scene once, a few seconds after VR starts in the main menu. Delete the file afterwards. Without it nothing happens.
 
 To make the release zips, run:
 

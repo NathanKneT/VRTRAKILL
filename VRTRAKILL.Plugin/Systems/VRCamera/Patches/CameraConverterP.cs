@@ -136,18 +136,63 @@ namespace Plugin.Systems.VRCamera.Patches
             __instance.tiltRotationZ = VRControllerLocations.Instance.headRot.eulerAngles.z;
             __instance.ApplyRotations();
 
+            if (__instance == CameraController.Instance) UpdateHeightAdjust(__instance);
             PortalAwareSetTransformFromBody(leftEye.transform, InputTracking.GetLocalPosition(XRNode.LeftEye), __instance.transform.rotation);
             PortalAwareSetTransformFromBody(rightEye.transform, InputTracking.GetLocalPosition(XRNode.RightEye), __instance.transform.rotation);
         }
 
-        // Logs the eye height above the player body once, so a player can set "Height offset" from a number.
-        private static bool LoggedTrackedHeight;
-        private static void LogTrackedHeightOnce(Vector3 eyeLocalPosition, bool hands)
+        // ---- Height ----
+        // The eyes were placed at the player body plus the raw tracked height, so the view height depended on the
+        // player's real height, on sitting or standing, and on the tracking origin (10 issues: "constant crouch",
+        // "too tall", "weapons huge when short", "can't jump past the tutorial"). With "Auto height" the tracked head
+        // height is measured once per level (and on the "Recalibrate height" key) and mapped to the game's own eye
+        // height, so everybody sees the levels from where the game expects; crouching and leaning stay real.
+        // "Height offset (meters)" is added on top either way. The same adjustment moves the hands, so they stay
+        // where they are relative to the head.
+        private const int CalibrationDelayFrames = 45; // let tracking settle after a level loads
+        private static float HeightAdjust;
+        private static CameraController CalibratedFor;
+        private static int FramesSinceCamera;
+        private static bool CalibrationRequested;
+        private static float GameEyeHeight, CalibratedHeadHeight = float.NaN;
+
+        // Asks for a new height calibration on the next frames (the "Recalibrate height" key).
+        public static void RequestHeightCalibration() => CalibrationRequested = true;
+
+        private static void UpdateHeightAdjust(CameraController cc)
         {
-            if (LoggedTrackedHeight || hands || eyeLocalPosition == Vector3.zero) return;
+            if (cc != CalibratedFor)
+            {
+                // a new level: its camera's start height is the game's eye height (defaultPos moves down while sliding later)
+                CalibratedFor = cc;
+                FramesSinceCamera = 0;
+                GameEyeHeight = cc.defaultPos.y;
+                CalibratedHeadHeight = float.NaN;
+            }
+            FramesSinceCamera++;
+
+            if (Vars.Config.AutoHeight && (CalibrationRequested || (float.IsNaN(CalibratedHeadHeight) && FramesSinceCamera >= CalibrationDelayFrames)))
+            {
+                CalibrationRequested = false;
+                CalibratedHeadHeight = InputTracking.GetLocalPosition(XRNode.Head).y;
+                Vars.Log.LogInfo($"Height calibrated: head {CalibratedHeadHeight:0.00} m above the tracking floor, game eye height {GameEyeHeight:0.00} m"
+                               + $" above the player body, \"Height offset\" {Vars.Config.HeightOffset:0.00} m.");
+            }
+
+            float Adjust = Vars.Config.HeightOffset;
+            if (Vars.Config.AutoHeight && !float.IsNaN(CalibratedHeadHeight)) Adjust += GameEyeHeight - CalibratedHeadHeight;
+            HeightAdjust = Adjust;
+            LogTrackedHeightOnce(InputTracking.GetLocalPosition(XRNode.Head).y + HeightAdjust);
+        }
+
+        // Logs the eye height above the player body once per game, so a player can tune "Height offset" from a number.
+        private static bool LoggedTrackedHeight;
+        private static void LogTrackedHeightOnce(float eyeHeight)
+        {
+            if (LoggedTrackedHeight || FramesSinceCamera < CalibrationDelayFrames + 1) return;
             LoggedTrackedHeight = true;
-            Vars.Log.LogInfo($"Eye height above the player body: {eyeLocalPosition.y:0.00} m (includes \"Height offset\" {Vars.Config.HeightOffset:0.00} m). "
-                           + "If the view is too low or too high, change \"Height offset\" in VRTRAKILL_Config.json.");
+            Vars.Log.LogInfo($"Eye height above the player body: {eyeHeight:0.00} m (auto height {(Vars.Config.AutoHeight ? "on" : "off")}, "
+                           + $"\"Height offset\" {Vars.Config.HeightOffset:0.00} m). If the view is too low or too high, change \"Height offset\" in VRTRAKILL_Config.json.");
         }
 
         // Places a transform at a pose relative to the player body, with turn and gravity applied, then moves it through crossed portals.
@@ -159,10 +204,8 @@ namespace Plugin.Systems.VRCamera.Patches
                 cc.gravityRotation *
                 Quaternion.AngleAxis(InputVars.TurnOffset, Vector3.up);
 
-            // "Height offset" moves the eyes and the hands together, along the player's up (10 issues about wrong height,
-            // constant crouch or seated play had no remedy short of editing code)
-            localPosition.y += Vars.Config.HeightOffset;
-            LogTrackedHeightOnce(localPosition, hands);
+            // auto height and "Height offset" move the eyes and the hands together, along the player's up (see UpdateHeightAdjust)
+            localPosition.y += HeightAdjust;
 
             Vector3 transformedLocalPos = parentRot * localPosition;
             t.position = cc.transform.parent.position + transformedLocalPos;

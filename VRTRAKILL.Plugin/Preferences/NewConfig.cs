@@ -11,6 +11,8 @@ namespace Plugin.Prefs
         {
             [JsonProperty("Toggle Desktop View")] public string ToggleDV { get; set; } = "T";
             [JsonProperty("Toggle Size Adjustment")] public string ToggleAvatarSizeAdj { get; set; } = "J";
+            // stand (or sit) as you play and press it to match your head to the game's eye height again
+            [JsonProperty("Recalibrate height")] public string RecalibrateHeight { get; set; } = "H";
         }
 
         // 1 = the game's own speed. The old default 0.575 also cut jump and wall jump power, so jumps reached about a third
@@ -22,12 +24,15 @@ namespace Plugin.Prefs
         // Moves the view and the hands up (positive) or down (negative), in meters. For seated play or a view that sits
         // too low or too high; the log prints the eye height at the first level.
         [JsonProperty("Height offset (meters)")] public float HeightOffset { get; set; } = 0f;
+        // true: at the start of each level your head is put at the game's own eye height, whatever your real height and
+        // seated or standing; you still crouch and lean for real from there. false: your real height above the floor.
+        [JsonProperty("Auto height")] public bool AutoHeight { get; set; } = true;
 
         // Version of the defaults this file was written with; null for files from before 1.1.0. See Migrate.
         [JsonProperty("Config version")] public int? ConfigVersion { get; set; }
-        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added.
+        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added. 4: auto height.
         // Bump it when settings are added, so existing files are rewritten and show the new settings.
-        public const int CurrentConfigVersion = 3;
+        public const int CurrentConfigVersion = 4;
 
         // Moves values that are still the old defaults to the new defaults, once. Returns true when the file should be
         // rewritten (which also adds settings the file does not have yet).

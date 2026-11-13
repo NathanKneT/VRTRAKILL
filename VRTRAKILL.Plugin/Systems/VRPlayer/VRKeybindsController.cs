@@ -17,6 +17,11 @@ namespace Plugin.Systems.VRPlayer
                 SubtitleController.Instance.DisplaySubtitle("VR: Toggling desktop view");
                 ToggleDesktopView();
             }
+            if (UnityEngine.Input.GetKeyDown((KeyCode)Prefs.ConfigMaster.RecalibrateHeight))
+            {
+                VRCamera.Patches.CameraConverterP.RequestHeightCalibration();
+                SubtitleController.Instance.DisplaySubtitle("VR: height recalibrated");
+            }
             if (UnityEngine.Input.GetKeyDown((KeyCode)Prefs.ConfigMaster.ToggleAvatarSizeAdj))
             {
                 // (bool) of a null bool? threw InvalidOperationException, which the NullReferenceException catch missed

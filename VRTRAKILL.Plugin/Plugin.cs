@@ -193,6 +193,7 @@ namespace Plugin
             if (InitVRLoader(VRAttempt == 1 || VRAttempt % 30 == 0))
             {
                 VRStarted = true;
+                Systems.DevTestHooks.OnVRStarted();
                 StartupStatus.ReportRunning();
                 if (VRAttempt > 1) Log.LogMessage($"VR started on try {VRAttempt}.");
                 string warning = StartupStatus.HeadsetWarning();

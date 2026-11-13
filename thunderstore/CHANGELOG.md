@@ -19,7 +19,8 @@ Fixes for the problems players reported most (from the 171 issues of the origina
 - Movement: "Movement multiplier" now defaults to 1 (the game's speed). The old default 0.575 also lowered jumps to about a third of their height and made some tutorial jumps impossible. Jump power has its own "Jump multiplier" (default 1).
 - Punch: a 2 m/s swing is enough (was 3.75 m/s), and a swing a few frames before or after the press still counts. "Enable movement-based punching": false now gives a button-only punch.
 - Your config file is updated once: the old defaults (movement multiplier 0.575, punch speed 7.5) move to the new ones and the new settings are added to the file. Values you changed are kept.
-- New "Height offset (meters)" moves the view and the hands up or down, for seated play or a view that is too low or too high. The log prints your eye height at the first level.
+- "Auto height" (on by default): at the start of each level your head is put at the game's own eye height, whatever your real height, seated or standing; crouching and leaning stay real. Press H on the keyboard ("Recalibrate height") to measure again. Before, the view sat at your real height above the player's body, which gave "constant crouch", "too tall" and seated-play problems.
+- New "Height offset (meters)" moves the view and the hands up or down on top of that. The log prints your eye height at the first level.
 - Task Manager no longer opens mid-fight. Slide + dash + pause sent Ctrl+Shift+Esc to Windows.
 - VR buttons are not sent to other programs when the game window does not have focus, and held buttons are released when the game loses focus or quits.
 - Left handed: the arm and the guns are no longer swapped twice (flipped revolver). The buttons stay right handed; swap them in SteamVR's binding screen.
