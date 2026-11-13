@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.1.0
+
+Fixes for the problems players reported most (from the 171 issues of the original mod):
+
+- VR start (the most reported problem, "the game does not start in VR"):
+  - The game no longer freezes on the boot screen when SteamVR or the headset is not ready. A background check asks SteamVR whether it runs and sees a headset, and VR starts only then.
+  - VR starts by itself as soon as the headset is ready, at any time. You no longer need to restart the game, and there is no 3-minute limit.
+  - If SteamVR is not running, the mod asks Steam to start it.
+  - The retries really run now. Before, the game destroyed the object that ran them right after startup, so only the first try happened.
+  - The desktop window says why VR is not running: SteamVR closed, no headset, or a game build other than 22957324.
+  - The game keeps running when its window loses focus, so the headset image no longer freezes when a SteamVR window or another program takes focus.
+- Movement: "Movement multiplier" now defaults to 1 (the game's speed). The old default 0.575 also lowered jumps to about a third of their height and made some tutorial jumps impossible. Jump power has its own "Jump multiplier" (default 1).
+- Punch: a 2 m/s swing is enough (was 3.75 m/s), and a swing a few frames before or after the press still counts. "Enable movement-based punching": false now gives a button-only punch.
+- Your config file is updated once: the old defaults (movement multiplier 0.575, punch speed 7.5) move to the new ones. Values you changed are kept.
+- New "Height offset (meters)" moves the view and the hands up or down, for seated play or a view that is too low or too high. The log prints your eye height at the first level.
+- Task Manager no longer opens mid-fight. Slide + dash + pause sent Ctrl+Shift+Esc to Windows.
+- VR buttons are not sent to other programs when the game window does not have focus, and held buttons are released when the game loses focus or quits.
+- Left handed: the arm and the guns are no longer swapped twice (flipped revolver). The buttons stay right handed; swap them in SteamVR's binding screen.
+- White and black screen flashes no longer grow without limit over a session.
+- The end-of-level rank screen no longer fails when its canvas is not where the mod expected.
+
 ## 1.0.2
 
 - The weapon wheel stays open while you hold B (Quest) or Circle (PS VR2). Before, it closed after about 1 second.

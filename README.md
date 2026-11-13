@@ -18,6 +18,9 @@ It was built and tested on build 22957324 only. If Steam updates the game, the m
 - [Controls](#controls)
   - [PS VR2 Sense controllers](#ps-vr2-sense-controllers)
   - [Meta Quest Touch controllers](#meta-quest-touch-controllers)
+- [Settings](#settings)
+- [Troubleshooting](#troubleshooting)
+- [Changes in 1.1.0](#changes-in-110)
 - [Changes in 1.0.2](#changes-in-102)
 - [Changes in 1.0.1](#changes-in-101)
 - [Updates](#updates)
@@ -30,12 +33,12 @@ It was built and tested on build 22957324 only. If Steam updates the game, the m
 
 Get the latest release from the [Releases page](../../releases). There are two zips:
 
-- `VRTRAKILL-1.0.2-full.zip`: the mod plus BepInEx 5.4.23.5 (x64). Use this one if you have never installed BepInEx.
-- `VRTRAKILL-1.0.2-modonly.zip`: the mod only, for players who already have BepInEx 5.4.23.5.
+- `VRTRAKILL-<version>-full.zip`: the mod plus BepInEx 5.4.23.5 (x64). Use this one if you have never installed BepInEx.
+- `VRTRAKILL-<version>-modonly.zip`: the mod only, for players who already have BepInEx 5.4.23.5.
 
 The release also has `SHA256SUMS.txt` and its signature `SHA256SUMS.txt.sig`, which the in-game updater checks.
 
-For r2modman or Gale, use the Thunderstore package `VRTRAKILL-1.0.2-thunderstore.zip` instead. Its install steps are in [thunderstore/README.md](thunderstore/README.md).
+For r2modman or Gale, use the Thunderstore package `VRTRAKILL-<version>-thunderstore.zip` instead. Its install steps are in [thunderstore/README.md](thunderstore/README.md).
 
 The zip root is the ULTRAKILL game folder. It contains `BepInEx/`, `ULTRAKILL_Data/` and (in the full zip) `winhttp.dll`, `doorstop_config.ini`, `.doorstop_version` and `changelog.txt`.
 
@@ -166,6 +169,49 @@ Mod settings are in `BepInEx/plugins/VRTRAKILL/VRTRAKILL_Config.json` (turning, 
 
 - "Finger tracking": optional cosmetic finger curl on the punch hand, off by default.
 
+## Settings
+
+The settings players ask about most, in `BepInEx/plugins/VRTRAKILL/VRTRAKILL_Config.json`. Close the game before you edit the file.
+
+| Setting | Default | What it does |
+|---|---|---|
+| `Movement multiplier` | `1.0` | Walk speed. 1 is the game's speed. Lower it if fast movement makes you sick; jumps are not affected. |
+| `Jump multiplier` | `1.0` | Jump and wall jump power. Below 1 some jumps in the levels cannot be made. |
+| `Height offset (meters)` | `0.0` | Moves the view and the hands up (positive) or down (negative). Use it for seated play or if the view is too low or too high. `BepInEx/LogOutput.log` prints your eye height at the first level. |
+| `Enable movement-based punching` | `true` | `true`: hold punch and swing your fist. `false`: the punch button alone punches, like the flat game. |
+| `Required speed to punch` | `4.0` | Twice the hand speed in m/s that a swing needs (4 = 2 m/s). Lower it if punches do not register. |
+| `Snap turning` / `Smooth turning speed` | `false` / `300` | Snap or smooth turning on the right stick. |
+| `Left handed (BROKEN)` | `false` | Puts the guns in the left hand and the arm in the right hand. The button layout stays right handed: swap the buttons in SteamVR > Settings > Controllers > Manage Controller Bindings > ULTRAKILL. (The name is kept so existing config files keep working.) |
+
+When you update from an older version, the mod changes the old defaults in your file once (movement multiplier 0.575 to 1.0, punch speed 7.5 to 4.0) and writes `"Config version": 2`. Values you changed yourself are kept.
+
+## Troubleshooting
+
+While VR is not running, a box at the top of the game window on your monitor says why:
+
+- "SteamVR is not running. Starting it...": the mod asked Steam to start SteamVR. Wait a few seconds.
+- "SteamVR does not see a headset": turn the headset on. For PS VR2, start the PlayStation VR2 App and wait until it shows the headset as connected.
+- "ULTRAKILL was updated (build ...)": the game build is not the one this release was tested on. The mod still starts, but some VR features may not work.
+
+VR starts by itself as soon as SteamVR sees the headset; you do not need to restart the game. Details are in `BepInEx/LogOutput.log`.
+
+Other problems:
+
+- Buttons do nothing: the mod's buttons are Windows key presses, so the ULTRAKILL window must have focus. Click the game window on your monitor (or with the SteamVR desktop view). The log says when presses were held back because the window had no focus.
+- Buttons act like an old layout: SteamVR > Settings > Controllers > Manage Controller Bindings > ULTRAKILL > Default.
+
+## Changes in 1.1.0
+
+Fixes for the problems players reported most. The full list is in [CHANGELOG.md](CHANGELOG.md).
+
+- The game no longer freezes on the boot screen when the headset is not ready, VR starts by itself whenever the headset is ready, SteamVR is started if needed, and the game window says why VR is not running.
+- Movement and jumps at the game's speed by default (the old 0.575 multiplier made jumps about a third as high).
+- Easier punches (2 m/s swing), and a button-only punch option.
+- New "Height offset (meters)".
+- Task Manager no longer opens mid-fight (slide + dash + pause sent Ctrl+Shift+Esc).
+- Left handed mode no longer swaps the hands twice.
+- Screen flashes and the end-of-level rank screen fixes.
+
 ## Changes in 1.0.2
 
 - The weapon wheel stays open while you hold B (Quest) or Circle (PS VR2). Before, it closed after about 1 second.
@@ -231,7 +277,7 @@ The other files the zip added under `ULTRAKILL_Data` can stay. Only the mod star
 
 ## Building from source
 
-You need the .NET SDK pinned in `global.json` (7.0.400 or a later 7.0 feature band) and ULTRAKILL build 22957324 with BepInEx 5.4.23.5 installed in it. The game's DLLs are not in this repo. The build reads Assembly-CSharp, the Unity DLLs and the BepInEx core from your game folder, and publicizes Assembly-CSharp at build time.
+You need a .NET SDK, 7.0.400 or later (`global.json` rolls forward, .NET 8 works), and ULTRAKILL build 22957324 with BepInEx 5.4.23.5 installed in it. On a PC without Visual Studio or the .NET Framework 4.7.2 Developer Pack, run `pwsh tools/setup-dev.ps1 -ULTRAKILLDir "<game folder>"` once: it installs the .NET 8 SDK for your user if no SDK is found, puts the .NET Framework 4.7.2 reference assemblies from NuGet in `.tools/netfx-ref` (the build uses them automatically), and installs BepInEx 5.4.23.5 in the game folder if it is missing. To test a build in the game, `pwsh tools/deploy-local.ps1 -ULTRAKILLDir "<game folder>" -Build` builds and copies it into the game folder and keeps your config. The game's DLLs are not in this repo. The build reads Assembly-CSharp, the Unity DLLs and the BepInEx core from your game folder, and publicizes Assembly-CSharp at build time.
 
 The game folder comes from the `ULTRAKILLDir` property. The default is `C:\Program Files (x86)\Steam\steamapps\common\ULTRAKILL`. Set it if your game is somewhere else, either as an environment variable or on the command line:
 
