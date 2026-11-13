@@ -291,7 +291,7 @@ The game folder comes from the `ULTRAKILLDir` property. The default is `C:\Progr
 dotnet build VRTRAKILL.sln -c Release -p:ULTRAKILLDir="E:\SteamLibrary\steamapps\common\ULTRAKILL"
 ```
 
-To check a level in VR without controllers (for example with SteamVR's null headset driver), put a file `BepInEx/plugins/VRTRAKILL/VRTRAKILL_TEST_SCENE.txt` containing a scene name such as `Level 0-1` in the game folder: the mod loads that scene once, a few seconds after VR starts in the main menu. Delete the file afterwards. Without it nothing happens.
+To check a level in VR without controllers (for example with SteamVR's null headset driver), put a file `BepInEx/plugins/VRTRAKILL/VRTRAKILL_TEST_SCENE.txt` containing a scene name such as `Level 0-1` in the game folder: the mod loads that scene once, a few seconds after VR starts in the main menu. Extra lines run in-game checks, logged to `BepInEx/LogOutput.log`: `jumptest` (jumps three times through the game's own jump and logs the height), `punchtest` (presses punch through the mod's SteamVR handler with simulated hand speeds and counts the punches; the game window needs focus) and `shortcuttest` (holds slide and dash, then pauses; check that Task Manager did not open). Delete the file afterwards. Without it nothing happens.
 
 To make the release zips, run:
 

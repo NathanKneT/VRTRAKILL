@@ -295,6 +295,17 @@ namespace Plugin.Systems.Input
 
         private static VirtualKeyCode? PunchKey; private static MouseButton? PunchButton;
         // Presses the punch bind, the shoot bind while the player is frozen or in a shop, or nothing in a menu, and releases the bind it pressed.
+        // Developer test hook only (DevTestHooks): drives buttons the way their SteamVR actions do.
+        internal static void TestPunchButton(bool down) => PunchH(null, SteamVR_Input_Sources.Any, down);
+        internal static void TestButton(string Name, bool Down)
+        {
+            switch (Name)
+            {
+                case "slide": SlideH(null, SteamVR_Input_Sources.Any, Down); break;
+                case "dash": DashH(null, SteamVR_Input_Sources.Any, Down); break;
+                case "escape": EscapeH(null, SteamVR_Input_Sources.Any, Down); break;
+            }
+        }
         private static void PunchH(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
         {
             if (newState != Punch)

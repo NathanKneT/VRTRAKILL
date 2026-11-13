@@ -16,6 +16,7 @@ namespace Plugin.Systems.Controllers
         // swing's peak (or a swing that peaks between frames) still counts, instead of needing both on the same frame
         public float PeakSpeed = 0; private float _PeakTime;
         private const float PunchWindow = 0.15f;
+        internal static float? TestHandSpeed; // set only by the developer test hook (DevTestHooks)
         private Vector3 LastPosition; // for direction
         // Measures the hand speed since the last frame in tracking space, for punch detection.
         private void CalculateSpeed()
@@ -25,6 +26,7 @@ namespace Plugin.Systems.Controllers
             float Delta = Time.unscaledDeltaTime;
             if (_HasPreviousPosition && Delta > 0f) Speed = (Position - _PreviousPosition).magnitude / Delta;
             _PreviousPosition = Position; _HasPreviousPosition = true;
+            if (TestHandSpeed.HasValue) Speed = TestHandSpeed.Value; // developer test hook only (DevTestHooks)
 
             float Now = Time.unscaledTime;
             if (Speed >= PeakSpeed || Now - _PeakTime > PunchWindow) { PeakSpeed = Speed; _PeakTime = Now; }
