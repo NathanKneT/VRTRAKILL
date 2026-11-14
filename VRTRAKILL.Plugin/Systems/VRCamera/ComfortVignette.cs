@@ -59,7 +59,8 @@ namespace Plugin.Systems.VRCamera
                     float dx = (x + .5f) / Size * 2f - 1f, dy = (y + .5f) / Size * 2f - 1f;
                     float d = Mathf.Sqrt(dx * dx + dy * dy);
                     float a = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(.35f, .8f, d));
-                    Pixels[y * Size + x] = new Color32(0, 0, 0, (byte)(a * 255));
+                    // white: the material colour tints it (black for comfort, dark red for low health)
+                    Pixels[y * Size + x] = new Color32(255, 255, 255, (byte)(a * 255));
                 }
             Tex.SetPixels32(Pixels); Tex.Apply(false, true);
             Mat = new Material(Shader.Find("UI/Default")) { name = "VRTRAKILL vignette", mainTexture = Tex, renderQueue = 4000 };
@@ -78,12 +79,15 @@ namespace Plugin.Systems.VRCamera
             Amount = TestAmount ?? Target(Amount);
             float A = Amount * Vars.Config.Comfort.VignetteStrength;
             if (Renderer == null) return;
-            Renderer.enabled = A > .01f;
-            Mat.color = new Color(1f, 1f, 1f, A);
+            // the low health glow uses the same ring, dark red and only at the edge, when it is stronger than the comfort one
+            float Low = Feedback.LowHealth.EdgeAlpha;
+            bool Red = Low > A;
+            Renderer.enabled = Mathf.Max(A, Low) > .01f;
+            Mat.color = Red ? new Color(.55f, 0f, 0f, Low) : new Color(0f, 0f, 0f, A);
             // texture zoom: at 0.72 the clear circle reaches about 70 degrees (only the edge of sight darkens), at 4.26
             // about 25 degrees, dark from about 47
             // done with the quad's texture coordinates: the UI shader ignores the material's texture scale
-            float K = Mathf.Lerp(.72f, 4.26f, Amount);
+            float K = Mathf.Lerp(.72f, 4.26f, Red ? .1f : Amount);
             if (Mathf.Abs(K - LastZoom) > .01f)
             {
                 LastZoom = K;

@@ -37,6 +37,8 @@ namespace Plugin.Systems
         private void LateUpdate()
         {
             if (Vars.Config == null) return;
+            try { Feedback.LowHealth.Tick(); }
+            catch (System.Exception e) { if (loggedErrors++ < 3) Vars.Log.LogError("Low health warning step failed: " + e); }
             try { Feedback.Haptics.Flush(); }
             catch (System.Exception e) { if (loggedErrors++ < 3) Vars.Log.LogError("Haptics step failed: " + e); }
         }
