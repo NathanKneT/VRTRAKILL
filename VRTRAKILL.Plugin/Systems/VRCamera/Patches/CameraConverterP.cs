@@ -135,6 +135,11 @@ namespace Plugin.Systems.VRCamera.Patches
             __instance.rotationX = -VRControllerLocations.Instance.headRot.eulerAngles.x;
             __instance.rotationY = VRControllerLocations.Instance.headRot.eulerAngles.y + InputVars.TurnOffset;
             __instance.tiltRotationZ = VRControllerLocations.Instance.headRot.eulerAngles.z;
+            // After a portal or a gravity change the game rolls its camera back to level over 0.25-0.5 s (transitionRotationZ,
+            // rotationOffset). On a flat screen that hides the cut; in VR it rolled the view against the head, a strong cue
+            // for motion sickness. The eyes keep only the real head roll: the new orientation applies at once.
+            __instance.transitionRotationZ = 0f; __instance.transitionRotationZSmooth = 0f;
+            __instance.rotationOffset = Quaternion.identity;
             __instance.ApplyRotations();
 
             if (__instance == CameraController.Instance) UpdateHeightAdjust(__instance);
