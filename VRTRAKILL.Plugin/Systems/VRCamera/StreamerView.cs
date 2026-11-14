@@ -56,6 +56,7 @@ namespace Plugin.Systems.VRCamera
 
         private void LateUpdate()
         {
+            StreamerOverlay.KeepAlive();
             bool Want = Vars.Config.StreamerView.On && XRSettings.isDeviceActive;
             if (!Want) { Smoothed = false; return; }
             Camera L = Patches.CameraConverterP.leftEye, R = Patches.CameraConverterP.rightEye;

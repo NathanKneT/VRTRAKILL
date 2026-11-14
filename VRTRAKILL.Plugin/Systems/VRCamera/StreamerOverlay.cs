@@ -1,4 +1,4 @@
-﻿﻿using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -42,9 +42,11 @@ namespace Plugin.Systems.VRCamera
         private RectTransform View, Hud, Rank, RankFill, HealthFill, Ring;
         private readonly RectTransform[] Stamina = new RectTransform[3];
         private Image RingImage, RankImage;
+        private Graphic[] AlwaysOn;
         private readonly List<Image> Trail = new List<Image>(), Path = new List<Image>();
         private TMP_Text HealthText, ParryText, WarningText, GunText, ArmText;
-        private bool FontSet, Logged;
+        private bool FontSet;
+        private int LoggedScene, FramesInScene;
         private Vector2 Gaze; private bool HaveGaze; private float GazeAlpha;
         private readonly Queue<(Vector2 P, float T)> TrailPoints = new Queue<(Vector2, float)>();
 
@@ -53,6 +55,7 @@ namespace Plugin.Systems.VRCamera
         public static void Create(GameObject Host)
         {
             if (Instance != null) return;
+            HostObject = Host;
             GameObject G = new GameObject("VRTRAKILL Streamer Screen", typeof(RectTransform));
             G.transform.SetParent(Host.transform, false);
             G.AddComponent<MonitorOnly>(); // before the canvas exists, so no conversion pass can take it
@@ -60,6 +63,41 @@ namespace Plugin.Systems.VRCamera
         }
 
         private void Awake()
+        {
+            try { Build(); }
+            catch (System.Exception E) { Vars.Log.LogError("Streamer screen could not be made: " + E); }
+        }
+        private static GameObject HostObject;
+
+        // Called every frame by StreamerView, which keeps running. Something in the game turns this object off as it
+        // starts (right after BepInEx's "Chainloader startup complete"), so the monitor never showed the picture; it is
+        // turned back on, or made again if it is gone, and the first time is logged with what was found.
+        public static void KeepAlive()
+        {
+            if (HostObject == null) return;
+            if (Instance == null) { Create(HostObject); Note("gone, made again"); return; }
+            if (!Instance.gameObject.activeSelf) { Instance.gameObject.SetActive(true); Note("its object was turned off"); }
+            if (!Instance.enabled) { Instance.enabled = true; Note("it was disabled"); }
+            // the same pass turns off the canvas scaler, and the HUD sizes are for its 1920x1080 reference
+            foreach (Behaviour B in Instance.GetComponents<Behaviour>())
+                if (!B.enabled && !(B is Canvas)) { B.enabled = true; Note(B.GetType().Name + " was disabled"); }
+            // and the images inside it: the background, the picture and the HUD bars (a test capture of the window had
+            // the gaze ring, which is turned on every frame, but no HUD)
+            if (Instance.AlwaysOn == null) return;
+            int Off = 0;
+            foreach (Graphic G in Instance.AlwaysOn)
+                if (G != null && !G.enabled) { G.enabled = true; Off++; }
+            if (Off > 0) Note("images", Off + " of its " + Instance.AlwaysOn.Length + " picture and HUD images were disabled");
+        }
+        // each kind once, so a pass that runs again on every scene load does not fill the log
+        private static readonly HashSet<string> Noted = new HashSet<string>();
+        private static void Note(string Kind, string What = null)
+        {
+            if (!Noted.Add(Kind)) return;
+            Vars.Log.LogInfo("Streamer screen: turned back on (" + (What ?? Kind) + ").");
+        }
+
+        private void Build()
         {
             Canvas = gameObject.AddComponent<Canvas>();
             Canvas.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -75,9 +113,7 @@ namespace Plugin.Systems.VRCamera
             Picture.transform.SetParent(transform, false);
             Picture.raycastTarget = false;
             View = Picture.rectTransform;
-            View.anchorMin = Vector2.zero; View.anchorMax = Vector2.one; View.sizeDelta = Vector2.zero;
-            AspectRatioFitter Fit = Picture.gameObject.AddComponent<AspectRatioFitter>();
-            Fit.aspectMode = AspectRatioFitter.AspectMode.FitInParent; Fit.aspectRatio = 16f / 9f;
+            View.anchorMin = View.anchorMax = View.pivot = new Vector2(.5f, .5f); // sized every frame: Letterbox
 
             // HUD, bottom left: health bar with its number, three stamina segments above it
             Hud = Rect(View, "HUD", new Vector2(0, 0), new Vector2(0, 0), new Vector2(30, 30), new Vector2(280, 70));
@@ -109,6 +145,12 @@ namespace Plugin.Systems.VRCamera
             RectTransform Triggers = Rect(View, "Triggers", new Vector2(1, 0), new Vector2(1, 0), new Vector2(-30, 30), new Vector2(320, 64));
             GunText = Text(Rect(Triggers, "Gun", new Vector2(0, .5f), new Vector2(1, 1), Vector2.zero, Vector2.zero), "Text", 24, TextAlignmentOptions.Right);
             ArmText = Text(Rect(Triggers, "Arm", new Vector2(0, 0), new Vector2(1, .5f), Vector2.zero, Vector2.zero), "Text", 24, TextAlignmentOptions.Right);
+
+            // what KeepAlive turns back on: everything made enabled, except the rank sprite, shown only with a sprite
+            var On = new List<Graphic>();
+            foreach (Graphic G in GetComponentsInChildren<Graphic>(true))
+                if (G.enabled && G != RankImage) On.Add(G);
+            AlwaysOn = On.ToArray();
         }
 
         private void LateUpdate()
@@ -118,6 +160,7 @@ namespace Plugin.Systems.VRCamera
             SetMirror(!Show);
             if (!Show) return;
             Picture.texture = StreamerView.Picture;
+            Letterbox();
             Shown++;
             // the game's font is loaded with its UI, after this canvas is made
             if (!FontSet && GameFont() is TMP_FontAsset Font)
@@ -129,12 +172,13 @@ namespace Plugin.Systems.VRCamera
             if (Cam == null) return;
 
             UpdateHud();
-            if (!Logged && Shown > 30)
+            int Scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().handle;
+            if (LoggedScene != Scene && ++FramesInScene > 60)
             {
-                // once, after a few frames: whether the monitor canvas is what it should be, for a test log
-                Logged = true;
+                // once a scene, after a second: whether the monitor canvas is what it should be, for a test log
+                LoggedScene = Scene; FramesInScene = 0;
                 Vars.Log.LogInfo($"Streamer screen: canvas {Canvas.renderMode}, enabled {Canvas.isActiveAndEnabled}, converted to VR {GetComponent<UI.UICanvas>() != null}, "
-                    + $"picture {View.rect.width:0}x{View.rect.height:0} of {Screen.width}x{Screen.height}, texture {(Picture.texture != null ? Picture.texture.width + "x" + Picture.texture.height : "none")}, HUD shown {Hud.gameObject.activeInHierarchy}, headset mirror {UnityEngine.XR.XRSettings.gameViewRenderMode}.");
+                    + $"picture {View.rect.width:0}x{View.rect.height:0} of {Screen.width}x{Screen.height}, texture {(Picture.texture != null ? Picture.texture.width + "x" + Picture.texture.height : "none")}, HUD shown {Hud.gameObject.activeInHierarchy}, headset mirror {Unity.XR.OpenVR.OpenVRSettings.GetSettings()?.GetMirrorViewMode()}, Unity game view {UnityEngine.XR.XRSettings.gameViewRenderMode}.");
             }
             string Mode = Vars.Config.StreamerView.Overlay;
             bool On = Mode != "Off";
@@ -150,20 +194,35 @@ namespace Plugin.Systems.VRCamera
             SetText(ArmText, A != null ? (Left ? "R2  " : "L2  ") + A : null, new Color(1, 1, 1, .85f));
         }
 
-        // The headset mirror is copied onto the window after the overlay canvases are drawn, so with it on the window
-        // showed only the mirror: the picture, HUD and overlays were drawn and then covered. While the streamer view
-        // shows, the mirror copy is off; it comes back when the view is turned off.
-        private bool MirrorOff; private UnityEngine.XR.GameViewRenderMode SavedMirror;
+        // The OpenVR plugin copies the headset's right eye onto the window after the overlay canvases are drawn, so the
+        // window showed only that mirror: the picture, HUD and overlays were drawn and then covered. While the streamer
+        // view shows, the plugin's own mirror (OpenVRSettings.MirrorView) is off; it comes back when the view is turned
+        // off. (Unity's XRSettings.gameViewRenderMode is not the plugin's switch: setting it to None instead made Unity
+        // draw this canvas into the right eye, where the PS VR2 tester saw the gaze ring.)
+        private bool MirrorOff; private Unity.XR.OpenVR.OpenVRSettings.MirrorViewModes SavedMirror;
         private void SetMirror(bool Mirror)
         {
             if (Mirror == !MirrorOff) return;
             try
             {
-                if (!Mirror) { SavedMirror = UnityEngine.XR.XRSettings.gameViewRenderMode; UnityEngine.XR.XRSettings.gameViewRenderMode = UnityEngine.XR.GameViewRenderMode.None; }
-                else UnityEngine.XR.XRSettings.gameViewRenderMode = SavedMirror;
+                Unity.XR.OpenVR.OpenVRSettings Settings = Unity.XR.OpenVR.OpenVRSettings.GetSettings();
+                if (Settings == null) return;
+                if (!Mirror) { SavedMirror = Settings.GetMirrorViewMode(); Settings.SetMirrorViewMode(Unity.XR.OpenVR.OpenVRSettings.MirrorViewModes.None); }
+                else Settings.SetMirrorViewMode(SavedMirror);
             }
             catch (System.Exception E) { Vars.Log.LogWarning("Streamer screen: the headset mirror setting could not be changed: " + E.Message); }
             MirrorOff = !Mirror;
+        }
+
+        // The largest 16:9 rectangle that fits the canvas, centred. (An AspectRatioFitter sized it from the wrong parent
+        // size, 4164x4228 on a 3840x2160 screen, so the monitor showed a zoomed-in crop.)
+        private void Letterbox()
+        {
+            Rect Area = ((RectTransform)transform).rect;
+            if (Area.width <= 0f || Area.height <= 0f) return;
+            Vector2 Size = Area.width / Area.height > 16f / 9f ? new Vector2(Area.height * 16f / 9f, Area.height) : new Vector2(Area.width, Area.width * 9f / 16f);
+            if (View.sizeDelta != Size) View.sizeDelta = Size;
+            View.anchoredPosition = Vector2.zero;
         }
 
         // ---- HUD ----
@@ -186,7 +245,7 @@ namespace Plugin.Systems.VRCamera
             if (!ShowHud) return;
             Hud.localScale = Rank.localScale = Vector3.one * Scale;
             Fill(HealthFill, NM.hp / 100f);
-            HealthText.text = NM.hp.ToString();
+            SetText(HealthText, NM.hp.ToString(), Color.white); // made turned off, like every label
             for (int i = 0; i < 3; i++) Fill(Stamina[i], (NM.boostCharge - i * 100f) / 100f);
             if (!ShowRank) return;
             StyleRank R = Style.currentRank;
