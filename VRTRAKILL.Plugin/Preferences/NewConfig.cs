@@ -210,6 +210,7 @@ namespace Plugin.Prefs
             VRBody = new _VRBody();
             UIInteraction = new _UIInteraction();
             DesktopView = new _DesktopView();
+            Comfort = new _Comfort();
             Misc = new _Misc();
         }
     }
