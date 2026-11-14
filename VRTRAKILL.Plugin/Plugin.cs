@@ -28,6 +28,13 @@ namespace Plugin
         public void Awake()
         {
             Log = Logger;
+            // "--novr" in the game's launch options: the game runs flat on the monitor with nothing of the mod applied,
+            // so it can be played without a headset and without uninstalling the mod
+            if (FlatRequested())
+            {
+                Log.LogMessage("\"--novr\" is in the game's launch options: the game runs flat, VRTRAKILL changes nothing. Remove it to play in VR.");
+                return;
+            }
             Debug.unityLogger.filterLogType = LogType.Warning;
             // a VR game must keep running when its desktop window loses focus (SteamVR windows, dashboard, alt-tab):
             // with Unity's default the game froze, the headset image froze, and the SteamVR retry loop stopped
@@ -54,6 +61,14 @@ namespace Plugin
             // once and VR starts here; otherwise ModHost.Update keeps trying in the background
             StartProbe();
             if (ProbeThread.Join(3000)) TickVRStart();
+        }
+
+        private static bool FlatRequested()
+        {
+            foreach (string Arg in Environment.GetCommandLineArgs())
+                if (Arg.Equals("--novr", StringComparison.OrdinalIgnoreCase) || Arg.Equals("-novr", StringComparison.OrdinalIgnoreCase))
+                    return true;
+            return false;
         }
 
         // ---- VR start ----

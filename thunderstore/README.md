@@ -97,6 +97,10 @@ All settings are in `VRTRAKILL_Config.json`, in the mod's folder under `BepInEx/
 
 Once per start the mod asks GitHub for the latest VRTRAKILL release and shows a notice in the main menu when a newer one exists. Nothing is downloaded. Set "Auto update" to "Off" in the config file to turn the check off. Update the mod in the mod manager.
 
+## Playing without VR
+
+Start the game vanilla from your mod manager, or add `--novr` to the game's launch options (in Steam: right-click ULTRAKILL > Properties > General > Launch options); with `--novr` the mod changes nothing for that session. Remove it to play in VR again.
+
 ## Uninstall
 
 1. Remove VRTRAKILL in your mod manager.

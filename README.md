@@ -207,6 +207,10 @@ Extract the new zip over the old install, or update in your mod manager. Files f
 
 Once per game start, the mod asks GitHub whether a newer VRTRAKILL release exists and shows a notice in the main menu if so. It sends one plain request with no personal data, and downloads nothing unless you set `"Auto update"` to `"Download"`; `"Off"` turns the check off. What the check sends and how a signed update is installed are in [docs/UPDATER.md](docs/UPDATER.md).
 
+## Playing without VR
+
+To play flat on the monitor without uninstalling the mod, add `--novr` to the game's launch options: in Steam, right-click ULTRAKILL > Properties > General > Launch options. The mod then changes nothing for that session (`BepInEx/LogOutput.log` says so). Remove `--novr` to play in VR again.
+
 ## Uninstall
 
 1. Close ULTRAKILL.
