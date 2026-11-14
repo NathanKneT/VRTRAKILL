@@ -42,6 +42,7 @@ namespace Plugin.Systems
                     PromptTest = Array.Exists(Lines, L => L.Trim().Equals("prompttest", StringComparison.OrdinalIgnoreCase));
                     VRSettingsTest = Array.Exists(Lines, L => L.Trim().Equals("vrsettingstest", StringComparison.OrdinalIgnoreCase));
                     Unfocused = Array.Exists(Lines, L => L.Trim().Equals("unfocused", StringComparison.OrdinalIgnoreCase));
+                    StreamerTest = Array.Exists(Lines, L => L.Trim().Equals("streamertest", StringComparison.OrdinalIgnoreCase));
                 }
             }
             catch (Exception e) { Vars.Log.LogWarning("Test scene file unreadable: " + e.Message); }
@@ -70,6 +71,7 @@ namespace Plugin.Systems
             if (HapticTest) yield return MeasureHaptics(Clock);
             if (RangeView) yield return ShowRange(Clock);
             if (PerfTest) yield return MeasurePerformance(Clock);
+            if (StreamerTest) yield return CheckStreamer(Clock);
             if (LevelSweep) yield return SweepLevels(Clock);
             if (PauseDump) yield return DumpPause(Clock);
             if (PromptTest) yield return CheckPrompts(Clock);
@@ -643,6 +645,79 @@ namespace Plugin.Systems
             VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestLeftPose = null;
             VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestRightPose = null;
             Vars.Log.LogWarning("Range view: done.");
+        }
+
+        // A line "streamertest": in the level, records 8 s of frame times and SteamVR's dropped and reprojected frames
+        // with the streamer view off, then 8 s with it on; saves the streamer picture as a BMP file in the BepInEx folder,
+        // logs its mean brightness and colour count (a black or single-colour picture means nothing was drawn) and how
+        // often the window drew it. In VR, reading the screen back returns an eye, not the window, so the window itself
+        // (with the HUD and overlays) is checked with a desktop screenshot. The streamer view setting is put back.
+        private static bool StreamerTest;
+        private static IEnumerator CheckStreamer(System.Diagnostics.Stopwatch Clock)
+        {
+            double T = Clock.Elapsed.TotalSeconds;
+            while (Clock.Elapsed.TotalSeconds < T + 60 && (Vars.IsMainMenu || Vars.Registered<NewMovement>() == null)) yield return null;
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 5) yield return null;
+            bool Was = Vars.Config.StreamerView.On;
+            Vars.Config.StreamerView.On = false;
+            yield return StreamerFrames(Clock, "off");
+            Vars.Config.StreamerView.On = true;
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 2) yield return null;
+            int Draws = VRCamera.StreamerView.Draws;
+            yield return StreamerFrames(Clock, "on");
+            Vars.Log.LogWarning($"Streamer test: the window drew the picture {VRCamera.StreamerView.Draws - Draws} times in 8 s; camera at {(VRCamera.StreamerView.WorldCamera != null ? VRCamera.StreamerView.WorldCamera.transform.position.ToString() : "none")}.");
+
+            RenderTexture Pic = VRCamera.StreamerView.Picture;
+            if (Pic == null) Vars.Log.LogWarning("Streamer test: no picture.");
+            else
+            {
+                RenderTexture Active = RenderTexture.active;
+                RenderTexture.active = Pic;
+                Texture2D Tex = new Texture2D(Pic.width, Pic.height, TextureFormat.RGB24, false);
+                Tex.ReadPixels(new Rect(0, 0, Pic.width, Pic.height), 0, 0); Tex.Apply();
+                RenderTexture.active = Active;
+                SaveForTest(Tex, "VRTRAKILL_streamer_picture.bmp");
+                UnityEngine.Object.Destroy(Tex);
+            }
+            Vars.Config.StreamerView.On = Was;
+            Vars.Log.LogWarning("Streamer test: done.");
+        }
+
+        private static IEnumerator StreamerFrames(System.Diagnostics.Stopwatch Clock, string Label)
+        {
+            Valve.VR.Compositor_CumulativeStats Before = new Valve.VR.Compositor_CumulativeStats(), After = new Valve.VR.Compositor_CumulativeStats();
+            uint Size = (uint)System.Runtime.InteropServices.Marshal.SizeOf(typeof(Valve.VR.Compositor_CumulativeStats));
+            Valve.VR.OpenVR.Compositor?.GetCumulativeStats(ref Before, Size);
+            var Frames = new System.Collections.Generic.List<float>();
+            double Start = Clock.Elapsed.TotalSeconds;
+            while (Clock.Elapsed.TotalSeconds < Start + 8) { yield return null; Frames.Add(Time.unscaledDeltaTime * 1000f); }
+            Valve.VR.OpenVR.Compositor?.GetCumulativeStats(ref After, Size);
+            Frames.Sort();
+            float Avg = 0f; foreach (float F in Frames) Avg += F; Avg /= Mathf.Max(1, Frames.Count);
+            float P95 = Frames.Count > 0 ? Frames[(int)(Frames.Count * .95f)] : 0f;
+            Vars.Log.LogWarning($"Streamer test, view {Label}: {Frames.Count} frames in 8 s, avg {Avg:0.00} ms, 95% {P95:0.00} ms; SteamVR dropped {After.m_nNumDroppedFrames - Before.m_nNumDroppedFrames}, reprojected {After.m_nNumReprojectedFrames - Before.m_nNumReprojectedFrames}.");
+        }
+
+        // Writes a 24-bit BMP (no image module needed) next to BepInEx's log, and logs its brightness and colour count.
+        private static void SaveForTest(Texture2D Tex, string Name)
+        {
+            Color32[] P = Tex.GetPixels32();
+            int W = Tex.width, H = Tex.height, Row = (W * 3 + 3) & ~3;
+            byte[] B = new byte[54 + Row * H];
+            B[0] = (byte)'B'; B[1] = (byte)'M';
+            BitConverter.GetBytes(B.Length).CopyTo(B, 2); BitConverter.GetBytes(54).CopyTo(B, 10); BitConverter.GetBytes(40).CopyTo(B, 14);
+            BitConverter.GetBytes(W).CopyTo(B, 18); BitConverter.GetBytes(H).CopyTo(B, 22); B[26] = 1; B[28] = 24;
+            double Sum = 0; var Colours = new System.Collections.Generic.HashSet<int>();
+            for (int y = 0; y < H; y++)
+                for (int x = 0; x < W; x++)
+                {
+                    Color32 C = P[y * W + x]; int I = 54 + y * Row + x * 3;
+                    B[I] = C.b; B[I + 1] = C.g; B[I + 2] = C.r;
+                    if (((x | y) & 7) == 0) { Sum += (C.r + C.g + C.b) / 3.0; Colours.Add(C.r << 16 | C.g << 8 | C.b); }
+                }
+            string Path_ = Path.Combine(BepInEx.Paths.BepInExRootPath, Name);
+            File.WriteAllBytes(Path_, B);
+            Vars.Log.LogWarning($"Streamer test: {Name} {W}x{H}, mean brightness {Sum / Math.Max(1, (W / 8) * (H / 8)):0}/255, {Colours.Count} colours in the samples.");
         }
 
         // A line "perftest": times every per-frame method of the mod (Update, LateUpdate, FixedUpdate of its

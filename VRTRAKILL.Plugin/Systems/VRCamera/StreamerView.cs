@@ -24,6 +24,9 @@ namespace Plugin.Systems.VRCamera
         public static Camera WorldCamera => Instance != null ? Instance.World : null;
         // where the picture is drawn in the window, for overlays
         public static Rect ScreenRect { get; private set; }
+        // for the developer test hook: the last picture, and how many times the window has drawn it
+        internal static RenderTexture Picture => Instance != null ? Instance.Target : null;
+        internal static int Draws;
         public static bool Showing => Instance != null && Instance.Target != null && Vars.Config.StreamerView.On && XRSettings.isDeviceActive;
 
         private Camera World, UI;
@@ -200,6 +203,7 @@ namespace Plugin.Systems.VRCamera
             if (H > Screen.height) { H = Screen.height; W = H * 16f / 9f; }
             ScreenRect = new Rect((Screen.width - W) * .5f, (Screen.height - H) * .5f, W, H);
             GUI.DrawTexture(ScreenRect, Target, ScaleMode.StretchToFill, false);
+            Draws++;
             StreamerOverlay.Draw(ScreenRect);
         }
 
