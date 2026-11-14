@@ -56,6 +56,7 @@ namespace Plugin.Systems
                     Unfocused = Array.Exists(Lines, L => L.Trim().Equals("unfocused", StringComparison.OrdinalIgnoreCase));
                     StreamerTest = Array.Exists(Lines, L => L.Trim().Equals("streamertest", StringComparison.OrdinalIgnoreCase));
                     StyleTest = Array.Exists(Lines, L => L.Trim().Equals("styletest", StringComparison.OrdinalIgnoreCase));
+                    CompareTest = Array.Exists(Lines, L => L.Trim().Equals("comparetest", StringComparison.OrdinalIgnoreCase));
                 }
             }
             catch (Exception e) { Vars.Log.LogWarning("Test scene file unreadable: " + e.Message); }
@@ -86,6 +87,7 @@ namespace Plugin.Systems
             if (PerfTest) yield return MeasurePerformance(Clock);
             if (StreamerTest) yield return CheckStreamer(Clock);
             if (StyleTest) yield return ShowStyle(Clock);
+            if (CompareTest) yield return ShowComparison(Clock);
             if (LevelSweep) yield return SweepLevels(Clock);
             if (PauseDump) yield return DumpPause(Clock);
             if (PromptTest) yield return CheckPrompts(Clock);
@@ -685,6 +687,30 @@ namespace Plugin.Systems
         // "Style test: shown" (capture the window then) and what the game's panel says. The level is not finished, so
         // nothing is saved.
         private static bool StyleTest;
+
+        // A line "comparetest": in the level, with the streamer view on, shows the headset comparison in Corner then
+        // Side by side for 6 s each, logging "Comparison view: <mode>" (capture the window then), and puts the setting
+        // back.
+        private static bool CompareTest;
+        private static IEnumerator ShowComparison(System.Diagnostics.Stopwatch Clock)
+        {
+            double T = Clock.Elapsed.TotalSeconds;
+            while (Clock.Elapsed.TotalSeconds < T + 60 && (Vars.IsMainMenu || Vars.Registered<NewMovement>() == null)) yield return null;
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 4) yield return null;
+            var S = Vars.Config.StreamerView;
+            bool WasOn = S.On; string Was = S.Comparison;
+            S.On = true;
+            foreach (string Mode in new[] { "Corner", "Side by side" })
+            {
+                S.Comparison = Mode;
+                T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 2) yield return null;
+                RenderTexture Raw = VRCamera.StreamerView.HeadsetPicture;
+                Vars.Log.LogWarning($"Comparison view: {Mode} (headset picture {(Raw != null ? Raw.width + "x" + Raw.height : "none")}).");
+                T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 6) yield return null;
+            }
+            S.On = WasOn; S.Comparison = Was;
+            Vars.Log.LogWarning("Comparison view: done.");
+        }
         private static IEnumerator ShowStyle(System.Diagnostics.Stopwatch Clock)
         {
             double T = Clock.Elapsed.TotalSeconds;

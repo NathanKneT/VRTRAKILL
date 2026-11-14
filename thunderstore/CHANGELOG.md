@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Headset comparison for videos: `Y` (or COMPARE in the VR column) shows the raw headset view, shaking and rolling with the head like a plain mirror recording, next to the streamer view, in a corner or side by side, each labelled. "Headset comparison" in the "Streamer view" settings (config version 23).
+
 ## 2.0.1
 
 - The README and the mod's DLLs now say that version 2.0 was made with the help of an AI assistant (Anthropic's Claude), as Thunderstore asks of mods made with AI. Nothing else changed.

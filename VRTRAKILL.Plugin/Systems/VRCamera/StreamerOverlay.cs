@@ -48,6 +48,9 @@ namespace Plugin.Systems.VRCamera
         private Image WeaponImage;
         private RectTransform RankBack; private string LaidOutFeed = ""; private bool LaidOutFresh = true;
         private WeaponHUD WeaponSource; private Image WeaponSourceIcon;
+        // the headset comparison: the raw headset picture, and in Side by side the smoothed one beside it
+        private RectTransform HeadsetFrame, SmoothFrame; private RawImage HeadsetImage, SmoothImage;
+        private TMP_Text HeadsetLabel, SmoothLabel; private string LaidOutCompare;
         // a trigger label shows when it changes (a charge step, READY, LOCKED, another weapon) and then fades
         private string GunShown, ArmShown; private float GunChanged = -10f, ArmChanged = -10f;
         private bool FontSet;
@@ -120,6 +123,10 @@ namespace Plugin.Systems.VRCamera
             View = Picture.rectTransform;
             View.anchorMin = View.anchorMax = View.pivot = new Vector2(.5f, .5f); // sized every frame: Letterbox
 
+            // the headset comparison, made before the HUD so the HUD stays on top (UpdateComparison)
+            HeadsetFrame = Frame("Headset", out HeadsetImage, out HeadsetLabel);
+            SmoothFrame = Frame("Streamer", out SmoothImage, out SmoothLabel);
+
             // HUD, bottom left: health bar with its number, three stamina segments above it
             Hud = Rect(View, "HUD", new Vector2(0, 0), new Vector2(0, 0), new Vector2(30, 30), new Vector2(280, 70));
             RectTransform HealthBack = Box(Hud, "Health", Vector2.zero, Vector2.zero, new Color(0, 0, 0, .55f), new Vector2(0, 0), new Vector2(280, 30));
@@ -182,6 +189,7 @@ namespace Plugin.Systems.VRCamera
             if (!Show) return;
             Picture.texture = StreamerView.Picture;
             Letterbox();
+            bool SideBySide = UpdateComparison();
             Shown++;
             // the game's font is loaded with its UI, after this canvas is made
             if (!FontSet && GameFont() is TMP_FontAsset Font)
@@ -202,7 +210,8 @@ namespace Plugin.Systems.VRCamera
                     + $"picture {View.rect.width:0}x{View.rect.height:0} of {Screen.width}x{Screen.height}, texture {(Picture.texture != null ? Picture.texture.width + "x" + Picture.texture.height : "none")}, HUD shown {Hud.gameObject.activeInHierarchy}, headset mirror {Unity.XR.OpenVR.OpenVRSettings.GetSettings()?.GetMirrorViewMode()}, Unity game view {UnityEngine.XR.XRSettings.gameViewRenderMode}.");
             }
             string Mode = Vars.Config.StreamerView.Overlay;
-            bool On = Mode != "Off";
+            // side by side, the pictures are half size and the gaze and parry marks would land in the wrong place
+            bool On = Mode != "Off" && !SideBySide;
             float Now = Time.unscaledTime;
             UpdateGaze(Cam, On && (Mode == "Always" || Now - LastParryTime < 1f));
             UpdateParry(Cam, On ? Now - LastParryTime : 10f);
@@ -214,6 +223,57 @@ namespace Plugin.Systems.VRCamera
             // a label that stayed on screen ("R2 CLICK" at rest) only added noise to a video
             SetText(GunText, G != null ? (Left ? "L2  " : "R2  ") + G : null, new Color(1, 1, 1, .85f * Recent(G, ref GunShown, ref GunChanged, Now)));
             SetText(ArmText, A != null ? (Left ? "R2  " : "L2  ") + A : null, new Color(1, 1, 1, .85f * Recent(A, ref ArmShown, ref ArmChanged, Now)));
+        }
+
+        // ---- Headset comparison ----
+        // Corner: the raw headset picture in a framed corner at the top left, over the smoothed view. Side by side: the
+        // raw picture on the left and the smoothed one on the right, each labelled; the full-size picture is made
+        // transparent (it stays enabled for KeepAlive). Returns whether it is side by side.
+        private bool UpdateComparison()
+        {
+            string Mode = Vars.Config.StreamerView.Comparison;
+            RenderTexture Raw = StreamerView.HeadsetPicture;
+            bool Corner = Mode == "Corner" && Raw != null, Side = Mode == "Side by side" && Raw != null;
+            HeadsetImage.texture = Raw; SmoothImage.texture = StreamerView.Picture;
+            if (HeadsetFrame.gameObject.activeSelf != (Corner || Side)) HeadsetFrame.gameObject.SetActive(Corner || Side);
+            if (SmoothFrame.gameObject.activeSelf != Side) SmoothFrame.gameObject.SetActive(Side);
+            Color Main = Side ? Color.clear : Color.white;
+            if (Picture.color != Main) Picture.color = Main;
+            SetText(HeadsetLabel, Corner ? "HEADSET" : Side ? "HEADSET (RAW)" : null, Color.white);
+            SetText(SmoothLabel, Side ? "STREAMER VIEW" : null, Color.white);
+            string Layout = Corner ? "Corner" : Side ? "Side" : "Off";
+            if (Layout != LaidOutCompare)
+            {
+                LaidOutCompare = Layout;
+                if (Corner) Put(HeadsetFrame, new Vector2(0, 1), new Vector2(24, -24), new Vector2(584, 332)); // a 576x324 picture
+                if (Side)
+                {
+                    Put(HeadsetFrame, new Vector2(0, .5f), Vector2.zero, new Vector2(956, 540));
+                    Put(SmoothFrame, new Vector2(1, .5f), Vector2.zero, new Vector2(956, 540));
+                }
+            }
+            return Side;
+        }
+
+        private static void Put(RectTransform R, Vector2 Anchor, Vector2 Position, Vector2 Size)
+        {
+            R.anchorMin = R.anchorMax = R.pivot = Anchor;
+            R.anchoredPosition = Position; R.sizeDelta = Size;
+        }
+
+        // a white-bordered picture with a label strip along its top, hidden until a comparison mode shows it
+        private RectTransform Frame(string Name, out RawImage Image, out TMP_Text Label)
+        {
+            RectTransform F = Box(View, Name + " frame", new Vector2(0, 1), new Vector2(0, 1), new Color(1, 1, 1, .9f));
+            Image = new GameObject("Picture", typeof(RectTransform)).AddComponent<RawImage>();
+            Image.transform.SetParent(F, false);
+            Image.raycastTarget = false;
+            RectTransform R = Image.rectTransform;
+            R.anchorMin = Vector2.zero; R.anchorMax = Vector2.one; R.offsetMin = new Vector2(4, 4); R.offsetMax = new Vector2(-4, -4);
+            RectTransform Strip = Box(F, "Label", new Vector2(0, 1), new Vector2(1, 1), new Color(0, 0, 0, .6f), new Vector2(4, -40), new Vector2(-8, 36));
+            Label = Text(Strip, "Text", 24, TextAlignmentOptions.Center);
+            F.gameObject.SetActive(false);
+            return F;
         }
 
         // 1 for 1.5 s after the label changed, then fading out over 0.4 s

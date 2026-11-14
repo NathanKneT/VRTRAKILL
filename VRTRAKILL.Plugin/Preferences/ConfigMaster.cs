@@ -42,6 +42,7 @@ namespace Plugin.Prefs
         // Joystick8Button9 is an unused placeholder; Unity rejects a null KeyCode
         public static UnityEngine.KeyCode?
             ToggleStreamerView = UnityEngine.KeyCode.Joystick8Button9,
+            CycleComparison = UnityEngine.KeyCode.Joystick8Button9,
 
             TPCamUp = UnityEngine.KeyCode.Joystick8Button9,
             TPCamDown = UnityEngine.KeyCode.Joystick8Button9,
@@ -140,6 +141,7 @@ namespace Plugin.Prefs
             {
                 // a miss would store null, and VRKeybindsController's (KeyCode) cast of null throws every frame
                 ToggleStreamerView = UnityKey(VRConfig.ToggleStreamerView);
+                CycleComparison = UnityKey(VRConfig.CycleComparison);
                 ToggleAvatarSizeAdj = UnityKey(VRConfig.ToggleAvatarSizeAdj);
                 RecalibrateHeight = UnityKey(VRConfig.RecalibrateHeight);
             }

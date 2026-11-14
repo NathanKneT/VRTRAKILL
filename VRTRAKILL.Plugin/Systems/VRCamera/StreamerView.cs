@@ -25,11 +25,14 @@ namespace Plugin.Systems.VRCamera
         public static Camera WorldCamera => Instance != null ? Instance.World : null;
         // the last picture, shown on the monitor by StreamerOverlay
         internal static RenderTexture Picture => Instance != null ? Instance.Target : null;
+        // the raw headset view for the comparison ("Headset comparison" not Off), or null
+        internal static RenderTexture HeadsetPicture => Instance != null && Comparing ? Instance.HeadsetTarget : null;
+        private static bool Comparing => Vars.Config.StreamerView.Comparison == "Corner" || Vars.Config.StreamerView.Comparison == "Side by side";
         public static bool Showing => Instance != null && Instance.Target != null && Vars.Config.StreamerView.On && XRSettings.isDeviceActive;
 
         private Camera World, UI;
         private Camera MadeFor;
-        private RenderTexture Target;
+        private RenderTexture Target, HeadsetTarget;
         private bool Smoothed;
         private Vector3 LocalPos;
         private Quaternion LocalRot, Rig, LastLocalTarget;
@@ -49,9 +52,20 @@ namespace Plugin.Systems.VRCamera
             Vars.Log.LogInfo("Streamer view " + (Vars.Config.StreamerView.On ? "on." : "off."));
         }
 
+        // Off -> Corner -> Side by side -> Off ("Headset comparison" key, Y, and COMPARE in the VR column); saved
+        public static void CycleComparison()
+        {
+            var S = Vars.Config.StreamerView;
+            S.Comparison = S.Comparison == "Corner" ? "Side by side" : S.Comparison == "Side by side" ? "Off" : "Corner";
+            try { Prefs.ConfigJSON.Serialize(Prefs.ConfigJSON.Instance); }
+            catch (System.Exception E) { Vars.Log.LogWarning("The headset comparison setting could not be saved: " + E.Message); }
+            Vars.Log.LogInfo("Streamer view headset comparison: " + S.Comparison + ".");
+        }
+
         private void Update()
         {
             if (Prefs.ConfigMaster.ToggleStreamerView is KeyCode Key && UnityEngine.Input.GetKeyDown(Key)) Toggle();
+            if (Prefs.ConfigMaster.CycleComparison is KeyCode Compare && UnityEngine.Input.GetKeyDown(Compare)) CycleComparison();
         }
 
         private void LateUpdate()
@@ -68,7 +82,27 @@ namespace Plugin.Systems.VRCamera
             Place(L, R);
             if (!Due()) return;
             MakeTarget();
-            Draw(L);
+            Draw(L, Target);
+            if (Comparing) DrawHeadset(L, R);
+        }
+
+        // The comparison picture: the same cameras at the raw head pose (middle of the eyes, the left eye's rotation), so it
+        // shakes and rolls like a plain recording of the headset; half the height of the streamer picture to keep the
+        // cost down. The cameras go back to the smoothed pose afterwards.
+        private void DrawHeadset(Camera L, Camera R)
+        {
+            int H = Mathf.Clamp(Vars.Config.StreamerView.Height / 2, 360, 1080), W = Mathf.RoundToInt(H * 16f / 9f);
+            if (HeadsetTarget == null || HeadsetTarget.height != H)
+            {
+                if (HeadsetTarget != null) { HeadsetTarget.Release(); Destroy(HeadsetTarget); }
+                HeadsetTarget = new RenderTexture(W, H, 24) { name = "VRTRAKILL Streamer Headset Comparison" };
+                HeadsetTarget.Create();
+            }
+            Transform T = World.transform;
+            Vector3 Smooth = T.position; Quaternion SmoothRot = T.rotation;
+            T.SetPositionAndRotation((L.transform.position + R.transform.position) * .5f, L.transform.rotation);
+            try { Draw(L, HeadsetTarget); }
+            finally { T.SetPositionAndRotation(Smooth, SmoothRot); }
         }
 
         // ---- Cameras: a world camera and a UI camera on top, both rendered by hand into one picture ----
@@ -113,7 +147,7 @@ namespace Plugin.Systems.VRCamera
             return true;
         }
 
-        private void Draw(Camera L)
+        private void Draw(Camera L, RenderTexture Into)
         {
             World.nearClipPlane = L.nearClipPlane; World.farClipPlane = L.farClipPlane;
             World.backgroundColor = L.backgroundColor; World.clearFlags = L.clearFlags; World.cullingMask = L.cullingMask;
@@ -122,7 +156,7 @@ namespace Plugin.Systems.VRCamera
             World.aspect = UI.aspect = 16f / 9f;
             if (Vars.UICamera != null) { UI.cullingMask = Vars.UICamera.cullingMask; UI.farClipPlane = Vars.UICamera.farClipPlane; }
             UI.nearClipPlane = .1f;
-            World.targetTexture = UI.targetTexture = Target;
+            World.targetTexture = UI.targetTexture = Into;
 
             // the vignette ring sits in front of the eyes; it is theirs, not the viewers'
             Renderer Ring = ComfortVignette.Ring;
@@ -221,6 +255,7 @@ namespace Plugin.Systems.VRCamera
         private void OnDestroy()
         {
             if (Target != null) { Target.Release(); Destroy(Target); }
+            if (HeadsetTarget != null) { HeadsetTarget.Release(); Destroy(HeadsetTarget); }
         }
     }
 }

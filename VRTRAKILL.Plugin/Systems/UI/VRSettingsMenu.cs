@@ -149,6 +149,11 @@ namespace Plugin.Systems.UI
             });
             Items.Add(new Item
             {
+                Text = () => "COMPARE: " + Vars.Config.StreamerView.Comparison.ToUpperInvariant(),
+                Next = () => VRCamera.StreamerView.CycleComparison(),
+            });
+            Items.Add(new Item
+            {
                 Text = () => Vars.Config.UIInteraction.WristHud ? "HUD: ON WRIST" : "HUD: FLOATING",
                 Next = () => Vars.Config.UIInteraction.WristHud = !Vars.Config.UIInteraction.WristHud,
             });

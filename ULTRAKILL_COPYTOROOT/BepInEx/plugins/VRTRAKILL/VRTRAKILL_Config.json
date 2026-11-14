@@ -2,6 +2,7 @@
   "VRTRAKILL Settings": {
     "VRTRAKILL Keybinds": {
       "Toggle streamer view": "T",
+      "Headset comparison": "Y",
       "Toggle Size Adjustment": "J",
       "Recalibrate height": "H"
     },
@@ -10,7 +11,7 @@
     "Jump multiplier": 1.0,
     "Height offset (meters)": 0.0,
     "Auto height": true,
-    "Config version": 22,
+    "Config version": 23,
     "Controller Settings": {
       "Deadzone (from 0 to 1)": 0.4,
       "Smooth turning speed": 300.0,
@@ -69,7 +70,8 @@
       "Frame rate (0 = headset rate)": 60,
       "Height in pixels": 1080,
       "HUD": "Medium",
-      "Overlay": "Always"
+      "Overlay": "Always",
+      "Headset comparison": "Off"
     },
     "Miscellaneous/Unsorted Settings": {
       "Game blood and oil stains (experimental)": false
