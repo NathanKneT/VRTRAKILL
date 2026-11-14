@@ -169,6 +169,11 @@ namespace Plugin.Systems.UI
             });
             Items.Add(new Item
             {
+                Text = () => C.AdaptiveTriggers ? "TRIGGERS: ON" : "TRIGGERS: OFF",
+                Next = () => C.AdaptiveTriggers = !C.AdaptiveTriggers,
+            });
+            Items.Add(new Item
+            {
                 Text = () => C.FingerTracking ? "FINGERS: ON" : "FINGERS: OFF",
                 Next = () => C.FingerTracking = !C.FingerTracking,
             });

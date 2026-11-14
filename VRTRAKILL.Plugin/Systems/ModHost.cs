@@ -39,6 +39,8 @@ namespace Plugin.Systems
             if (Vars.Config == null) return;
             try { Feedback.LowHealth.Tick(); }
             catch (System.Exception e) { if (loggedErrors++ < 3) Vars.Log.LogError("Low health warning step failed: " + e); }
+            try { Feedback.AdaptiveTriggers.Tick(); }
+            catch (System.Exception e) { if (loggedErrors++ < 3) Vars.Log.LogError("Adaptive trigger step failed: " + e); }
             try { Feedback.Haptics.Flush(); }
             catch (System.Exception e) { if (loggedErrors++ < 3) Vars.Log.LogError("Haptics step failed: " + e); }
         }
@@ -47,6 +49,7 @@ namespace Plugin.Systems
         {
             quitting = true;
             Input.SVRActionsManager.ReleaseAll(); // a key held at exit would stay down in Windows
+            try { Feedback.AdaptiveTriggers.Shutdown(); } catch { } // free the triggers for the next game
         }
 
         // With "Windows key presses", held keys must not stay down for the program that gets focus.

@@ -33,6 +33,7 @@ This version runs on ULTRAKILL build 22957324 (Unity 2022.3.29f1), the current o
 - **The arm in your other hand.** The Feedbacker and Knuckleblaster punch from it, the whiplash throws from it with a small marker where it will go, and a coin tossed with a throwing move flies along your throw.
 - **Health and stamina on your wrist.** Raise your arm like reading a watch, or keep the HUD floating in the view.
 - **Prompts name your controller's buttons.** The game says "Cross" on PS VR2, "A" on Quest, "D-pad down" on Steam Frame, and so on.
+- **PS VR2 adaptive triggers.** With the [PSVR2 Toolkit](https://github.com/BnuuySolutions/PSVR2Toolkit) installed, each weapon has its own trigger feel: a crisp break on the revolver, a heavy one on the shotgun, rising resistance on the railcannon, a rattle on the nailgun.
 - **Layouts for every common controller.** PS VR2 Sense, Quest Touch, Index, Steam Frame, Pico, Vive wands and WMR, each with a mirrored left-handed layout.
 - **VR settings in the pause menu.** Turning, comfort vignette, HUD, rumble, height, punch mode and left-handed play, changed in the headset.
 - **Controller feedback.** Each hand rumbles on its own: gunfire in the gun hand, punches and the whiplash in the other, a tick when a hit lands, a sharp crack and a deep knock on a parry, a knock on a kill, a thud when you get hurt, and a heartbeat when your health is low.
@@ -123,7 +124,7 @@ If the buttons act like an older version, pick the default layout again: SteamVR
 
 ## Settings
 
-Pause the game in the headset. A **VR** column next to the pause menu changes the main settings at once and saves them: turn mode (smooth, or snap 30, 45 or 90 degrees), turn speed, UI size, comfort vignette, screen flashes, HUD on the wrist or floating, rumble strength, height offset, recenter view, fingers, punch by swing or by button, and left handed (takes effect after a restart). Point the laser at a button and pull the trigger to move to the next value.
+Pause the game in the headset. A **VR** column next to the pause menu changes the main settings at once and saves them: turn mode (smooth, or snap 30, 45 or 90 degrees), turn speed, UI size, comfort vignette, screen flashes, HUD on the wrist or floating, rumble strength, height offset, recenter view, adaptive triggers, fingers, punch by swing or by button, and left handed (takes effect after a restart). Point the laser at a button and pull the trigger to move to the next value.
 
 ![The comfort vignette darkens the edge of the view while moving fast](docs/images/comfort-vignette.jpg)
 
@@ -148,6 +149,7 @@ All settings are in `BepInEx/plugins/VRTRAKILL/VRTRAKILL_Config.json`. Close the
 | `Low health warning` | `true` | Below 30 health, both hands feel a heartbeat that quickens near death, and the edge of the view glows dark red with each beat (not with `"Screen flashes"` off). |
 | `Rumble strength` | `1.0` | Scales all controller vibration, from 0 to 2. The game's own rumble setting still applies on top. |
 | `Hit and kill rumble` / `Damage rumble` / `Menu rumble` | `true` | The tick when your shot or punch lands, the crack and knock of a parry, and the knock on a kill; the thud when you get hurt; the tick when the menu laser reaches or presses a button. |
+| `Adaptive triggers` | `true` | PS VR2 only, with the PSVR2 Toolkit installed: the gun trigger's resistance follows the weapon and the punch trigger the fist. Menus, the shop and pause free both triggers. Without the Toolkit nothing happens. |
 | `Finger tracking` | `false` | The arm hand's fingers follow yours, from the controller's finger sensors. "Fingers" in the VR column switches it at once. |
 | `Windows key presses` | `false` | `false`: the VR buttons press a keyboard and mouse that exist only inside the game. `true`: real Windows key presses, like 1.0.x, which need the ULTRAKILL window in front. Use it only if a button does nothing with `false`, and report it. |
 
@@ -213,6 +215,7 @@ Setup, testing in the game, the in-game test hooks, the left-handed layout gener
 - Guillaume-Lechevallier: thank you for your [VRTRAKILL_FRAUD fork](https://github.com/Guillaume-Lechevallier/VRTRAKILL_FRAUD), which did the groundwork for the current game build (the Unity 2022.3 VRPatcher, the OpenVR start-up and the portal overlay). Our weapon wheel, desktop view, 4-S and Clash camera, late HUD conversion and opt-in VR body are based on your work, and your notes pointed us at the shop preview problem.
 - Graze, Rokic, Party Wumpus and NavaShield contributed to the original mod.
 - Raicuparta: the globalgamemanagers patcher approach comes from Two Forks VR (MIT).
+- BnuuySolutions: the [PSVR2 Toolkit](https://github.com/BnuuySolutions/PSVR2Toolkit) (MIT) opens the PS VR2 Sense adaptive triggers on PC; the mod sends its trigger effects to it.
 - Motaweh updated the mod for build 22957324 (1.0.x).
 - NathanKneT made version 2.0.0: the fixes for the problems players reported most, buttons inside the game, controller layouts and button prompts, left-handed play, controller feedback, settings in the headset and the comfort vignette.
 

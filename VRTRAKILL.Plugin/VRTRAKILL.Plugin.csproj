@@ -227,6 +227,7 @@
     <Compile Include="Input\SkeletonInput.cs" />
     <Compile Include="Input\SVRActionsManager.cs" />
     <Compile Include="Input\VirtualInput.cs" />
+    <Compile Include="Systems\Feedback\AdaptiveTriggers.cs" />
     <Compile Include="Systems\Feedback\Haptics.cs" />
     <Compile Include="Systems\Feedback\LowHealth.cs" />
     <Compile Include="Patches\Controllers\PatchHitFeedback.cs" />

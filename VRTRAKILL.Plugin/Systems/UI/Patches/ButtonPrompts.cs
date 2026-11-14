@@ -71,7 +71,7 @@ namespace Plugin.Systems.UI.Patches
         }
 
         // The SteamVR controller type of the hand controllers ("playstation_vr2_sense", "oculus_touch"...), or null.
-        private static string ControllerType()
+        internal static string ControllerType()
         {
             if (TestControllerType != null) return TestControllerType;
             if (Time.unscaledTime - CachedAt < 2f) return CachedType;
