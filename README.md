@@ -233,6 +233,10 @@ A flat start applies nothing of the mod: no patches and no SteamVR, as if it wer
 
 ## Uninstall
 
+In one click: double-click `UNINSTALL VRTRAKILL.bat` from the release zip and answer Y. It removes the mod and its settings, puts back the game's original `globalgamemanagers` (while it is still the one the mod patched), and removes BepInEx only if no other mod uses it.
+
+By hand:
+
 1. Close ULTRAKILL.
 2. If no other mods use BepInEx, delete the `BepInEx` folder and the doorstop files `winhttp.dll`, `doorstop_config.ini` and `.doorstop_version` from the game folder. If you have other BepInEx mods, keep those and delete only `BepInEx/plugins/VRTRAKILL/` and this mod's three files in `BepInEx/patchers/` (`VRPatcher.dll`, `AssetsTools.NET.dll`, `classdata.tpk`). Also delete `BepInEx/VRTRAKILL_update/` if it exists.
 3. In Steam, right-click ULTRAKILL > Properties > Installed Files > Verify integrity of game files. This restores the original `globalgamemanagers`, which turns VR off.

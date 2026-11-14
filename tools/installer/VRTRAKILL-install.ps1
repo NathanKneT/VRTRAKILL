@@ -9,14 +9,23 @@
 #  3. Copies every file of the zip into the game folder, except these two installer files. An existing
 #     VRTRAKILL_Config.json is kept (the mod adds new settings to it by itself).
 # It changes nothing outside the game folder and downloads nothing. -FindOnly only reports the folder it would use.
+#
+# With -Uninstall (run by "UNINSTALL VRTRAKILL.bat") it asks first, then removes the mod from the game folder:
+#  - BepInEx/plugins/VRTRAKILL (with its settings), BepInEx/VRTRAKILL_update and the mod's three files in BepInEx/patchers;
+#  - puts back the game's own ULTRAKILL_Data/globalgamemanagers from the patcher's backup, but only while the file is
+#    still the one the patcher wrote (a game update replaces it with a new original, which is left alone);
+#  - removes BepInEx itself and its loader files only when no other mod's plugin or patcher is left in it.
+# The VR files the mod added under ULTRAKILL_Data stay; without the mod nothing loads them. -Yes skips the question.
 param(
     [string]$GameDir,
     [switch]$FindOnly,
+    [switch]$Uninstall,
+    [switch]$Yes,
     [switch]$NoPause
 )
 $ErrorActionPreference = 'Stop'
 $Source = $PSScriptRoot
-$Installer = @('INSTALL VRTRAKILL.bat', 'VRTRAKILL-install.ps1')
+$Installer = @('INSTALL VRTRAKILL.bat', 'UNINSTALL VRTRAKILL.bat', 'VRTRAKILL-install.ps1')
 # never overwritten when the game folder already has them: the player's settings
 $KeepIfPresent = @('BepInEx\plugins\VRTRAKILL\VRTRAKILL_Config.json')
 
@@ -60,6 +69,44 @@ function Ask-GameDir {
     return $null
 }
 
+function Remove-Mod([string]$Dir) {
+    $removed = 0
+    foreach ($relative in 'BepInEx\plugins\VRTRAKILL', 'BepInEx\VRTRAKILL_update', 'BepInEx\patchers\VRPatcher.dll',
+                          'BepInEx\patchers\AssetsTools.NET.dll', 'BepInEx\patchers\classdata.tpk') {
+        $path = Join-Path $Dir $relative
+        if (Test-Path $path) { Remove-Item $path -Recurse -Force; $removed++ }
+    }
+    Say "Removed the mod's files ($removed items)."
+
+    $managers = Join-Path $Dir 'ULTRAKILL_Data\globalgamemanagers'
+    $backup = "$managers.vrtrakill.bak"; $state = "$managers.vrtrakill.sha256"
+    if ((Test-Path $backup) -and (Test-Path $state) -and (Test-Path $managers)) {
+        $patched = (Get-Content $state -Raw).Trim()
+        if ((Get-FileHash $managers -Algorithm SHA256).Hash -eq $patched) {
+            Copy-Item $backup $managers -Force
+            Say 'Put back the game''s original globalgamemanagers (VR turned off in the game files).'
+        } else {
+            Say 'globalgamemanagers was already replaced by a game update; left as it is.'
+        }
+    }
+    foreach ($leftover in $backup, $state) { if (Test-Path $leftover) { Remove-Item $leftover -Force } }
+
+    $others = @()
+    foreach ($folder in 'BepInEx\plugins', 'BepInEx\patchers') {
+        $path = Join-Path $Dir $folder
+        if (Test-Path $path) { $others += @(Get-ChildItem $path -Recurse -File -Force) }
+    }
+    if ($others.Count -eq 0) {
+        foreach ($relative in 'BepInEx', 'winhttp.dll', 'doorstop_config.ini', '.doorstop_version', 'changelog.txt') {
+            $path = Join-Path $Dir $relative
+            if (Test-Path $path) { Remove-Item $path -Recurse -Force }
+        }
+        Say 'Removed BepInEx too: no other mod used it.'
+    } else {
+        Say "Kept BepInEx: $($others.Count) file(s) of other mods are still in it."
+    }
+}
+
 function Finish([int]$Code) {
     if (-not $NoPause) { Say ''; Read-Host 'Press Enter to close' | Out-Null }
     exit $Code
@@ -81,6 +128,20 @@ try {
         Say "There is no ULTRAKILL.exe in $GameDir; nothing was installed." 'Red'; Finish 1
     }
     $GameDir = (Resolve-Path $GameDir).Path
+    if ($Uninstall) {
+        if (-not (Test-Path (Join-Path $GameDir 'BepInEx\plugins\VRTRAKILL'))) { Say "VRTRAKILL is not installed in $GameDir." 'Yellow'; Finish 0 }
+        if (-not $Yes) {
+            $answer = Read-Host "Remove VRTRAKILL (and its settings) from $GameDir? Type Y and press Enter"
+            if ($answer -notmatch '^[Yy]') { Say 'Nothing was removed.'; Finish 0 }
+        }
+        while (Get-Process ULTRAKILL -ErrorAction SilentlyContinue) {
+            Say 'ULTRAKILL is running. Close it, then press Enter.' 'Yellow'
+            Read-Host | Out-Null
+        }
+        Remove-Mod $GameDir
+        Say 'VRTRAKILL is uninstalled. ULTRAKILL starts as the unmodded game.' 'Green'
+        Finish 0
+    }
     if ($GameDir.TrimEnd('\') -eq $Source.TrimEnd('\')) {
         Say 'The zip was already extracted into the game folder, so VRTRAKILL is installed. Start SteamVR, then ULTRAKILL.' 'Green'; Finish 0
     }
@@ -114,7 +175,7 @@ try {
     Finish 0
 }
 catch {
-    Say ('Install failed: ' + $_.Exception.Message) 'Red'
+    Say ($(if ($Uninstall) { 'Uninstall' } else { 'Install' }) + ' failed: ' + $_.Exception.Message) 'Red'
     Say 'You can also install by hand: extract the zip into the ULTRAKILL folder (see README.md).'
     Finish 1
 }

@@ -67,6 +67,7 @@ Copy-Item (Join-Path $Repo 'LICENSE.md') $PluginDir
 Copy-Item (Join-Path $Repo 'THIRD_PARTY_NOTICES.md') $PluginDir
 # the one-click installer at the zip root (double-click INSTALL VRTRAKILL.bat): finds the game through Steam and copies the rest
 Copy-Item (Join-Path $PSScriptRoot 'installer\INSTALL VRTRAKILL.bat') $Mod
+Copy-Item (Join-Path $PSScriptRoot 'installer\UNINSTALL VRTRAKILL.bat') $Mod
 Copy-Item (Join-Path $PSScriptRoot 'installer\VRTRAKILL-install.ps1') $Mod
 
 # full: the BepInEx release zip, then the mod and BepInEx.cfg on top
