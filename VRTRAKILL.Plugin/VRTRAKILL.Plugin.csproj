@@ -215,12 +215,11 @@
     <Compile Include="Systems\UI\VRSettingsMenu.cs" />
     <Compile Include="Systems\VRCamera\ComfortVignette.cs" />
     <Compile Include="Systems\VRCamera\FramePacing.cs" />
+    <Compile Include="Systems\UI\Patches\TutorialTextP.cs" />
     <Compile Include="Systems\UI\Patches\PauseMenuP.cs" />
     <Compile Include="Systems\UI\Patches\ButtonPrompts.cs" />
     <Compile Include="Systems\UI\Patches\GamePointerP.cs" />
     <Compile Include="Systems\UI\Patches\IntroVideoP.cs" />
-    <Compile Include="Input\ControlMessages\MessageContainer.cs" />
-    <Compile Include="Input\ControlMessages\Patches.cs" />
     <Compile Include="Input\InputMap.cs" />
     <Compile Include="Input\InputVars.cs" />
     <Compile Include="Input\LeftHandedBindings.cs" />
