@@ -984,10 +984,19 @@ namespace Plugin.Systems
                 string Before = Label.text;
                 B.onClick.Invoke();
                 yield return null;
-                if (Label.text != Before || Before.StartsWith("RECENTER")) Changed++;
+                // RECENTER acts at once and CHEATS opens the game's cheat menu (in a level): neither label changes
+                if (Label.text != Before || Before.StartsWith("RECENTER") || Before.StartsWith("CHEATS")) Changed++;
                 Report.Append($"[{Before} -> {Label.text}] ");
             }
             bool Saved = File.GetLastWriteTimeUtc(File_) > Written;
+            // COMFORT was pressed first; the presses after it changed turning, the vignette and flashes by hand
+            string Comfort = "none";
+            foreach (UnityEngine.UI.Button B in Buttons)
+            {
+                string Text = B.GetComponentInChildren<TMPro.TMP_Text>().text;
+                if (Text.StartsWith("COMFORT:")) Comfort = Text; // not "COMFORT VIGNETTE"
+            }
+            Vars.Log.LogWarning($"VR settings test, preset after manual changes: {Comfort} -> {(Comfort.EndsWith("CUSTOM") ? "OK" : "DIFFERENT")}");
             Vars.Log.LogWarning($"VR settings test, presses: {Changed} of {Buttons.Length} changed, config saved {Saved}: {Report} -> {(Changed == Buttons.Length && Saved ? "OK" : "DIFFERENT")}");
             Vars.Log.LogWarning("VR settings: pressed");
             T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 3) yield return null;
