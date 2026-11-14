@@ -128,6 +128,11 @@ namespace Plugin.Systems.UI
             });
             Items.Add(new Item
             {
+                Text = () => "SCREEN FLASHES: " + (FlashLimiter.Cap >= 1f ? "FULL" : FlashLimiter.Cap <= 0f ? "OFF" : "REDUCED"),
+                Next = () => Vars.Config.Comfort.ScreenFlashes = FlashLimiter.Cap >= 1f ? "Reduced" : FlashLimiter.Cap <= 0f ? "Full" : "Off",
+            });
+            Items.Add(new Item
+            {
                 Text = () => Vars.Config.UIInteraction.WristHud ? "HUD: ON WRIST" : "HUD: FLOATING",
                 Next = () => Vars.Config.UIInteraction.WristHud = !Vars.Config.UIInteraction.WristHud,
             });

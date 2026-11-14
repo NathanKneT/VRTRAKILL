@@ -25,6 +25,9 @@ namespace Plugin.Systems.UI.Patches
                     T.transform.localScale *= 10;
                     for (int i = 0; i < T.childCount; i++)
                         T.GetChild(i).transform.localScale /= 10;
+                    // the bright ones are capped by "Screen flashes"; fades to black are left alone
+                    if (ScreenEffect == "HurtScreen" || ScreenEffect == "ParryFlash" || ScreenEffect == "White")
+                        FlashLimiter.Attach(T);
                 }
                 catch { continue; }
 
@@ -85,6 +88,7 @@ namespace Plugin.Systems.UI.Patches
         static void FlashImageTweak(FlashImage __instance)
         {
             if (!(__instance.gameObject.name.Contains("White") || __instance.gameObject.name.Contains("Black"))) return;
+            if (__instance.gameObject.name.Contains("White")) FlashLimiter.Attach(__instance);
             if (!ScaledFlashes.Add(__instance.GetInstanceID())) return;
             __instance.transform.localScale *= 20;
         }

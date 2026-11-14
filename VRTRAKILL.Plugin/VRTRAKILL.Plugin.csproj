@@ -273,6 +273,7 @@
     <Compile Include="Systems\Movement\Patches\NewMovementP.cs" />
     <Compile Include="Systems\SceneWorker.cs" />
     <Compile Include="Systems\UI\CrosshairController.cs" />
+    <Compile Include="Systems\UI\FlashLimiter.cs" />
     <Compile Include="Systems\UI\GTFOTW.cs" />
     <Compile Include="Systems\UI\HideWhenMenuActive.cs" />
     <Compile Include="Systems\UI\Patches\A.cs" />

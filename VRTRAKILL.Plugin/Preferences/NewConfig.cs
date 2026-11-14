@@ -30,9 +30,9 @@ namespace Plugin.Prefs
 
         // Version of the defaults this file was written with; null for files from before 2.0.0. See Migrate.
         [JsonProperty("Config version")] public int? ConfigVersion { get; set; }
-        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added. 4: auto height. 5: HUD on wrist. 6: "Left handed" renamed (was "Left handed (BROKEN)"). 7: "Windows key presses". 8: rumble settings. 9: comfort vignette. 10: smaller UI.
+        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added. 4: auto height. 5: HUD on wrist. 6: "Left handed" renamed (was "Left handed (BROKEN)"). 7: "Windows key presses". 8: rumble settings. 9: comfort vignette. 10: smaller UI. 11: screen flashes.
         // Bump it when settings are added, so existing files are rewritten and show the new settings.
-        public const int CurrentConfigVersion = 10;
+        public const int CurrentConfigVersion = 11;
 
         // Moves values that are still the old defaults to the new defaults, once. Returns true when the file should be
         // rewritten (which also adds settings the file does not have yet).
@@ -146,6 +146,9 @@ namespace Plugin.Prefs
             [JsonProperty("Comfort vignette")] public bool Vignette { get; set; } = false;
             // how dark the edge gets, 0 to 1
             [JsonProperty("Comfort vignette strength")] public float VignetteStrength { get; set; } = .85f;
+            // full-view white (parry) and red (damage) flashes: "Reduced" caps how bright they get, "Off" hides them,
+            // "Full" leaves them as the game draws them (Systems/UI/FlashLimiter)
+            [JsonProperty("Screen flashes")] public string ScreenFlashes { get; set; } = "Reduced";
         }
 
         [JsonProperty("DesktopView Settings")] public _DesktopView DesktopView { get; set; }
