@@ -131,6 +131,12 @@ namespace Plugin.Systems.UI
                 Text = () => Vars.Config.UIInteraction.WristHud ? "HUD: ON WRIST" : "HUD: FLOATING",
                 Next = () => Vars.Config.UIInteraction.WristHud = !Vars.Config.UIInteraction.WristHud,
             });
+            var UII = Vars.Config.UIInteraction;
+            Items.Add(new Item
+            {
+                Text = () => $"UI SIZE: {UII.UISize / .04f * 100f:0}%",
+                Next = () => UII.UISize = Step(UII.UISize, new[] { .03f, .035f, .04f, .05f, .0625f }),
+            });
             Items.Add(new Item
             {
                 Text = () => C.EnableHaptics && C.RumbleStrength > 0f ? $"RUMBLE: {C.RumbleStrength * 100:0}%" : "RUMBLE: OFF",

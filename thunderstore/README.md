@@ -91,7 +91,7 @@ If the buttons act like an older version, pick the default layout again: SteamVR
 
 ## Settings
 
-Pause the game in the headset. A VR column next to the pause menu changes the main settings at once and saves them: turn mode, turn speed, comfort vignette, HUD on the wrist or floating, rumble strength, height offset, recenter view, punch by swing or by button, and left handed (takes effect after a restart).
+Pause the game in the headset. A VR column next to the pause menu changes the main settings at once and saves them: turn mode, turn speed, UI size, comfort vignette, HUD on the wrist or floating, rumble strength, height offset, recenter view, punch by swing or by button, and left handed (takes effect after a restart).
 
 All settings are in `VRTRAKILL_Config.json`, in the mod's folder under `BepInEx/plugins` in your profile. A mod update replaces this file, so note your changes before you update.
 

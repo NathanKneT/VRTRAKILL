@@ -123,7 +123,7 @@ If the buttons act like an older version, pick the default layout again: SteamVR
 
 ## Settings
 
-Pause the game in the headset. A **VR** column next to the pause menu changes the main settings at once and saves them: turn mode (smooth, or snap 30, 45 or 90 degrees), turn speed, comfort vignette, HUD on the wrist or floating, rumble strength, height offset, recenter view, punch by swing or by button, and left handed (takes effect after a restart). Point the laser at a button and pull the trigger to move to the next value.
+Pause the game in the headset. A **VR** column next to the pause menu changes the main settings at once and saves them: turn mode (smooth, or snap 30, 45 or 90 degrees), turn speed, UI size, comfort vignette, HUD on the wrist or floating, rumble strength, height offset, recenter view, punch by swing or by button, and left handed (takes effect after a restart). Point the laser at a button and pull the trigger to move to the next value.
 
 ![The comfort vignette darkens the edge of the view while moving fast](docs/images/comfort-vignette.jpg)
 
@@ -139,6 +139,7 @@ All settings are in `BepInEx/plugins/VRTRAKILL/VRTRAKILL_Config.json`. Close the
 | `Required speed to punch` | `4.0` | Twice the hand speed in m/s that a swing needs (4 = 2 m/s). Lower it if punches do not register. |
 | `Snap turning` / `Smooth turning speed` | `false` / `300` | Snap or smooth turning on the right stick. |
 | `HUD on wrist` | `true` | Health, stamina and the weapon panel sit on your arm-hand forearm, facing you, like a watch. `false` brings back the panel floating low in the view. |
+| `UI Size (from 0 to 0.1)` | `0.04` | Size of the menus and the floating HUD: 0.04 spans about 56 degrees of your view. Raise it for bigger text, lower it if the edges are hard to read. "UI size" in the VR column changes it in the headset. |
 | `Whiplash aim marker` | `true` | A small blue marker ahead of the arm hand where the whiplash will go, while it is ready to throw. |
 | `Left handed` | `false` | Puts the guns in the left hand and the arm in the right hand, and mirrors the buttons (see Controls). Takes effect the next time VR starts. A layout you made yourself in SteamVR's binding screen still wins; pick the default there to get the mirrored one. |
 | `Comfort vignette` | `false` | Darkens the edge of the view while you move fast or turn with the stick. `Comfort vignette strength` (0 to 1, default 0.85) sets how dark. |

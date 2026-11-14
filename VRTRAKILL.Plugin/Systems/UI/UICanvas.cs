@@ -80,6 +80,8 @@ namespace Plugin.Systems.UI
             }
             LastChildren = Children;
             transform.position = Vars.MainCamera.transform.position + LastCamFwd;
+            // "UI SIZE" in the VR settings applies at once
+            if (transform.localScale.x != Scale) transform.localScale = Vector3.one * Scale;
         }
     }
 }

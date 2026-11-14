@@ -30,9 +30,9 @@ namespace Plugin.Prefs
 
         // Version of the defaults this file was written with; null for files from before 2.0.0. See Migrate.
         [JsonProperty("Config version")] public int? ConfigVersion { get; set; }
-        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added. 4: auto height. 5: HUD on wrist. 6: "Left handed" renamed (was "Left handed (BROKEN)"). 7: "Windows key presses". 8: rumble settings. 9: comfort vignette.
+        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added. 4: auto height. 5: HUD on wrist. 6: "Left handed" renamed (was "Left handed (BROKEN)"). 7: "Windows key presses". 8: rumble settings. 9: comfort vignette. 10: smaller UI.
         // Bump it when settings are added, so existing files are rewritten and show the new settings.
-        public const int CurrentConfigVersion = 9;
+        public const int CurrentConfigVersion = 10;
 
         // Moves values that are still the old defaults to the new defaults, once. Returns true when the file should be
         // rewritten (which also adds settings the file does not have yet).
@@ -45,6 +45,8 @@ namespace Plugin.Prefs
                 if (System.Math.Abs(MovementMultiplier - 0.575f) < 0.0001f) MovementMultiplier = 1f;
                 if (System.Math.Abs(MBP.PunchingSpeed - 7.5f) < 0.0001f) MBP.PunchingSpeed = new _MBP().PunchingSpeed;
             }
+            if ((ConfigVersion ?? 1) < 10 && UIInteraction != null && System.Math.Abs(UIInteraction.UISize - 0.0625f) < 0.0001f)
+                UIInteraction.UISize = new _UIInteraction().UISize;
             ConfigVersion = CurrentConfigVersion;
             return true;
         }
@@ -114,7 +116,10 @@ namespace Plugin.Prefs
         [JsonProperty("UI Interaction Settings")] public _UIInteraction UIInteraction { get; set; }
         public class _UIInteraction
         {
-            [JsonProperty("UI Size (from 0 to 0.1)")] public float UISize { get; set; } = 0.0625f;
+            // the menus and the floating HUD, as a scale of a 1920x1080 canvas 72 m away: 0.04 spans about 56 by 33 degrees.
+            // The old 0.0625 spanned about 80 degrees, which put the style meter and other edge panels where headset
+            // lenses blur ("the UI is too close, I can't read it", PS VR2 test).
+            [JsonProperty("UI Size (from 0 to 0.1)")] public float UISize { get; set; } = 0.04f;
             [JsonProperty("Controller-based")] public bool ControllerBased { get; set; } = true;
             // health and stamina on the back of the arm-hand wrist, like a watch; false keeps them floating in the view
             [JsonProperty("HUD on wrist")] public bool WristHud { get; set; } = true;
