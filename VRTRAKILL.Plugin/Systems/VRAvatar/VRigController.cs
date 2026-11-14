@@ -176,7 +176,7 @@ namespace Plugin.Systems.VRAvatar
 
             // Whiplash behavior
             if (HookArm.Instance != null && HookArm.Instance.enabled
-            && HookArm.Instance.model.activeSelf && !Vars.Config.MBP.CameraWhiplash)
+            && HookArm.Instance.model.activeSelf)
             {
                 ActiveArm.GameObject.gameObject.SetActive(false);
                 Rig.Whiplash.GameObject.gameObject.SetActive(true);

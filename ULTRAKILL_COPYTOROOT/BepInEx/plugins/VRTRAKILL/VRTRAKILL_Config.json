@@ -9,7 +9,7 @@
     "Jump multiplier": 1.0,
     "Height offset (meters)": 0.0,
     "Auto height": true,
-    "Config version": 18,
+    "Config version": 19,
     "Controller Settings": {
       "Deadzone (from 0 to 1)": 0.4,
       "Smooth turning speed": 300.0,
@@ -27,7 +27,6 @@
       "Finger tracking": false,
       "Windows key presses": false
     },
-    "Enable controller-based aiming": true,
     "CBS Settings": {
       "Enable Crosshair": true,
       "Crosshair distance": 8.0,
@@ -36,7 +35,6 @@
     "Enable movement-based punching": true,
     "MBP Settings": {
       "Required speed to punch": 4.0,
-      "WHIPLASH: camera-based aiming": false,
       "Coin follows the throw": true,
       "Parry aim": "Eyes"
     },

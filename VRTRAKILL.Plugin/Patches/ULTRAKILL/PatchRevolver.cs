@@ -12,10 +12,8 @@ internal class PatchRevolver
     [HarmonyPatch(nameof(Revolver.ThrowCoin))]
     private static bool ThrowCoin(Revolver __instance)
     {
-        // the arm hand throws it with swing punching, and whenever the coin follows the throw
-        if (Vars.Config.EnableMBP || Vars.Config.MBP.CoinThrow) __instance.camObj = Vars.NonDominantHand;
-        else if (Vars.Config.EnableCBA) __instance.camObj = Vars.DominantHand;
-        else __instance.camObj = Camera.main.gameObject;
+        // the arm hand throws it with swing punching, and whenever the coin follows the throw; else the gun hand
+        __instance.camObj = Vars.Config.EnableMBP || Vars.Config.MBP.CoinThrow ? Vars.NonDominantHand : Vars.DominantHand;
 
         // rest of the game's ThrowCoin (build 22957324), spawning from the camObj chosen above
         if (__instance.punch == null || !__instance.punch.gameObject.activeInHierarchy)
@@ -23,9 +21,8 @@ internal class PatchRevolver
         if (__instance.punch)
             __instance.punch.CoinFlip();
         MonoSingleton<PlayerAnimations>.Instance?.CoinToss();
-        // the game drops the coin 0.5 below the eye; from a hand it spawns at the hand, as before
-        Vector3 Drop = Vars.Config.EnableMBP || Vars.Config.EnableCBA ? Vector3.zero : __instance.camObj.transform.up * -0.5f;
-        Coin component = Object.Instantiate(__instance.coin, __instance.camObj.transform.position + Drop, __instance.camObj.transform.rotation).GetComponent<Coin>();
+        // the game drops the coin 0.5 below the eye; from a hand it spawns at the hand
+        Coin component = Object.Instantiate(__instance.coin, __instance.camObj.transform.position, __instance.camObj.transform.rotation).GetComponent<Coin>();
         component.sourceWeapon = __instance.gc.currentWeapon;
         // the coin falls along the player's custom gravity (inverted gravity areas)
         Vector3 vector = Vector3.down;

@@ -30,9 +30,9 @@ namespace Plugin.Prefs
 
         // Version of the defaults this file was written with; null for files from before 2.0.0. See Migrate.
         [JsonProperty("Config version")] public int? ConfigVersion { get; set; }
-        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added. 4: auto height. 5: HUD on wrist. 6: "Left handed" renamed (was "Left handed (BROKEN)"). 7: "Windows key presses". 8: rumble settings. 9: comfort vignette. 10: smaller UI. 11: screen flashes. 12: coin throw. 13: low health warning. 14: adaptive triggers. 15: weapon charge shake. 16: parry aim. 17: parry warning. 18: parry aim by the eyes.
+        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added. 4: auto height. 5: HUD on wrist. 6: "Left handed" renamed (was "Left handed (BROKEN)"). 7: "Windows key presses". 8: rumble settings. 9: comfort vignette. 10: smaller UI. 11: screen flashes. 12: coin throw. 13: low health warning. 14: adaptive triggers. 15: weapon charge shake. 16: parry aim. 17: parry warning. 18: parry aim by the eyes. 19: "Enable controller-based aiming" and "WHIPLASH: camera-based aiming" removed (they did nothing).
         // Bump it when settings are added, so existing files are rewritten and show the new settings.
-        public const int CurrentConfigVersion = 18;
+        public const int CurrentConfigVersion = 19;
 
         // Moves values that are still the old defaults to the new defaults, once. Returns true when the file should be
         // rewritten (which also adds settings the file does not have yet).
@@ -83,7 +83,6 @@ namespace Plugin.Prefs
             [JsonProperty("Windows key presses")] public bool WindowsKeyPresses { get; set; } = false;
         }
 
-        [JsonProperty("Enable controller-based aiming")] public bool EnableCBA { get; set; } = true;
         [JsonProperty("CBS Settings")] public _CBS CBS { get; set; }
         public class _CBS
         {
@@ -100,7 +99,6 @@ namespace Plugin.Prefs
         {
             // twice the hand speed in m/s; 4 = a 2 m/s swing (the old 7.5 needed 3.75 m/s, and most presses did nothing)
             [JsonProperty("Required speed to punch")] public float PunchingSpeed { get; set; } = 4f;
-            [JsonProperty("WHIPLASH: camera-based aiming")] public bool CameraWhiplash { get; set; } = false;
             // a coin tossed while the arm hand makes a throwing move flies along the throw (Patches/ULTRAKILL/PatchRevolver)
             [JsonProperty("Coin follows the throw")] public bool CoinThrow { get; set; } = true;
             // where parried projectiles go: "Eyes" where your eyes look (PS VR2 with the PSVR2 Toolkit; elsewhere, or without
