@@ -156,6 +156,12 @@ namespace Plugin.Systems.VRCamera.Patches
             if (cam == CameraConverterP.rightEye)
             {
                 rightEyeRender.Render(cam);
+                // The Limbo and space skies are a picture of the far scenery that a hidden camera renders before an
+                // eye renders, and that the walls and sky show by screen position. Only the left eye rendered it, so
+                // the right eye showed the left eye's picture: other trees, other clouds, a different image in each
+                // eye (PS VR2 test, Limbo). The right eye now renders its own, like the game does for its camera.
+                Shader.SetGlobalVector("_PortalClipPlane", Vector4.zero);
+                rightEyePP.RenderSkyboxes();
                 RenderFromRef(__instance)?.Invoke(cam); // so look-at-camera objects face both eyes
             }
 
