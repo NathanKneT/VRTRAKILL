@@ -68,7 +68,9 @@ Get the latest release from the [Releases page](../../releases). There are two z
 2. In Steam, right-click ULTRAKILL, then Manage > Browse local files. This opens the folder that has `ULTRAKILL.exe`.
 3. Extract the zip into that folder. If Windows asks to replace or merge files, say yes.
 4. Start SteamVR and connect your headset.
-5. Start ULTRAKILL from Steam.
+5. Start ULTRAKILL from Steam (or from your Steam library inside VR).
+
+The same Play button does VR and flat: if SteamVR is running when ULTRAKILL starts, the game starts in VR; if not, it starts flat on the monitor, as if the mod were not there, and says so at the top of the screen for a few seconds. See [VR or flat](#vr-or-flat).
 
 On the first start, `BepInEx/patchers/VRPatcher.dll` edits `ULTRAKILL_Data/globalgamemanagers` to turn on VR. It keeps the original as `globalgamemanagers.vrtrakill.bak`. When a game update replaces that file, the patcher patches the new one on the next start.
 
@@ -143,6 +145,7 @@ All settings are in `BepInEx/plugins/VRTRAKILL/VRTRAKILL_Config.json`. Close the
 
 | Setting | Default | What it does |
 |---|---|---|
+| `Start in VR` | `"Auto"` | `"Auto"`: VR when SteamVR is running as the game starts, flat otherwise. `"Always"`: VR every time (the game starts SteamVR). `"Never"`: flat. See [VR or flat](#vr-or-flat). |
 | `Movement multiplier` | `1.0` | Walk speed. 1 is the game's speed. Lower it if fast movement makes you sick; jumps are not affected. |
 | `Jump multiplier` | `1.0` | Jump and wall jump power. Below 1 some jumps in the levels cannot be made. |
 | `Auto height` | `true` | At the start of each level, your head is put at the game's own eye height, whatever your real height, seated or standing. Crouching and leaning stay real. Press `H` ("Recalibrate height" in the keybinds) to measure again while you play. `false` uses your real height above the floor. |
@@ -177,7 +180,8 @@ When you update from an older version, the mod changes the old defaults in your 
 
 While VR is not running, a box at the top of the game window on your monitor says why:
 
-- "SteamVR is not running": start SteamVR (PS VR2: start the PlayStation VR2 App). If SteamVR is not running when the game starts, the game starts it itself, like any VR game.
+- "SteamVR was not running, so ULTRAKILL started without VR": with `"Start in VR"` on `"Auto"` (the default) the game starts flat when SteamVR is not running. Start SteamVR first, then the game. To have the game start SteamVR itself instead, set `"Start in VR"` to `"Always"`.
+- "SteamVR is not running" (with `"Always"`): start SteamVR (PS VR2: start the PlayStation VR2 App). If SteamVR is not running when the game starts, the game starts it itself, like any VR game.
 - "SteamVR sees the headset. Starting VR in a few seconds...": SteamVR has just started; VR waits a moment so SteamVR's own apps (Home, Room Setup) do not take it away.
 - "SteamVR stopped VR for ULTRAKILL": another VR app started or SteamVR closed. Restart ULTRAKILL.
 - "SteamVR is not answering": SteamVR is stuck, often on "Unexpected SteamVR Error" because the headset is not connected. Connect and turn on the headset, then restart SteamVR; the game keeps waiting.
@@ -207,9 +211,17 @@ Extract the new zip over the old install, or update in your mod manager. Files f
 
 Once per game start, the mod asks GitHub whether a newer VRTRAKILL release exists and shows a notice in the main menu if so. It sends one plain request with no personal data, and downloads nothing unless you set `"Auto update"` to `"Download"`; `"Off"` turns the check off. What the check sends and how a signed update is installed are in [docs/UPDATER.md](docs/UPDATER.md).
 
-## Playing without VR
+## VR or flat
 
-To play flat on the monitor without uninstalling the mod, add `--novr` to the game's launch options: in Steam, right-click ULTRAKILL > Properties > General > Launch options. The mod then changes nothing for that session (`BepInEx/LogOutput.log` says so). Remove `--novr` to play in VR again.
+You do not need to uninstall the mod to play on the monitor. `"Start in VR"` in `VRTRAKILL_Config.json` decides, when the game starts:
+
+| `"Start in VR"` | The game starts |
+|---|---|
+| `"Auto"` (default) | in VR when SteamVR is running (started first, or the game launched from inside VR); flat otherwise, with a short notice at the top of the screen |
+| `"Always"` | in VR every time: it starts SteamVR itself if needed and waits for the headset (the behavior before 2.0.0) |
+| `"Never"` | flat every time |
+
+A flat start applies nothing of the mod: no patches and no SteamVR, as if it were not installed (`BepInEx/LogOutput.log` says which way it went). The game's launch options win over the setting: `--novr` always starts flat and `--vr` always starts in VR (in Steam: right-click ULTRAKILL > Properties > General > Launch options).
 
 ## Uninstall
 

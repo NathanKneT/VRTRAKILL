@@ -13,6 +13,18 @@ namespace Plugin.Systems
     {
         private static bool Done;
 
+        // Whether the test file has this line; read at once, for checks that run before VR starts. "autoflat" makes the
+        // "Auto" start act as if SteamVR were not running (flat start and its notice), without closing SteamVR.
+        public static bool Requested(string Line)
+        {
+            try
+            {
+                string File_ = Path.Combine(PluginInfo.PluginPath, "VRTRAKILL_TEST_SCENE.txt");
+                return File.Exists(File_) && Array.Exists(File.ReadAllLines(File_), L => L.Trim().Equals(Line, StringComparison.OrdinalIgnoreCase));
+            }
+            catch (Exception) { return false; }
+        }
+
         public static void OnVRStarted()
         {
             if (Done) return;

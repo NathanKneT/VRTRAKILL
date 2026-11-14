@@ -16,6 +16,11 @@ namespace Plugin.Prefs
             [JsonProperty("Recalibrate height")] public string RecalibrateHeight { get; set; } = "H";
         }
 
+        // "Auto": VR when SteamVR is running as the game starts (started first, or the game launched from inside VR), flat
+        // on the monitor otherwise, so the same Steam "Play" button does both. "Always": VR every time; the game starts
+        // SteamVR itself and waits for the headset. "Never": always flat. "--vr" / "--novr" in the launch options win.
+        [JsonProperty("Start in VR")] public string StartInVR { get; set; } = "Auto";
+
         // 1 = the game's own speed. The old default 0.575 also cut jump and wall jump power, so jumps reached about a third
         // of their height (gravity is unchanged) and tutorial jumps were impossible: the most reported gameplay complaint.
         [JsonProperty("Movement multiplier")] public float MovementMultiplier { get; set; } = 1f;
@@ -31,9 +36,9 @@ namespace Plugin.Prefs
 
         // Version of the defaults this file was written with; null for files from before 2.0.0. See Migrate.
         [JsonProperty("Config version")] public int? ConfigVersion { get; set; }
-        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added. 4: auto height. 5: HUD on wrist. 6: "Left handed" renamed (was "Left handed (BROKEN)"). 7: "Windows key presses". 8: rumble settings. 9: comfort vignette. 10: smaller UI. 11: screen flashes. 12: coin throw. 13: low health warning. 14: adaptive triggers. 15: weapon charge shake. 16: parry aim. 17: parry warning. 18: parry aim by the eyes. 19: "Enable controller-based aiming" and "WHIPLASH: camera-based aiming" removed (they did nothing). 20: streamer view replaces the desktop view. 21: streamer HUD and overlay.
+        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added. 4: auto height. 5: HUD on wrist. 6: "Left handed" renamed (was "Left handed (BROKEN)"). 7: "Windows key presses". 8: rumble settings. 9: comfort vignette. 10: smaller UI. 11: screen flashes. 12: coin throw. 13: low health warning. 14: adaptive triggers. 15: weapon charge shake. 16: parry aim. 17: parry warning. 18: parry aim by the eyes. 19: "Enable controller-based aiming" and "WHIPLASH: camera-based aiming" removed (they did nothing). 20: streamer view replaces the desktop view. 21: streamer HUD and overlay. 22: "Start in VR".
         // Bump it when settings are added, so existing files are rewritten and show the new settings.
-        public const int CurrentConfigVersion = 21;
+        public const int CurrentConfigVersion = 22;
 
         // Moves values that are still the old defaults to the new defaults, once. Returns true when the file should be
         // rewritten (which also adds settings the file does not have yet).

@@ -29,6 +29,8 @@ This version runs on the current ULTRAKILL on Steam: build 22957324 (Unity 2022.
 2. Start SteamVR and connect your headset.
 3. Start the game with "Start modded".
 
+With SteamVR running the game starts in VR; without it, it starts flat on the monitor and says so (see [VR or flat](#vr-or-flat)).
+
 A mod manager can only put files in the BepInEx folder of its profile. VR also needs files in the game's own `ULTRAKILL_Data` folder. On each start, `VRPatcher` copies these files from the mod into `ULTRAKILL_Data` if they are missing or different:
 
 - `Managed/`: the SteamVR and Unity XR DLLs
@@ -97,9 +99,9 @@ All settings are in `VRTRAKILL_Config.json`, in the mod's folder under `BepInEx/
 
 Once per start the mod asks GitHub for the latest VRTRAKILL release and shows a notice in the main menu when a newer one exists. Nothing is downloaded. Set "Auto update" to "Off" in the config file to turn the check off. Update the mod in the mod manager.
 
-## Playing without VR
+## VR or flat
 
-Start the game vanilla from your mod manager, or add `--novr` to the game's launch options (in Steam: right-click ULTRAKILL > Properties > General > Launch options); with `--novr` the mod changes nothing for that session. Remove it to play in VR again.
+With `"Start in VR"` on `"Auto"` (the default), the game starts in VR when SteamVR is running and flat on the monitor otherwise, with nothing of the mod applied. `"Always"` makes the game start SteamVR itself and wait for the headset; `"Never"` always starts flat. The launch options `--novr` and `--vr` (in Steam: right-click ULTRAKILL > Properties > General > Launch options) win over the setting. You can also start the game vanilla from your mod manager.
 
 ## Uninstall
 

@@ -28,12 +28,29 @@ namespace Plugin
         public void Awake()
         {
             Log = Logger;
-            // "--novr" in the game's launch options: the game runs flat on the monitor with nothing of the mod applied,
-            // so it can be played without a headset and without uninstalling the mod
-            if (FlatRequested())
+            // VR or flat is decided first: a flat game gets nothing of the mod (no patches, no SteamVR), so it plays
+            // like the unmodded game on the monitor
+            string Start = StartMode(out string Why);
+            if (Start == "Never")
             {
-                Log.LogMessage("\"--novr\" is in the game's launch options: the game runs flat, VRTRAKILL changes nothing. Remove it to play in VR.");
+                Log.LogMessage(Why + ": the game runs flat, VRTRAKILL changes nothing.");
                 return;
+            }
+            bool Probed = false;
+            if (Start == "Auto")
+            {
+                // "Auto": VR only if SteamVR is already running (started first, or the game launched from inside VR);
+                // the background check answers at once when it is not, and never starts SteamVR itself
+                StartProbe();
+                Probed = ProbeThread.Join(3000);
+                bool NoSteamVR = Probed && ProbeException == null && ProbeResult == EVRInitError.Init_NoServerForBackgroundApp;
+                if (NoSteamVR || Systems.DevTestHooks.Requested("autoflat"))
+                {
+                    Log.LogMessage("SteamVR is not running, so the game runs flat (\"Start in VR\": \"Auto\"); VRTRAKILL changes nothing. "
+                        + "To play in VR, start SteamVR first, or set \"Start in VR\" to \"Always\" in VRTRAKILL_Config.json.");
+                    FlatNotice.Show();
+                    return;
+                }
             }
             Debug.unityLogger.filterLogType = LogType.Warning;
             // a VR game must keep running when its desktop window loses focus (SteamVR windows, dashboard, alt-tab):
@@ -59,16 +76,29 @@ namespace Plugin
 
             // first try now, before the first scene, like before: when SteamVR is up with a headset the probe answers at
             // once and VR starts here; otherwise ModHost.Update keeps trying in the background
-            StartProbe();
-            if (ProbeThread.Join(3000)) TickVRStart();
+            if (ProbeThread == null) StartProbe();
+            if (Probed || ProbeThread.Join(3000)) TickVRStart();
         }
 
-        private static bool FlatRequested()
+        // "Auto", "Always" or "Never": the launch options "--vr" / "--novr" first, then "Start in VR" in the config.
+        private static string StartMode(out string Why)
         {
+            Why = null;
             foreach (string Arg in Environment.GetCommandLineArgs())
+            {
                 if (Arg.Equals("--novr", StringComparison.OrdinalIgnoreCase) || Arg.Equals("-novr", StringComparison.OrdinalIgnoreCase))
-                    return true;
-            return false;
+                { Why = "\"--novr\" is in the game's launch options"; return "Never"; }
+                if (Arg.Equals("--vr", StringComparison.OrdinalIgnoreCase) || Arg.Equals("-vr", StringComparison.OrdinalIgnoreCase))
+                    return "Always";
+            }
+            try
+            {
+                string Mode = Vars.Config.StartInVR ?? "Auto";
+                if (Mode.Equals("Never", StringComparison.OrdinalIgnoreCase)) { Why = "\"Start in VR\" is \"Never\" in VRTRAKILL_Config.json"; return "Never"; }
+                if (Mode.Equals("Always", StringComparison.OrdinalIgnoreCase)) return "Always";
+            }
+            catch (Exception e) { Log.LogWarning("\"Start in VR\" could not be read from the config (" + e.Message + "); using \"Auto\"."); }
+            return "Auto";
         }
 
         // ---- VR start ----
@@ -112,7 +142,7 @@ namespace Plugin
                     if (!ReportedSlowProbe && Now - ProbeStartedAt > 5f)
                     {
                         ReportedSlowProbe = true;
-                        LastInitError = "SteamVR is not answering. If it shows an error, check that the headset is connected and on (PS VR2: PlayStation VR2 App), then restart SteamVR.";
+                        LastInitError = "SteamVR is not answering. If it shows an error, check that the headset is connected and on, then restart SteamVR.";
                         StartupStatus.ReportAttempt(Math.Max(VRAttempt, 2), LastInitError);
                         Log.LogWarning(LastInitError);
                     }
@@ -189,11 +219,11 @@ namespace Plugin
                         TryFullInit();
                         return;
                     }
-                    LastInitError = "SteamVR is not running. Start SteamVR (PS VR2: start the PlayStation VR2 App).";
+                    LastInitError = "SteamVR is not running. Start SteamVR.";
                     break;
                 case EVRInitError.Init_HmdNotFound:
                 case EVRInitError.Init_HmdNotFoundPresenceFailed:
-                    LastInitError = "SteamVR does not see a headset. Turn the headset on (PS VR2: start the PlayStation VR2 App).";
+                    LastInitError = "SteamVR does not see a headset. Turn the headset on and check that SteamVR shows it.";
                     break;
                 default:
                     LastInitError = "SteamVR is not ready (" + ProbeResult + ").";
