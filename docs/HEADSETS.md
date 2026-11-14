@@ -9,6 +9,10 @@ VRTRAKILL runs through SteamVR (OpenVR) only. Every headset must reach the game 
 | PlayStation VR2 / PS VR2 Sense controllers | `playstation_vr2_sense` | Tested on hardware | `bindings_playstation_vr2_sense.json` |
 | Meta Quest 2, 3, 3S, Pro / Meta Quest Touch controllers (through SteamVR) | `oculus_touch` | Tested on hardware | `bindings_oculus_touch.json` |
 | Valve Index / Index controllers (also Virtual Desktop with "Emulate Index controllers") | `knuckles` | Configured, not tested | `bindings_knuckles.json` |
+| Steam Frame / Steam Frame controllers | `frame_controller` | Configured, not tested | `bindings_frame_controller.json` |
+| Pico 4, Pico 4 Ultra with Steam Link | `pico_controller` | Configured, not tested | `bindings_pico_controller.json` |
+| Pico 4, Pico 4 Ultra with PICO Connect | `pico_controller` (not confirmed) | Best effort | `bindings_pico_controller.json` |
+| Pico 4, Pico 4 Ultra with Virtual Desktop | `oculus_touch` | As Quest Touch | `bindings_oculus_touch.json` |
 | HTC Vive, Vive Pro / Vive wands | `vive_controller` | Configured, not tested | `bindings_vive_controller.json` |
 | Windows Mixed Reality / motion controllers | `holographic_controller` | Configured, not tested | `bindings_holographic_controller.json` |
 | HTC Vive Cosmos controllers | `vive_cosmos_controller` | Not supported | file is an empty stub |
@@ -16,7 +20,7 @@ VRTRAKILL runs through SteamVR (OpenVR) only. Every headset must reach the game 
 | Hand tracking (any headset) | none | Not supported | none |
 | OpenXR-only runtimes without SteamVR | none | Not supported | none |
 
-"Configured" means the default binding covers every game action and passes a check against the SteamVR driver's input profile. Nobody has played the game with it.
+"Configured" means the default binding covers every game action and passes a check against the SteamVR driver's input profile. Nobody has played the game with it. "Best effort" means the binding follows the controller's layout but could not be checked against its driver profile.
 
 ### What works
 
@@ -57,6 +61,16 @@ VDXR (Virtual Desktop's OpenXR runtime) is not used. "Emulate Index controllers"
 1. Start SteamVR.
 2. Start ULTRAKILL from Steam.
 
+### Steam Frame
+1. Connect the Steam Frame to the PC and start SteamVR.
+2. Start ULTRAKILL from Steam.
+
+### Pico 4
+1. Connect with Steam Link, PICO Connect or Virtual Desktop, and start SteamVR.
+2. Start ULTRAKILL from Steam.
+
+With Steam Link and PICO Connect the Pico layout applies; Virtual Desktop presents the Pico controllers as Touch controllers, so the Quest Touch layout applies. If a button does nothing with PICO Connect, connect through Steam Link or Virtual Desktop instead, and report it.
+
 ### Refresh rate
 The mod does not set or assume a refresh rate. Set 72, 80, 90 or 120 Hz in the Link, Virtual Desktop or Steam Link settings, or in SteamVR for PS VR2 and Index.
 
@@ -64,26 +78,28 @@ The mod does not set or assume a refresh rate. Set 72, 80, 90 or 120 Hz in the L
 
 `(R)` is the right controller, `(L)` is the left controller. "Double" is a fast double press. "Held" is a long press. Change any of these in SteamVR > Settings > Controllers > Manage Controller Bindings > ULTRAKILL.
 
-| Action | Quest Touch | PS VR2 Sense | Index | Vive wand | WMR |
-|---|---|---|---|---|---|
-| Move | (L) stick | (L) stick | (L) thumbstick | (L) trackpad touch | (L) stick |
-| Turn | (R) stick left / right | (R) stick left / right | (R) thumbstick left / right | (R) trackpad touch left / right | (R) stick left / right |
-| Jump | (R) A | (R) cross | (R) A | (R) trackpad click center or up | (R) trackpad click |
-| Slide / slam | (R) stick click | (R) stick click | (R) thumbstick click | (R) trackpad click down | (R) stick click |
-| Dash | (L) stick click | (L) stick click | (L) thumbstick click | (L) trackpad click center, down, left or right | (L) stick click |
-| Shoot | (R) trigger | (R) R2 | (R) trigger | (R) trigger | (R) trigger |
-| Alternate fire | (R) grip | (R) R1 | (R) grip | (R) grip | (R) grip |
-| Punch | (L) trigger | (L) L2 | (L) trigger | (L) trigger | (L) trigger |
-| Whiplash | (L) grip | (L) L1 | (L) grip | (L) grip | (L) grip |
-| Change fist (Feedbacker / Knuckleblaster) | (L) X | (L) square | (L) A | (L) menu | (L) trackpad click down |
-| Change weapon variation | (L) Y | (L) triangle | (L) B | (L) trackpad click up | (L) trackpad click up |
-| Weapon wheel | (R) B held | (R) circle held | (R) B held | (R) menu held | (R) menu held |
-| Weapon wheel scroll | (L) stick | (L) stick | (L) thumbstick | (L) trackpad touch | (L) stick |
-| Pause | (R) B double | (R) Options, or (R) circle double | (R) B double | (R) menu double | (L) menu, or (R) menu double |
-| Menu select | (R) A, or a trigger | (R) cross, or R2 / L2 | (R) A, or a trigger | (R) trackpad click center or up, or a trigger | (R) trackpad click, or a trigger |
-| Menu highlight | (L) stick | (L) stick | (L) thumbstick | (L) trackpad touch | (L) stick |
-| Menu scroll | (R) stick up / down | (R) stick up / down | (R) thumbstick up / down | (R) trackpad touch up / down | (R) stick up / down |
-| Menu back | (R) B once | (R) circle once | (R) B once | (R) menu once | (R) menu once |
+Pico controllers use the Quest Touch column.
+
+| Action | Quest Touch | PS VR2 Sense | Index | Steam Frame | Vive wand | WMR |
+|---|---|---|---|---|---|---|
+| Move | (L) stick | (L) stick | (L) thumbstick | (L) stick | (L) trackpad touch | (L) stick |
+| Turn | (R) stick left / right | (R) stick left / right | (R) thumbstick left / right | (R) stick left / right | (R) trackpad touch left / right | (R) stick left / right |
+| Jump | (R) A | (R) cross | (R) A | (R) A | (R) trackpad click center or up | (R) trackpad click |
+| Slide / slam | (R) stick click | (R) stick click | (R) thumbstick click | (R) stick click | (R) trackpad click down | (R) stick click |
+| Dash | (L) stick click | (L) stick click | (L) thumbstick click | (L) stick click | (L) trackpad click center, down, left or right | (L) stick click |
+| Shoot | (R) trigger | (R) R2 | (R) trigger | (R) trigger | (R) trigger | (R) trigger |
+| Alternate fire | (R) grip | (R) R1 | (R) grip | (R) grip | (R) grip | (R) grip |
+| Punch | (L) trigger | (L) L2 | (L) trigger | (L) trigger | (L) trigger | (L) trigger |
+| Whiplash | (L) grip | (L) L1 | (L) grip | (L) grip | (L) grip | (L) grip |
+| Change fist (Feedbacker / Knuckleblaster) | (L) X | (L) square | (L) A | (L) d-pad down | (L) menu | (L) trackpad click down |
+| Change weapon variation | (L) Y | (L) triangle | (L) B | (L) d-pad up | (L) trackpad click up | (L) trackpad click up |
+| Weapon wheel | (R) B held | (R) circle held | (R) B held | (R) B held | (R) menu held | (R) menu held |
+| Weapon wheel scroll | (L) stick | (L) stick | (L) thumbstick | (L) stick | (L) trackpad touch | (L) stick |
+| Pause | (R) B double | (R) Options, or (R) circle double | (R) B double | (R) Menu, or (R) B double | (R) menu double | (L) menu, or (R) menu double |
+| Menu select | (R) A, or a trigger | (R) cross, or R2 / L2 | (R) A, or a trigger | (R) A, or a trigger | (R) trackpad click center or up, or a trigger | (R) trackpad click, or a trigger |
+| Menu highlight | (L) stick | (L) stick | (L) thumbstick | (L) stick | (L) trackpad touch | (L) stick |
+| Menu scroll | (R) stick up / down | (R) stick up / down | (R) thumbstick up / down | (R) stick up / down | (R) trackpad touch up / down | (R) stick up / down |
+| Menu back | (R) B once | (R) circle once | (R) B once | (R) B once | (R) menu once | (R) menu once |
 
 This layout follows the common VR shooter layout: Meta's controller guidance and ULTRAKILL's own gamepad layout. No button switches to the next or previous weapon by default. Use the weapon wheel. PS VR2 Create is not bound, because SteamVR uses it for screenshots.
 
@@ -99,7 +115,8 @@ If the buttons still act like an older version, reset SteamVR to the default bin
 
 ## Known issues
 
-- PS VR2 and Quest are tested on hardware. Index, Vive and WMR bindings are checked against driver input profiles only.
+- PS VR2 and Quest are tested on hardware. Index, Steam Frame, Pico, Vive and WMR bindings are checked against driver input profiles only.
+- Pico: the layout is checked against the Pico profile of SteamVR's Steam Link driver. PICO Connect's own driver could not be checked.
 - Quest: the (L) menu button opens the SteamVR menu. Games cannot use it, so pause is a double tap of (R) B.
 - WMR: the binding was checked against Valve's WMR example binding and ALVR's WMR controller profile, not against Microsoft's own driver profile.
 - The weapon wheel button presses the key the game uses for "Last Used Weapon". The game has no keyboard key for it by default, so the mod presses the "Previous Variation" key (Q) instead, which opens the wheel when held. Bind a keyboard key to "Last Used Weapon" in the game's controls to get quick swap.

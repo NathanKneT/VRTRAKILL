@@ -31,6 +31,11 @@ MIRROR_NAMES = {
     "playstation_vr2_sense": {"l1": "r1", "l1_sensor": "r1_sensor", "l2": "r2", "l2_sensor": "r2_sensor",
                               "square": "cross", "triangle": "circle", "create": "options",
                               "left_stick": "right_stick", "left_ps": "right_ps"},
+    # SteamVR/drivers/frame_controller/resources/input/frame_controller_profile.json
+    "frame_controller": {"dpad_up": "y", "dpad_right": "b", "dpad_down": "a", "dpad_left": "x", "view": "menu"},
+    # SteamVR/drivers/vrlink/resources/input/pico_controller_profile.json has no mirror table: like Touch, a and b
+    # are on the right hand only, x and y on the left
+    "pico_controller": {"x": "a", "y": "b"},
     "knuckles": {},
     "vive_controller": {},
     "holographic_controller": {},
@@ -41,6 +46,8 @@ PROFILES = {
     "oculus_touch": r"steamapps\common\SteamVR\drivers\oculus\resources\input\touch_profile.json",
     "knuckles": r"steamapps\common\SteamVR\drivers\indexcontroller\resources\input\index_controller_profile.json",
     "vive_controller": r"steamapps\common\SteamVR\drivers\htc\resources\input\vive_controller_profile.json",
+    "frame_controller": r"steamapps\common\SteamVR\drivers\frame_controller\resources\input\frame_controller_profile.json",
+    "pico_controller": r"steamapps\common\SteamVR\drivers\vrlink\resources\input\pico_controller_profile.json",
     "playstation_vr2_sense": r"steamapps\common\PlayStation VR2 App\SteamVR_Plug-In\resources\input\playstation_vr2_sense_controller_profile.json",
 }
 
