@@ -22,6 +22,7 @@ This version runs on ULTRAKILL build 22957324 (Unity 2022.3.29f1), the current o
 - [Settings](#settings)
 - [Troubleshooting](#troubleshooting)
 - [Updating](#updating)
+- [VR or flat](#vr-or-flat)
 - [Uninstall](#uninstall)
 - [Building from source](#building-from-source)
 - [Credits](#credits)
@@ -53,13 +54,20 @@ The full list of changes is in [CHANGELOG.md](CHANGELOG.md).
 
 ## Install
 
+### In one click
+
+1. Download `VRTRAKILL-<version>-full.zip` from the [Releases page](../../releases) and extract it anywhere (your Downloads folder is fine).
+2. Double-click `INSTALL VRTRAKILL.bat` in the extracted folder.
+
+It finds ULTRAKILL through Steam, on any drive, and copies the mod into the game folder; if it cannot find the game, it asks for the folder. Your VRTRAKILL settings are kept when you update. It changes nothing outside the game folder and downloads nothing; the steps are in `VRTRAKILL-install.ps1`, a plain text file next to it. Then play: start SteamVR first for VR, or just start ULTRAKILL to play flat ([VR or flat](#vr-or-flat)).
+
 ### With a mod manager (r2modman, Gale)
 
 Install VRTRAKILL from the mod manager, start SteamVR, then start the game with "Start modded". The steps and the files the mod copies into the game folder are in [thunderstore/README.md](thunderstore/README.md).
 
 ### By hand
 
-Get the latest release from the [Releases page](../../releases). There are two zips:
+Get the latest release from the [Releases page](../../releases). There are two zips (both also work with the one-click installer):
 
 - `VRTRAKILL-<version>-full.zip`: the mod plus BepInEx 5.4.23.5 (x64). Use this one if you have never installed BepInEx.
 - `VRTRAKILL-<version>-modonly.zip`: the mod only, for players who already have BepInEx 5.4.23.5.
@@ -207,7 +215,7 @@ Open an [issue](../../issues/new/choose) with the mod and game versions, your he
 
 ## Updating
 
-Extract the new zip over the old install, or update in your mod manager. Files from older versions can stay. If SteamVR keeps an old layout, pick the default layout again (see [Controls](#controls)).
+Double-click `INSTALL VRTRAKILL.bat` from the new zip (your settings are kept), extract the new zip over the old install, or update in your mod manager. Files from older versions can stay. If SteamVR keeps an old layout, pick the default layout again (see [Controls](#controls)).
 
 Once per game start, the mod asks GitHub whether a newer VRTRAKILL release exists and shows a notice in the main menu if so. It sends one plain request with no personal data, and downloads nothing unless you set `"Auto update"` to `"Download"`; `"Off"` turns the check off. What the check sends and how a signed update is installed are in [docs/UPDATER.md](docs/UPDATER.md).
 

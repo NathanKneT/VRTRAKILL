@@ -106,7 +106,7 @@ The game's button prompts read the same files (`VRTRAKILL.Plugin/Systems/UI/Patc
 pwsh tools/package.ps1 -ULTRAKILLDir "<game folder>"
 ```
 
-builds Release, downloads the BepInEx 5.4.23.5 x64 zip from the BepInEx GitHub release, checks its SHA-256, and writes `VRTRAKILL-<version>-full.zip`, `VRTRAKILL-<version>-modonly.zip`, `SHA256SUMS.txt` and `SHA256SUMS.txt.sig` to `artifacts/`.
+builds Release, downloads the BepInEx 5.4.23.5 x64 zip from the BepInEx GitHub release, checks its SHA-256, and writes `VRTRAKILL-<version>-full.zip`, `VRTRAKILL-<version>-modonly.zip`, `SHA256SUMS.txt` and `SHA256SUMS.txt.sig` to `artifacts/`. Both zips carry the one-click installer from `tools/installer/` at their root (`INSTALL VRTRAKILL.bat`, which runs `VRTRAKILL-install.ps1`); `VRTRAKILL-install.ps1 -FindOnly` reports the game folder it would use without copying anything.
 
 `tools/sign-release.ps1` signs `SHA256SUMS.txt` with the release key, which is kept outside the repository (`%USERPROFILE%\.vrtrakill`, protected with Windows DPAPI). Use `-NoSign` for a local test build; the in-game updater does not install unsigned zips. `tools/backup-signing-key.ps1` backs the key up to 1Password and restores it on a new Windows profile (`-Restore`).
 
