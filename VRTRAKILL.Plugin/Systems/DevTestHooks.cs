@@ -697,7 +697,7 @@ namespace Plugin.Systems
             var Top = new System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<string, double>>(PerfTicks);
             Top.Sort((A, B) => B.Value.CompareTo(A.Value));
             string TopText = string.Join(", ", Top.GetRange(0, Math.Min(6, Top.Count)).ConvertAll(K => $"{K.Key} {K.Value * TickMs / Frames.Count:0.000} ms"));
-            Vars.Log.LogWarning($"Perf: scene {SceneHelper.CurrentScene}, {Frames.Count} frames in 10 s, frame avg {Avg:0.00} ms, 95% {P95:0.00} ms, max {Max:0.0} ms, {Over} over 11.2 ms; "
+            Vars.Log.LogWarning($"Perf: scene {SceneHelper.CurrentScene}, frame cap {Application.targetFrameRate}, vsync {QualitySettings.vSyncCount}, {Frames.Count} frames in 10 s, frame avg {Avg:0.00} ms, 95% {P95:0.00} ms, max {Max:0.0} ms, {Over} over 11.2 ms; "
                               + $"SteamVR presents {After.m_nNumFramePresents - Before.m_nNumFramePresents}, dropped {After.m_nNumDroppedFrames - Before.m_nNumDroppedFrames}, reprojected {After.m_nNumReprojectedFrames - Before.m_nNumReprojectedFrames}; "
                               + $"mod per-frame code {ModMs / Math.Max(1, Frames.Count):0.000} ms/frame over {Patched} methods; top: {TopText}");
             Vars.Log.LogWarning("Perf test: done.");

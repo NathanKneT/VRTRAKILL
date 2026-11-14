@@ -29,7 +29,7 @@ namespace Plugin.Systems
         {
             try { Plugin.TickVRStart(); }
             catch (System.Exception e) { if (loggedErrors++ < 3) Vars.Log.LogError("VR start step failed: " + e); }
-            try { Input.SVRActionsManager.TickVirtualInput(); }
+            try { Input.SVRActionsManager.TickVirtualInput(); VRCamera.FramePacing.Apply(); }
             catch (System.Exception e) { if (loggedErrors++ < 3) Vars.Log.LogError("Virtual input step failed: " + e); }
         }
 
