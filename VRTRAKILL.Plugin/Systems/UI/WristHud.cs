@@ -39,6 +39,7 @@ namespace Plugin.Systems.UI
 
         private Vector3 PlacedAt;
         private bool Placed, LoggedMove;
+        private int LoggedScene;
         private void BeforeRender()
         {
             if (Placed && !LoggedMove && (transform.position - PlacedAt).sqrMagnitude > .0025f)
@@ -62,6 +63,17 @@ namespace Plugin.Systems.UI
             // Registered: never auto-create a hand-less arms system
             Controllers.VRArmsSystem Arms = Vars.Registered<Controllers.VRArmsSystem>();
             if (Arms == null) return;
+            // an arms system read before the VR hands existed is an empty object at the level's origin; the panel then
+            // sat metres away ("behind me", PS VR2 test). The one on a controller is the arm hand: make it current.
+            if (Arms.CC == null)
+            {
+                Arms = null;
+                foreach (Controllers.VRArmsSystem A in FindObjectsOfType<Controllers.VRArmsSystem>())
+                    if (A.CC != null) { Arms = A; break; }
+                if (Arms == null) return;
+                Arms.MakeCurrent();
+                Vars.Log.LogWarning("Wrist HUD: the current arm system had no controller (made before the VR hands); switched to the arm hand's.");
+            }
             Vector3 Head = HeadPosition();
             if (Head == Vector3.zero) return;
             if (--FramesToMeasure <= 0) { Measure(); FramesToMeasure = MeasureEvery; }
@@ -81,6 +93,13 @@ namespace Plugin.Systems.UI
             // put the middle of what is shown at the wrist point, not the canvas's pivot
             transform.position = Pos - transform.TransformVector(ContentCenter);
             PlacedAt = transform.position; Placed = true;
+            // once a level: where the panel ended up, to tell a placement problem from a tracking one in a test log
+            int SceneNow = gameObject.scene.handle;
+            if (LoggedScene != SceneNow)
+            {
+                LoggedScene = SceneNow;
+                Vars.Log.LogInfo($"Wrist HUD: on {Hand.name}, hand {(Hand.position - Head).magnitude:0.00} m from the head, panel {(transform.position - Head).magnitude:0.00} m from the head and {(transform.position - Hand.position).magnitude:0.00} m from the hand.");
+            }
         }
 
         // Finds the bounds of the visible graphics in the canvas's local units.
