@@ -1,0 +1,81 @@
+name: Bug report
+description: Something does not work in VR
+title: "[Bug] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Check the [Troubleshooting](../blob/HEAD/README.md#troubleshooting) section and the existing issues first.
+  - type: input
+    id: mod-version
+    attributes:
+      label: Mod version
+      description: BepInEx/LogOutput.log says "Loading [VRTRAKILL <version>]".
+      placeholder: "2.0.0"
+    validations:
+      required: true
+  - type: input
+    id: game-build
+    attributes:
+      label: Game build
+      description: BepInEx/LogOutput.log says "ULTRAKILL build <number>".
+      placeholder: "22957324"
+    validations:
+      required: true
+  - type: dropdown
+    id: headset
+    attributes:
+      label: Headset
+      options:
+        - PlayStation VR2 (PC adapter)
+        - Meta Quest 2, 3, 3S or Pro
+        - Valve Index
+        - Steam Frame
+        - Pico 4 or Pico 4 Ultra
+        - HTC Vive or Vive Pro
+        - Windows Mixed Reality
+        - Other (say which below)
+    validations:
+      required: true
+  - type: input
+    id: connection
+    attributes:
+      label: Connection
+      description: How the headset reaches SteamVR.
+      placeholder: "PS VR2 App, Quest Link cable, Air Link, Virtual Desktop, Steam Link, PICO Connect..."
+  - type: dropdown
+    id: install
+    attributes:
+      label: Install
+      options:
+        - Zip in the game folder
+        - Mod manager (r2modman, Gale, Thunderstore Mod Manager)
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+      placeholder: |
+        1. Start Level 1-1
+        2. Hold the weapon wheel button
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: |
+        Drag both files here, from the session where the problem happened:
+        - BepInEx/LogOutput.log in the game folder (mod manager: in the profile folder)
+        - %USERPROFILE%\AppData\LocalLow\Hakita\ULTRAKILL\Player.log
+    validations:
+      required: true
+  - type: textarea
+    id: media
+    attributes:
+      label: Screenshots or video
+      description: Optional. A capture of the headset view or the desktop window helps a lot.

@@ -174,7 +174,7 @@ namespace Plugin.Prefs
             Misc ??= new _Misc();
         }
 
-        [JsonProperty("Auto update")] public string AutoUpdate { get; set; } = "Notify"; // Off, Notify or Download; see README "Updates"
+        [JsonProperty("Auto update")] public string AutoUpdate { get; set; } = "Notify"; // Off, Notify or Download; see docs/UPDATER.md
 
         // Creates a config with default settings and the current game binds.
         public NewConfig()

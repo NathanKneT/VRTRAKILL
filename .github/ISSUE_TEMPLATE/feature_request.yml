@@ -1,0 +1,24 @@
+name: Feature request
+description: An idea that would make the game better in VR
+title: "[Idea] "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is missing or awkward
+      description: What you try to do in VR, and what gets in the way.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+      description: How it could work. Other VR games that do it well are useful references.
+    validations:
+      required: true
+  - type: input
+    id: headset
+    attributes:
+      label: Headset
+      placeholder: "PS VR2, Quest 3, Index..."
