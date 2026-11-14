@@ -86,9 +86,11 @@ namespace Plugin.Systems.VRCamera
             if (Comparing) DrawHeadset(L, R);
         }
 
-        // The comparison picture: the same cameras at the raw head pose (middle of the eyes, the left eye's rotation), so it
-        // shakes and rolls like a plain recording of the headset; half the height of the streamer picture to keep the
-        // cost down. The cameras go back to the smoothed pose afterwards.
+        // The comparison picture, made to look like a plain recording of the headset (the SteamVR mirror in a 16:9
+        // window): the left eye's own position and rotation, so it shakes and rolls with the head, and the eye's own
+        // horizontal field of view cropped to 16:9, with what the eye sees in front of it (the comfort vignette, the
+        // game's style panel). Half the height of the streamer picture to keep the cost down. The cameras go back to the
+        // smoothed pose afterwards.
         private void DrawHeadset(Camera L, Camera R)
         {
             int H = Mathf.Clamp(Vars.Config.StreamerView.Height / 2, 360, 1080), W = Mathf.RoundToInt(H * 16f / 9f);
@@ -100,8 +102,12 @@ namespace Plugin.Systems.VRCamera
             }
             Transform T = World.transform;
             Vector3 Smooth = T.position; Quaternion SmoothRot = T.rotation;
-            T.SetPositionAndRotation((L.transform.position + R.transform.position) * .5f, L.transform.rotation);
-            try { Draw(L, HeadsetTarget); }
+            T.SetPositionAndRotation(L.transform.position, L.transform.rotation);
+            // the eye's horizontal half-width from its projection (m00 = 1 / tan of the half angle)
+            Matrix4x4 Eye = L.GetStereoProjectionMatrix(Camera.StereoscopicEye.Left);
+            float HalfWidth = Eye.m00 > .1f ? 1f / Eye.m00 : Mathf.Tan(50f * Mathf.Deg2Rad);
+            float Vertical = 2f * Mathf.Atan(HalfWidth * 9f / 16f) * Mathf.Rad2Deg;
+            try { Draw(L, HeadsetTarget, Vertical, ForViewers: false); }
             finally { T.SetPositionAndRotation(Smooth, SmoothRot); }
         }
 
@@ -147,11 +153,14 @@ namespace Plugin.Systems.VRCamera
             return true;
         }
 
-        private void Draw(Camera L, RenderTexture Into)
+        // ForViewers: hides what belongs to the player's eyes (the vignette) and the game's floating style panel, which
+        // the monitor HUD replaces. VerticalFov below 0: the "Field of view" setting.
+        private void Draw(Camera L, RenderTexture Into, float VerticalFov = -1f, bool ForViewers = true)
         {
             World.nearClipPlane = L.nearClipPlane; World.farClipPlane = L.farClipPlane;
             World.backgroundColor = L.backgroundColor; World.clearFlags = L.clearFlags; World.cullingMask = L.cullingMask;
-            float Vertical = 2f * Mathf.Atan(Mathf.Tan(Mathf.Clamp(Vars.Config.StreamerView.FieldOfView, 30f, 150f) * .5f * Mathf.Deg2Rad) * 9f / 16f) * Mathf.Rad2Deg;
+            float Vertical = VerticalFov > 0f ? VerticalFov
+                : 2f * Mathf.Atan(Mathf.Tan(Mathf.Clamp(Vars.Config.StreamerView.FieldOfView, 30f, 150f) * .5f * Mathf.Deg2Rad) * 9f / 16f) * Mathf.Rad2Deg;
             World.fieldOfView = UI.fieldOfView = Vertical;
             World.aspect = UI.aspect = 16f / 9f;
             if (Vars.UICamera != null) { UI.cullingMask = Vars.UICamera.cullingMask; UI.farClipPlane = Vars.UICamera.farClipPlane; }
@@ -159,13 +168,13 @@ namespace Plugin.Systems.VRCamera
             World.targetTexture = UI.targetTexture = Into;
 
             // the vignette ring sits in front of the eyes; it is theirs, not the viewers'
-            Renderer Ring = ComfortVignette.Ring;
+            Renderer Ring = ForViewers ? ComfortVignette.Ring : null;
             bool RingWas = Ring != null && Ring.enabled;
             if (Ring != null) Ring.enabled = false;
             // The game's style panel floats beside the view in VR and covered a good part of the picture, next to the
             // monitor HUD's own rank, meter and bonus list. While that HUD shows, the panel is moved far below for this
             // render only (a world space canvas is drawn where its transform is, with no rebuild).
-            Transform Style = Vars.Config.StreamerView.Hud != "Off" ? StylePanel() : null;
+            Transform Style = ForViewers && Vars.Config.StreamerView.Hud != "Off" ? StylePanel() : null;
             Vector3 StyleAt = Style != null ? Style.position : default;
             if (Style != null) Style.position = StyleAt + Vector3.down * 100000f;
             try { World.Render(); UI.Render(); }

@@ -38,7 +38,7 @@ In the "Streamer view" section of `BepInEx/plugins/VRTRAKILL/VRTRAKILL_Config.js
 | `Height in pixels` | `1080` | The picture size: 1080 is 1920x1080, 1440 is 2560x1440. Bigger costs the headset more. |
 | `HUD` | `"Medium"` | `"Off"`, `"Small"`, `"Medium"` or `"Large"`. |
 | `Overlay` | `"Always"` | `"Always"`, `"Parries"` or `"Off"`. |
-| `Headset comparison` | `"Off"` | `"Corner"` puts the raw headset view, shaking and rolling with your head like a plain mirror recording, in a framed picture at the top left; `"Side by side"` shows it on the left and the streamer view on the right, each labelled. Cycle it with `Y` or COMPARE in the VR column. Side by side hides the gaze and parry marks. It draws the scene a second time, at half the picture's height. |
+| `Headset comparison` | `"Off"` | `"Corner"` puts the raw headset view, shaking and rolling with your head like a plain mirror recording, in a framed picture at the top left; `"Side by side"` shows it on the left and the streamer view on the right, each labelled. Cycle it with `Y` or COMPARE in the VR column. The headset side is one eye with the headset's own field of view, the comfort vignette and the game's floating panels, like a plain mirror recording; the streamer side keeps the gaze ring, the parry marks and the HUD. It draws the scene a second time, at half the picture's height. |
 
 ## Showing the difference
 

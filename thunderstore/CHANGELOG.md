@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Headset comparison for videos: `Y` (or COMPARE in the VR column) shows the raw headset view, shaking and rolling with the head like a plain mirror recording, next to the streamer view, in a corner or side by side, each labelled. "Headset comparison" in the "Streamer view" settings (config version 23).
+- Headset comparison for videos: `Y` (or COMPARE in the VR column) shows the raw headset view, shaking and rolling with the head like a plain mirror recording, next to the streamer view, in a corner or side by side, each labelled. The headset side is one eye with the headset's own field of view, the comfort vignette and the game's floating panels, like a plain mirror recording; the streamer side keeps the gaze ring, the parry marks and the HUD. "Headset comparison" in the "Streamer view" settings (config version 23).
 
 ## 2.0.1
 

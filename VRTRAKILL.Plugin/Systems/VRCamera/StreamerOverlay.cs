@@ -51,6 +51,9 @@ namespace Plugin.Systems.VRCamera
         // the headset comparison: the raw headset picture, and in Side by side the smoothed one beside it
         private RectTransform HeadsetFrame, SmoothFrame; private RawImage HeadsetImage, SmoothImage;
         private TMP_Text HeadsetLabel, SmoothLabel; private string LaidOutCompare;
+        // where the streamer picture is, as a fraction of the full frame: all of it, or the right half side by side;
+        // the gaze, parry and warning marks are placed inside it
+        private Rect Area = new Rect(0, 0, 1, 1);
         // a trigger label shows when it changes (a charge step, READY, LOCKED, another weapon) and then fades
         private string GunShown, ArmShown; private float GunChanged = -10f, ArmChanged = -10f;
         private bool FontSet;
@@ -189,7 +192,7 @@ namespace Plugin.Systems.VRCamera
             if (!Show) return;
             Picture.texture = StreamerView.Picture;
             Letterbox();
-            bool SideBySide = UpdateComparison();
+            UpdateComparison();
             Shown++;
             // the game's font is loaded with its UI, after this canvas is made
             if (!FontSet && GameFont() is TMP_FontAsset Font)
@@ -210,8 +213,7 @@ namespace Plugin.Systems.VRCamera
                     + $"picture {View.rect.width:0}x{View.rect.height:0} of {Screen.width}x{Screen.height}, texture {(Picture.texture != null ? Picture.texture.width + "x" + Picture.texture.height : "none")}, HUD shown {Hud.gameObject.activeInHierarchy}, headset mirror {Unity.XR.OpenVR.OpenVRSettings.GetSettings()?.GetMirrorViewMode()}, Unity game view {UnityEngine.XR.XRSettings.gameViewRenderMode}.");
             }
             string Mode = Vars.Config.StreamerView.Overlay;
-            // side by side, the pictures are half size and the gaze and parry marks would land in the wrong place
-            bool On = Mode != "Off" && !SideBySide;
+            bool On = Mode != "Off";
             float Now = Time.unscaledTime;
             UpdateGaze(Cam, On && (Mode == "Always" || Now - LastParryTime < 1f));
             UpdateParry(Cam, On ? Now - LastParryTime : 10f);
@@ -227,8 +229,9 @@ namespace Plugin.Systems.VRCamera
 
         // ---- Headset comparison ----
         // Corner: the raw headset picture in a framed corner at the top left, over the smoothed view. Side by side: the
-        // raw picture on the left and the smoothed one on the right, each labelled; the full-size picture is made
-        // transparent (it stays enabled for KeepAlive). Returns whether it is side by side.
+        // raw picture on the left and the smoothed one on the right, each labelled, with the gaze, parry and warning
+        // marks on the right one (Area): the difference viewers get is the steadiness and these. The full-size picture
+        // is made transparent (it stays enabled for KeepAlive). Returns whether it is side by side.
         private bool UpdateComparison()
         {
             string Mode = Vars.Config.StreamerView.Comparison;
@@ -245,6 +248,15 @@ namespace Plugin.Systems.VRCamera
             if (Layout != LaidOutCompare)
             {
                 LaidOutCompare = Layout;
+                // the streamer picture's place in the frame: the inside of the right-hand frame side by side (968..1916
+                // across, 274..806 up, of 1920x1080), else all of it; the parry and warning texts follow it
+                Area = Side ? new Rect(968f / 1920f, 274f / 1080f, 948f / 1920f, 532f / 1080f) : new Rect(0, 0, 1, 1);
+                foreach (var (Label, Height) in new[] { (ParryText, .88f), (WarningText, .38f) })
+                {
+                    RectTransform Box = (RectTransform)Label.transform.parent;
+                    Box.anchorMin = Box.anchorMax = Box.pivot = new Vector2(Area.x + Area.width * .5f, Area.y + Area.height * Height);
+                    Box.localScale = Vector3.one * Mathf.Max(.6f, Area.width);
+                }
                 if (Corner) Put(HeadsetFrame, new Vector2(0, 1), new Vector2(24, -24), new Vector2(584, 332)); // a 576x324 picture
                 if (Side)
                 {
@@ -454,9 +466,9 @@ namespace Plugin.Systems.VRCamera
             I.enabled = C.a > .005f;
             if (!I.enabled) return;
             RectTransform R = I.rectTransform;
-            R.anchorMin = R.anchorMax = new Vector2(Mathf.Clamp01(P.x / 1920f), Mathf.Clamp01(P.y / 1080f));
+            R.anchorMin = R.anchorMax = new Vector2(Area.x + Mathf.Clamp01(P.x / 1920f) * Area.width, Area.y + Mathf.Clamp01(P.y / 1080f) * Area.height);
             R.anchoredPosition = Vector2.zero;
-            R.localScale = Vector3.one * Scale;
+            R.localScale = Vector3.one * Scale * Mathf.Max(.6f, Area.width);
             I.color = C;
         }
 
