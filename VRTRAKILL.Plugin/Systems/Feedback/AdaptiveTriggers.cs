@@ -11,15 +11,18 @@ namespace Plugin.Systems.Feedback
     // adaptive triggers unused; the open source PSVR2 Toolkit (github.com/BnuuySolutions/PSVR2Toolkit, MIT) adds them and
     // takes effect commands over a local TCP connection on port 3364 (its "legacy IPC": an 8-byte header, a handshake,
     // then one command per send). The gun hand's trigger gets an effect per weapon (a crisp break on the revolver, a
-    // heavy one on the shotgun, rising resistance on the railcannon, a rattle on the nailgun...), and the arm hand's a
-    // light click for the Feedbacker and a firm push for the Knuckleblaster. Menus, the shop and pause free both
-    // triggers, so clicking stays light. Without the Toolkit, or with other controllers, nothing is sent.
+    // heavy one on the shotgun, a rattle on the nailgun, a hum on the charged railcannon...), and the arm hand's a
+    // light click for the Feedbacker and a firm push for the Knuckleblaster. The gun trigger also follows the weapon's
+    // state: the break grows heavier while a charge builds (Piercer, shotgun pump and core, cannonball, jackhammer
+    // swing), the trigger hums once the charge is full or the railcannon is ready, and it locks stiff while the
+    // railcannon recharges or the nailgun has burnt out. Menus, the shop and pause free both triggers, so clicking stays
+    // light. Without the Toolkit, or with other controllers, nothing is sent.
     // "Adaptive triggers" in the controller settings (TRIGGERS in the VR column) turns it off.
     internal static class AdaptiveTriggers
     {
         private const int Port = 3364;
         private const ushort IpcVersion = 1; // the oldest: accepted by every Toolkit server; it only changes gaze data
-        private const ushort CmdHandshake = 2, CmdHandshakeResult = 3, CmdOff = 6, CmdFeedback = 7, CmdWeapon = 8, CmdVibration = 9, CmdSlope = 11;
+        private const ushort CmdHandshake = 2, CmdHandshakeResult = 3, CmdOff = 6, CmdFeedback = 7, CmdWeapon = 8, CmdVibration = 9;
         private const byte Left = 0, Right = 1;
 
         private static Thread Worker;
@@ -27,7 +30,7 @@ namespace Plugin.Systems.Feedback
         private static readonly Queue<byte[]> Pending = new Queue<byte[]>();
         private static volatile bool Wanted, Connected, Stopping;
         private static readonly string[] Sent = new string[2];
-        private static GameObject CachedWeapon; private static string CachedWeaponKind;
+        private static GameObject CachedWeapon; private static string CachedWeaponKind; private static Component CachedComponent;
 
         // Called once a frame on the main thread: works out each trigger's effect and queues the ones that changed.
         public static void Tick()
@@ -67,18 +70,53 @@ namespace Plugin.Systems.Feedback
         {
             GunControl GC = MonoSingleton<GunControl>.Instance;
             GameObject W = GC != null ? GC.currentWeapon : null;
-            if (W != CachedWeapon) { CachedWeapon = W; CachedWeaponKind = Kind(W); }
+            if (W != CachedWeapon) { CachedWeapon = W; CachedWeaponKind = Kind(W, out CachedComponent); }
+            if (CachedComponent == null) return ("off", Off(Hand));
             switch (CachedWeaponKind)
             {
-                case "revolver": return ("revolver", Weapon(Hand, 3, 5, 5));       // a crisp break, like a trigger
-                case "shotgun": return ("shotgun", Weapon(Hand, 2, 5, 8));         // a long, heavy break
-                case "jackhammer": return ("jackhammer", Feedback(Hand, 2, 6));    // firm all the way
-                case "nailgun": return ("nailgun", Vibration(Hand, 7, 4, 40));     // a rattle once it fires
-                case "railcannon": return ("railcannon", Slope(Hand, 1, 8, 2, 8)); // harder the further you pull
-                case "rocket": return ("rocket", Weapon(Hand, 4, 5, 7));           // a late, firm break
+                case "revolver":
+                    Revolver R = (Revolver)CachedComponent;
+                    if (R.pierceShotCharge >= 100f) return ("revolver ready", Ready(Hand));
+                    if (R.pierceShotCharge > 0f) return Charging("revolver", Hand, R.pierceShotCharge / 100f, 3, 5, 5);
+                    return ("revolver", Weapon(Hand, 3, 5, 5));                     // a crisp break, like a trigger
+                case "shotgun":
+                    Shotgun S = (Shotgun)CachedComponent;
+                    if (S.variation == 1 && S.primaryCharge >= 3) return ("shotgun overpumped", Vibration(Hand, 1, 7, 50)); // one more pump explodes
+                    if (S.variation == 1 && S.primaryCharge > 0) return Charging("shotgun", Hand, S.primaryCharge / 3f, 2, 5, 6);
+                    if (S.charging) return Charging("shotgun", Hand, S.grenadeForce / 60f, 2, 5, 6);
+                    return ("shotgun", Weapon(Hand, 2, 5, 6));                      // a long, heavy break
+                case "jackhammer":
+                    ShotgunHammer H = (ShotgunHammer)CachedComponent;
+                    if (H.chargingSwing && H.swingCharge >= 1f) return ("jackhammer ready", Ready(Hand));
+                    if (H.chargingSwing) { int L = Level(H.swingCharge); return ("jackhammer " + L, Feedback(Hand, 2, (byte)Mathf.Min(8, 5 + L))); }
+                    return ("jackhammer", Feedback(Hand, 2, 6));                    // firm all the way
+                case "nailgun":
+                    if (((Nailgun)CachedComponent).burnOut) return ("nailgun burnt out", Locked(Hand));
+                    return ("nailgun", Vibration(Hand, 7, 4, 40));                  // a rattle once it fires
+                case "railcannon":
+                    WeaponCharges Charges = MonoSingleton<WeaponCharges>.Instance;
+                    if (Charges != null && Charges.raicharge < 5f && !ULTRAKILL.Cheats.NoWeaponCooldown.NoCooldown) return ("railcannon charging", Locked(Hand));
+                    return ("railcannon", Ready(Hand));
+                case "rocket":
+                    RocketLauncher RL = (RocketLauncher)CachedComponent;
+                    if (RL.cbCharge >= 1f) return ("rocket ready", Ready(Hand));
+                    if (RL.cbCharge > 0f) return Charging("rocket", Hand, RL.cbCharge, 4, 5, 6);
+                    return ("rocket", Weapon(Hand, 4, 5, 6));                       // a late, firm break
                 default: return ("off", Off(Hand));
             }
         }
+
+        // A charge in four steps, each a heavier break than the last, up to the strongest (8).
+        private static (string, byte[]) Charging(string Name, byte Hand, float Charge, byte Start, byte End, byte Strength)
+        {
+            int L = Level(Charge);
+            return (Name + " " + L, Weapon(Hand, Start, End, (byte)Mathf.Min(8, Strength + L)));
+        }
+        private static int Level(float Charge) => Mathf.Clamp(Mathf.CeilToInt(Charge * 4f), 1, 4);
+        // a hum from the first tenth of the pull: charged, fire when you like
+        private static byte[] Ready(byte Hand) => Vibration(Hand, 1, 3, 30);
+        // a stiff wall from the first tenth: this weapon cannot fire yet
+        private static byte[] Locked(byte Hand) => Feedback(Hand, 1, 8);
 
         private static (string, byte[]) ArmEffect(byte Hand)
         {
@@ -89,15 +127,16 @@ namespace Plugin.Systems.Feedback
             return ("feedbacker", Weapon(Hand, 3, 5, 3));
         }
 
-        private static string Kind(GameObject W)
+        private static string Kind(GameObject W, out Component C)
         {
+            C = null;
             if (W == null) return null;
-            if (W.GetComponent<Revolver>() != null) return "revolver";
-            if (W.GetComponent<ShotgunHammer>() != null) return "jackhammer";
-            if (W.GetComponent<Shotgun>() != null) return "shotgun";
-            if (W.GetComponent<Nailgun>() != null) return "nailgun";
-            if (W.GetComponent<Railcannon>() != null) return "railcannon";
-            if (W.GetComponent<RocketLauncher>() != null) return "rocket";
+            if ((C = W.GetComponent<Revolver>()) != null) return "revolver";
+            if ((C = W.GetComponent<ShotgunHammer>()) != null) return "jackhammer";
+            if ((C = W.GetComponent<Shotgun>()) != null) return "shotgun";
+            if ((C = W.GetComponent<Nailgun>()) != null) return "nailgun";
+            if ((C = W.GetComponent<Railcannon>()) != null) return "railcannon";
+            if ((C = W.GetComponent<RocketLauncher>()) != null) return "rocket";
             return null;
         }
 
@@ -114,7 +153,6 @@ namespace Plugin.Systems.Feedback
         private static byte[] Feedback(byte Hand, byte Position, byte Strength) => Packet(CmdFeedback, Hand, Position, Strength);
         private static byte[] Weapon(byte Hand, byte Start, byte End, byte Strength) => Packet(CmdWeapon, Hand, Start, End, Strength);
         private static byte[] Vibration(byte Hand, byte Position, byte Amplitude, byte Frequency) => Packet(CmdVibration, Hand, Position, Amplitude, Frequency);
-        private static byte[] Slope(byte Hand, byte Start, byte End, byte StartStrength, byte EndStrength) => Packet(CmdSlope, Hand, Start, End, StartStrength, EndStrength);
 
         private static void Queue(byte[] P)
         {
