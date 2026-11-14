@@ -22,6 +22,8 @@ VRTRAKILL runs through SteamVR (OpenVR) only. Every headset must reach the game 
 
 "Configured" means the default binding covers every game action and passes a check against the SteamVR driver's input profile. Nobody has played the game with it. "Best effort" means the binding follows the controller's layout but could not be checked against its driver profile.
 
+The game's prompts ("press ... to jump", the tutorial, hints) name the button of the controller you hold, as that controller labels it: Cross on PS VR2, A on Quest, D-pad down on Steam Frame, and so on. They follow the default layout; a layout you made yourself in SteamVR is not read.
+
 ### What works
 
 - PS VR2 Sense controllers and Meta Quest Touch controllers: played on this game build through SteamVR. Head and hand tracking, the actions in the button map below and the menus with the controller laser are in use.

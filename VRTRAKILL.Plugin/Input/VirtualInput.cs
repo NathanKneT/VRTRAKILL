@@ -18,6 +18,8 @@ namespace Plugin.Systems.Input
     internal static unsafe class VirtualInput
     {
         private static Keyboard Kb;
+        // the virtual keyboard, or null before it is added
+        public static Keyboard KeyboardDevice => Ready ? Kb : null;
         private static Mouse Ms;
         private static KeyboardState KbState;
         private static MouseState MsState;

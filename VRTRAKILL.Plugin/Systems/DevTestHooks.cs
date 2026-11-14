@@ -39,6 +39,7 @@ namespace Plugin.Systems
                     PerfTest = Array.Exists(Lines, L => L.Trim().Equals("perftest", StringComparison.OrdinalIgnoreCase));
                     LevelSweep = Array.Exists(Lines, L => L.Trim().Equals("levelsweep", StringComparison.OrdinalIgnoreCase));
                     PauseDump = Array.Exists(Lines, L => L.Trim().Equals("pausedump", StringComparison.OrdinalIgnoreCase));
+                    PromptTest = Array.Exists(Lines, L => L.Trim().Equals("prompttest", StringComparison.OrdinalIgnoreCase));
                     VRSettingsTest = Array.Exists(Lines, L => L.Trim().Equals("vrsettingstest", StringComparison.OrdinalIgnoreCase));
                     Unfocused = Array.Exists(Lines, L => L.Trim().Equals("unfocused", StringComparison.OrdinalIgnoreCase));
                 }
@@ -71,6 +72,7 @@ namespace Plugin.Systems
             if (PerfTest) yield return MeasurePerformance(Clock);
             if (LevelSweep) yield return SweepLevels(Clock);
             if (PauseDump) yield return DumpPause(Clock);
+            if (PromptTest) yield return CheckPrompts(Clock);
             if (VRSettingsTest) yield return CheckVRSettings(Clock);
             if (EndTest) yield return FinishLevel(Clock);
             if (JumpTest) yield return MeasureJumps(Clock);
@@ -896,6 +898,44 @@ namespace Plugin.Systems
             VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestLeftPose = null;
             VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestRightPose = null;
             Vars.Log.LogWarning("VR settings test: done.");
+        }
+
+        // A line "prompttest": for each controller type the mod has a layout for, asks the game for the binding text of
+        // its main actions (the text its prompts show) and logs it, then the same for PS VR2 with "Left handed" on.
+        private static bool PromptTest;
+        private static string SafeBinding(InputManager IM, string A)
+        {
+            try { return IM.GetBindingString(A); }
+            catch (Exception E) { return "(" + E.GetType().Name + ", action " + (IM.InputSource.Actions.FindAction(A) == null ? "not found" : "found") + ")"; }
+        }
+        private static IEnumerator CheckPrompts(System.Diagnostics.Stopwatch Clock)
+        {
+            double T = Clock.Elapsed.TotalSeconds;
+            while (Clock.Elapsed.TotalSeconds < T + 60 && (Vars.IsMainMenu || Vars.Registered<NewMovement>() == null)) yield return null;
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 2) yield return null;
+            InputManager IM = MonoSingleton<InputManager>.Instance;
+            string[] Actions = { "Jump", "Dodge", "Slide", "Punch", "Hook", "Primary Fire", "Secondary Fire", "Change Fist", "Next Variation", "Last Used Weapon", "Pause", "Move", "Look", "Revolver" };
+            Vars.Log.LogWarning("Prompt test, flat text: " + string.Join(", ", Array.ConvertAll(Actions, A => A + "=" + SafeBinding(IM, A))));
+            string[] Types = { "playstation_vr2_sense", "oculus_touch", "knuckles", "frame_controller", "pico_controller", "vive_controller", "holographic_controller" };
+            bool WasLeft = Vars.Config.Controllers.LeftHanded;
+            foreach (bool Left in new[] { false, true })
+            {
+                Vars.Config.Controllers.LeftHanded = Left;
+                foreach (string Ty in Types)
+                {
+                    if (Left && Ty != "playstation_vr2_sense" && Ty != "frame_controller") continue;
+                    UI.Patches.ButtonPrompts.TestControllerType = Ty;
+                    Vars.Log.LogWarning($"Prompt test, {Ty}{(Left ? " left handed" : "")}: " + string.Join(", ", Array.ConvertAll(Actions, A => A + "=" + SafeBinding(IM, A))));
+                    yield return null;
+                }
+            }
+            // by action id too (HudMessage and TextGetControl pass the Guid)
+            UI.Patches.ButtonPrompts.TestControllerType = "playstation_vr2_sense";
+            Vars.Config.Controllers.LeftHanded = false;
+            Vars.Log.LogWarning($"Prompt test, by id: Jump={IM.GetBindingString(IM.InputSource.Jump.Action.id)}, Punch={IM.GetBindingString(IM.InputSource.Punch.Action.id)}");
+            UI.Patches.ButtonPrompts.TestControllerType = null;
+            Vars.Config.Controllers.LeftHanded = WasLeft;
+            Vars.Log.LogWarning("Prompt test: done.");
         }
 
         // A second line "jumptest" in the file: once the player has stood on the ground for 2 s, jump three times through
