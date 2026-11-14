@@ -101,7 +101,11 @@ namespace Plugin.Systems.VRCamera
         }
 
 
-        // Eases toward the target: speed above a run, and stick turning.
+        // Eases toward the target: speed above a run, stick turning, and the sudden moves of the game. Changes of speed
+        // and vertical motion upset the inner ear more than a steady speed (VR comfort guidance), and ULTRAKILL is made of
+        // them: a dash, a slam, a long fall, a launch by an explosion or the whiplash all darken the edge now, not only
+        // a fast run ("it makes me a bit sick", PS VR2 test).
+        private static Vector3 LastVelocity;
         private static float Target(float Current)
         {
             float Want = 0f;
@@ -110,8 +114,17 @@ namespace Plugin.Systems.VRCamera
                 NewMovement NM = Vars.Registered<NewMovement>();
                 if (NM != null && NM.rb != null && !Vars.IsPaused)
                 {
-                    Vector3 V = NM.rb.velocity; V.y *= .5f;
+                    Vector3 Velocity = NM.rb.velocity;
+                    Vector3 V = Velocity; V.y *= .5f;
                     Want = Mathf.InverseLerp(12f, 35f, V.magnitude);
+                    if (NM.boost) Want = Mathf.Max(Want, .85f);                                    // dash and slide boost
+                    if (NM.slamForce > 0f || Velocity.y < -25f) Want = Mathf.Max(Want, .8f);        // slam, fast fall
+                    // launched sideways (explosion, whiplash pull): horizontal only, so jumps and landings do not count,
+                    // and above the game's quickest start from a standstill
+                    float Dt = Time.deltaTime;
+                    Vector3 Change = Velocity - LastVelocity; Change.y = 0f;
+                    if (Dt > 0f && Change.magnitude / Dt > 400f) Want = Mathf.Max(Want, .75f);
+                    LastVelocity = Velocity;
                 }
                 if (Mathf.Abs(Input.InputVars.TurnVector.x) > Vars.Config.Controllers.Deadzone && !Vars.Config.Controllers.SnapTurn) Want = Mathf.Max(Want, .8f);
             }

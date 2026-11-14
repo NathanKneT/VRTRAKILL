@@ -142,7 +142,7 @@ All settings are in `BepInEx/plugins/VRTRAKILL/VRTRAKILL_Config.json`. Close the
 | `UI Size (from 0 to 0.1)` | `0.04` | Size of the menus and the floating HUD: 0.04 spans about 56 degrees of your view. Raise it for bigger text, lower it if the edges are hard to read. "UI size" in the VR column changes it in the headset. |
 | `Whiplash aim marker` | `true` | A small blue marker ahead of the arm hand where the whiplash will go, while it is ready to throw. |
 | `Left handed` | `false` | Puts the guns in the left hand and the arm in the right hand, and mirrors the buttons (see Controls). Takes effect the next time VR starts. A layout you made yourself in SteamVR's binding screen still wins; pick the default there to get the mirrored one. |
-| `Comfort vignette` | `false` | Darkens the edge of the view while you move fast or turn with the stick. `Comfort vignette strength` (0 to 1, default 0.85) sets how dark. |
+| `Comfort vignette` | `false` | Darkens the edge of the view while you move fast, dash, slam, fall fast, get launched, or turn with the stick. Turn it on if the game makes you feel sick. `Comfort vignette strength` (0 to 1, default 0.85) sets how dark. |
 | `Rumble strength` | `1.0` | Scales all controller vibration, from 0 to 2. The game's own rumble setting still applies on top. |
 | `Hit and kill rumble` / `Damage rumble` / `Menu rumble` | `true` | The tick when your shot or punch lands and the knock on a kill; the thud when you get hurt; the tick when the menu laser reaches or presses a button. |
 | `Finger tracking` | `false` | A cosmetic finger curl on the punch hand. |
