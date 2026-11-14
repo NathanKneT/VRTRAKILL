@@ -30,7 +30,7 @@ This version runs on ULTRAKILL build 22957324 (Unity 2022.3.29f1), the current o
 ## Features
 
 - **Your hands are the weapons.** Guns sit in your gun hand and shoot where you point. The crosshair sits on the real shot line. Punch by swinging your fist, or with the button alone if you prefer.
-- **The arm in your other hand.** The Feedbacker and Knuckleblaster punch from it, and the whiplash throws from it with a small marker where it will go.
+- **The arm in your other hand.** The Feedbacker and Knuckleblaster punch from it, the whiplash throws from it with a small marker where it will go, and a coin tossed with a throwing move flies along your throw.
 - **Health and stamina on your wrist.** Raise your arm like reading a watch, or keep the HUD floating in the view.
 - **Prompts name your controller's buttons.** The game says "Cross" on PS VR2, "A" on Quest, "D-pad down" on Steam Frame, and so on.
 - **Layouts for every common controller.** PS VR2 Sense, Quest Touch, Index, Steam Frame, Pico, Vive wands and WMR, each with a mirrored left-handed layout.
@@ -137,6 +137,7 @@ All settings are in `BepInEx/plugins/VRTRAKILL/VRTRAKILL_Config.json`. Close the
 | `Height offset (meters)` | `0.0` | Moves the view and the hands up (positive) or down (negative), on top of auto height. `BepInEx/LogOutput.log` prints your eye height at the first level. |
 | `Enable movement-based punching` | `true` | `true`: hold punch and swing your fist. `false`: the punch button alone punches, like the flat game. |
 | `Required speed to punch` | `4.0` | Twice the hand speed in m/s that a swing needs (4 = 2 m/s). Lower it if punches do not register. |
+| `Coin follows the throw` | `true` | A coin (Marksman revolver) leaves your arm hand, and one tossed while your arm hand makes a throwing move flies along the throw, harder for a harder throw. A still hand tosses it as the game does. |
 | `Snap turning` / `Smooth turning speed` | `false` / `300` | Snap or smooth turning on the right stick. |
 | `HUD on wrist` | `true` | Health, stamina and the weapon panel sit on your arm-hand forearm, facing you, like a watch. `false` brings back the panel floating low in the view. |
 | `UI Size (from 0 to 0.1)` | `0.04` | Size of the menus and the floating HUD: 0.04 spans about 56 degrees of your view. Raise it for bigger text, lower it if the edges are hard to read. "UI size" in the VR column changes it in the headset. |

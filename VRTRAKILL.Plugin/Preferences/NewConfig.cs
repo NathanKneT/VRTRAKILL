@@ -30,9 +30,9 @@ namespace Plugin.Prefs
 
         // Version of the defaults this file was written with; null for files from before 2.0.0. See Migrate.
         [JsonProperty("Config version")] public int? ConfigVersion { get; set; }
-        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added. 4: auto height. 5: HUD on wrist. 6: "Left handed" renamed (was "Left handed (BROKEN)"). 7: "Windows key presses". 8: rumble settings. 9: comfort vignette. 10: smaller UI. 11: screen flashes.
+        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added. 4: auto height. 5: HUD on wrist. 6: "Left handed" renamed (was "Left handed (BROKEN)"). 7: "Windows key presses". 8: rumble settings. 9: comfort vignette. 10: smaller UI. 11: screen flashes. 12: coin throw.
         // Bump it when settings are added, so existing files are rewritten and show the new settings.
-        public const int CurrentConfigVersion = 11;
+        public const int CurrentConfigVersion = 12;
 
         // Moves values that are still the old defaults to the new defaults, once. Returns true when the file should be
         // rewritten (which also adds settings the file does not have yet).
@@ -97,6 +97,8 @@ namespace Plugin.Prefs
             // twice the hand speed in m/s; 4 = a 2 m/s swing (the old 7.5 needed 3.75 m/s, and most presses did nothing)
             [JsonProperty("Required speed to punch")] public float PunchingSpeed { get; set; } = 4f;
             [JsonProperty("WHIPLASH: camera-based aiming")] public bool CameraWhiplash { get; set; } = false;
+            // a coin tossed while the arm hand makes a throwing move flies along the throw (Patches/ULTRAKILL/PatchRevolver)
+            [JsonProperty("Coin follows the throw")] public bool CoinThrow { get; set; } = true;
         }
 
         [JsonProperty("Enable VRAvatar")] public bool EnableVRBody { get; set; } = false;

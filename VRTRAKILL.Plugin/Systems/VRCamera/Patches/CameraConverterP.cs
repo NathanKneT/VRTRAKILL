@@ -229,6 +229,13 @@ namespace Plugin.Systems.VRCamera.Patches
                            + $"\"Height offset\" {Vars.Config.HeightOffset:0.00} m). If the view is too low or too high, change \"Height offset\" in VRTRAKILL_Config.json.");
         }
 
+        // The rotation from tracking space to the world: stick turning and the player's gravity (as the hands are placed).
+        public static Quaternion TrackingToWorld()
+        {
+            CameraController cc = Vars.Registered<CameraController>();
+            return cc == null ? Quaternion.identity : cc.gravityRotation * Quaternion.AngleAxis(InputVars.TurnOffset, Vector3.up);
+        }
+
         // Places a transform at a pose relative to the player body, with turn and gravity applied, then moves it through crossed portals.
         public static void PortalAwareSetTransformFromBody(Transform t, Vector3 localPosition, Quaternion worldRotation, bool hands = false, Vector3 worldPush = default)
         {

@@ -7,7 +7,7 @@ This version runs on the current ULTRAKILL on Steam: build 22957324 (Unity 2022.
 ## Features
 
 - Guns in your gun hand that shoot where you point, with the crosshair on the real shot line. Punch by swinging your fist, or with the button alone.
-- The Feedbacker, Knuckleblaster and whiplash in your other hand, with a small marker where the whiplash will go.
+- The Feedbacker, Knuckleblaster and whiplash in your other hand, with a small marker where the whiplash will go. A coin tossed with a throwing move flies along your throw.
 - Health and stamina on your wrist like a watch, or a floating HUD.
 - The game's prompts name your controller's buttons: "Cross" on PS VR2, "A" on Quest, "D-pad down" on Steam Frame.
 - Layouts for PS VR2 Sense, Quest Touch, Index, Steam Frame, Pico, Vive wands and WMR, each with a mirrored left-handed layout.

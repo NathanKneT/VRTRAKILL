@@ -45,6 +45,7 @@ A new version of motaweh's 1.0.2: the problems players reported most are fixed (
 - The crosshair sits at the depth of what you aim at. It floated 8 m ahead of the gun, so in front of a nearer wall it showed behind the wall, and in front of a shop screen the eyes saw it over another button than the one the hand pointed at (PS VR2 test). It now sits on the wall or enemy the shot line hits, or on the laser's point in menus and shops, keeps the same size to the eye, and glides between near and far.
 - The rocket launcher model sits in the gun hand like the other guns. It was drawn about 30 cm toward the middle of the view and up from the hand (#195).
 - A small blue marker ahead of the arm hand shows where the whiplash will go while it is ready to throw ("Whiplash aim marker" in the CBS settings).
+- Throw the coin. A coin (Marksman revolver) leaves your arm hand, and one tossed while your arm hand makes a throwing move flies along the throw, from 20 to 35 m/s depending on how hard you throw, with some lift so you can shoot it. A still hand tosses it as before. "Coin follows the throw" turns it off.
 - White and black screen flashes no longer grow without limit over a session.
 - The end-of-level rank screen no longer fails when its canvas is not where the mod expected.
 
