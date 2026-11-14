@@ -30,9 +30,9 @@ namespace Plugin.Prefs
 
         // Version of the defaults this file was written with; null for files from before 2.0.0. See Migrate.
         [JsonProperty("Config version")] public int? ConfigVersion { get; set; }
-        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added. 4: auto height. 5: HUD on wrist. 6: "Left handed" renamed (was "Left handed (BROKEN)"). 7: "Windows key presses". 8: rumble settings. 9: comfort vignette. 10: smaller UI. 11: screen flashes. 12: coin throw. 13: low health warning. 14: adaptive triggers. 15: weapon charge shake.
+        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added. 4: auto height. 5: HUD on wrist. 6: "Left handed" renamed (was "Left handed (BROKEN)"). 7: "Windows key presses". 8: rumble settings. 9: comfort vignette. 10: smaller UI. 11: screen flashes. 12: coin throw. 13: low health warning. 14: adaptive triggers. 15: weapon charge shake. 16: parry aim.
         // Bump it when settings are added, so existing files are rewritten and show the new settings.
-        public const int CurrentConfigVersion = 15;
+        public const int CurrentConfigVersion = 16;
 
         // Moves values that are still the old defaults to the new defaults, once. Returns true when the file should be
         // rewritten (which also adds settings the file does not have yet).
@@ -101,6 +101,8 @@ namespace Plugin.Prefs
             [JsonProperty("WHIPLASH: camera-based aiming")] public bool CameraWhiplash { get; set; } = false;
             // a coin tossed while the arm hand makes a throwing move flies along the throw (Patches/ULTRAKILL/PatchRevolver)
             [JsonProperty("Coin follows the throw")] public bool CoinThrow { get; set; } = true;
+            // where parried projectiles go: "Head" where you look (like the flat game), "Hand" along the arm hand (Patches/ULTRAKILL/PatchPunch)
+            [JsonProperty("Parry aim")] public string ParryAim { get; set; } = "Head";
         }
 
         [JsonProperty("Enable VRAvatar")] public bool EnableVRBody { get; set; } = false;

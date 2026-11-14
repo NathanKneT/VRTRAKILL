@@ -196,21 +196,30 @@ public sealed class PatchPunch
         }
         return false;
     }
-    // Returns the parry target along the arm hand, or toward the auto aim target.
+    // Returns where a parried projectile, cannonball, nail or chainsaw goes: where you look, like the flat game's camera,
+    // or toward the auto aim target. It went along the arm hand before; a punch points the fist anywhere, so parried
+    // shots flew off in every direction and almost never back at the enemy ("I can never send the ball back", PS VR2
+    // test). "Parry aim": "Hand" brings that back. Looking aim checks a 0.5 m wide line for an enemy, since the head
+    // moves with the punch.
+    private const float ParryAimRadius = .5f;
     [HarmonyPrefix]
     [HarmonyPatch(nameof(Punch.GetParryLookTarget))]
     private static bool GetParryLookTarget(ref Vector3 __result)
     {
-        Vector3 vector = Vars.NonDominantHand.transform.forward;
+        Camera L = Systems.VRCamera.Patches.CameraConverterP.leftEye, R = Systems.VRCamera.Patches.CameraConverterP.rightEye;
+        bool Look = Vars.Config.MBP.ParryAim != "Hand" && L != null && R != null;
+        Vector3 From = Look ? (L.transform.position + R.transform.position) * .5f : Vars.NDHC.transform.position;
+        Vector3 vector = Look ? L.transform.forward : Vars.NonDominantHand.transform.forward;
 
         if ((bool)MonoSingleton<CameraFrustumTargeter>.Instance && (bool)MonoSingleton<CameraFrustumTargeter>.Instance.CurrentTarget && MonoSingleton<CameraFrustumTargeter>.Instance.IsAutoAimed)
         {
-            vector = MonoSingleton<CameraFrustumTargeter>.Instance.CurrentTargetAimPosition - MonoSingleton<CameraController>.Instance.transform.position;
+            vector = MonoSingleton<CameraFrustumTargeter>.Instance.CurrentTargetAimPosition - From;
         }
-        if (Physics.Raycast(Vars.NDHC.transform.position, vector, out var hitInfo, float.PositiveInfinity, LayerMaskDefaults.Get(LMD.Enemies), QueryTriggerInteraction.Ignore))
-            __result = hitInfo.point;
-        else
-            __result = Vars.NDHC.transform.position + vector * 1000f;
+        int Enemies = LayerMaskDefaults.Get(LMD.Enemies);
+        bool Hit = Look
+            ? Physics.SphereCast(From, ParryAimRadius, vector, out var hitInfo, float.PositiveInfinity, Enemies, QueryTriggerInteraction.Ignore)
+            : Physics.Raycast(From, vector, out hitInfo, float.PositiveInfinity, Enemies, QueryTriggerInteraction.Ignore);
+        __result = Hit ? hitInfo.point : From + vector.normalized * 1000f;
         return false;
     }
 }
