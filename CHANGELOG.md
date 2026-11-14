@@ -1,8 +1,8 @@
 # Changelog
 
-## 1.1.0
+## 2.0.0
 
-Fixes for the problems players reported most (from the 171 issues of the original mod):
+A new version of motaweh's 1.0.2: the problems players reported most are fixed (from the 171 issues of the original mod), and the VR feel goes further (buttons inside the game, prompts that name your controller's buttons, layouts for more headsets, left-handed play, controller feedback, HUD on the wrist, auto height, settings in the headset):
 
 - VR start (the most reported problem, "the game does not start in VR"):
   - The game no longer freezes on the boot screen when SteamVR or the headset is not ready. A background check asks SteamVR whether it runs and sees a headset, and VR starts only then.
