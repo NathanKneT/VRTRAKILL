@@ -40,7 +40,7 @@ This version runs on ULTRAKILL build 22957324 (Unity 2022.3.29f1), the current o
 - **Comfort options.** Snap or smooth turning, an optional vignette while moving fast, adjustable movement speed. Seated or standing play: your head is put at the game's eye height at each level.
 - **No window juggling.** The buttons work while another window has focus, and they never reach Windows or other programs.
 - **Full frame rate.** The desktop frame cap and vsync are off while VR runs, so the game keeps up with a 90 or 120 Hz headset.
-- **A streamer view for recording.** Press `T`, or turn on STREAMER VIEW in the VR column, and the monitor shows a smoothed, level 16:9 view at 60 frames a second instead of the shaky headset mirror, with a HUD, and on PS VR2 a ring where your eyes look and the path of eye-aimed parries. The headset keeps its frame rate.
+- **A streamer view for recording.** Press `T`, or turn on STREAMER VIEW in the VR column, and the monitor shows a smoothed, level 16:9 view at 60 frames a second instead of the shaky headset mirror, with a HUD, and on PS VR2 a ring where your eyes look and the path of eye-aimed parries. The headset keeps its frame rate. Recording tips are in [docs/STREAMING.md](docs/STREAMING.md).
 - **VR starts by itself** as soon as SteamVR sees the headset. While it is not running, the game window on your monitor says why.
 
 The full list of changes is in [CHANGELOG.md](CHANGELOG.md).
