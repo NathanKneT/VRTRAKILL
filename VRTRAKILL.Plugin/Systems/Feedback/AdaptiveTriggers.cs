@@ -59,7 +59,10 @@ namespace Plugin.Systems.Feedback
             Queue(Effect.Packet);
         }
 
-        // Positions run 0 (released) to 9 (fully pulled); strengths 1 to 8 (Sony's ScePad trigger effect ranges).
+        // Positions run 0 (released) to 9 (fully pulled), a tenth of the travel each; strengths 1 to 8 (Sony's ScePad
+        // trigger effect ranges). The PS VR2 bindings fire at 75 % of the travel, so every break ends by position 5:
+        // the shot leaves as the trigger gives way, not halfway through the resistance ("it fires before I get to the
+        // end", PS VR2 test).
         private static (string, byte[]) GunEffect(byte Hand)
         {
             GunControl GC = MonoSingleton<GunControl>.Instance;
@@ -67,12 +70,12 @@ namespace Plugin.Systems.Feedback
             if (W != CachedWeapon) { CachedWeapon = W; CachedWeaponKind = Kind(W); }
             switch (CachedWeaponKind)
             {
-                case "revolver": return ("revolver", Weapon(Hand, 4, 6, 5));       // a crisp break, like a trigger
-                case "shotgun": return ("shotgun", Weapon(Hand, 3, 7, 8));         // a heavy break
+                case "revolver": return ("revolver", Weapon(Hand, 3, 5, 5));       // a crisp break, like a trigger
+                case "shotgun": return ("shotgun", Weapon(Hand, 2, 5, 8));         // a long, heavy break
                 case "jackhammer": return ("jackhammer", Feedback(Hand, 2, 6));    // firm all the way
-                case "nailgun": return ("nailgun", Vibration(Hand, 3, 4, 40));     // a rattle while held
+                case "nailgun": return ("nailgun", Vibration(Hand, 7, 4, 40));     // a rattle once it fires
                 case "railcannon": return ("railcannon", Slope(Hand, 1, 8, 2, 8)); // harder the further you pull
-                case "rocket": return ("rocket", Weapon(Hand, 5, 7, 7));           // a late, firm break
+                case "rocket": return ("rocket", Weapon(Hand, 4, 5, 7));           // a late, firm break
                 default: return ("off", Off(Hand));
             }
         }
@@ -83,7 +86,7 @@ namespace Plugin.Systems.Feedback
             Punch P = Fists != null ? Fists.currentPunch : null;
             if (P == null) return ("off", Off(Hand));
             if (P.type == FistType.Heavy) return ("knuckleblaster", Feedback(Hand, 3, 6));
-            return ("feedbacker", Weapon(Hand, 4, 6, 3));
+            return ("feedbacker", Weapon(Hand, 3, 5, 3));
         }
 
         private static string Kind(GameObject W)
