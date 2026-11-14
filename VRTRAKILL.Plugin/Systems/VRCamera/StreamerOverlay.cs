@@ -44,7 +44,12 @@ namespace Plugin.Systems.VRCamera
         private Image RingImage, RankImage;
         private Graphic[] AlwaysOn;
         private readonly List<Image> Trail = new List<Image>(), Path = new List<Image>();
-        private TMP_Text HealthText, ParryText, WarningText, GunText, ArmText;
+        private TMP_Text HealthText, ParryText, WarningText, GunText, ArmText, FreshText, FeedText;
+        private Image WeaponImage;
+        private RectTransform RankBack; private string LaidOutFeed = ""; private bool LaidOutFresh = true;
+        private WeaponHUD WeaponSource; private Image WeaponSourceIcon;
+        // a trigger label shows when it changes (a charge step, READY, LOCKED, another weapon) and then fades
+        private string GunShown, ArmShown; private float GunChanged = -10f, ArmChanged = -10f;
         private bool FontSet;
         private int LoggedScene, FramesInScene;
         private Vector2 Gaze; private bool HaveGaze; private float GazeAlpha;
@@ -125,14 +130,30 @@ namespace Plugin.Systems.VRCamera
                 RectTransform Back = Box(Hud, "Stamina " + i, Vector2.zero, Vector2.zero, new Color(0, 0, 0, .55f), new Vector2(i * 96, 38), new Vector2(88, 12));
                 Stamina[i] = Box(Back, "Fill", Vector2.zero, new Vector2(1, 1), new Color(.2f, .6f, 1f, .9f));
             }
+            // the weapon in hand, right of the health bar, in its variation's colour (blue, green, red...); the
+            // game's glow sprite is left out: drawn over the icon in this box it showed the weapon twice
+            WeaponImage = new GameObject("Weapon", typeof(RectTransform)).AddComponent<Image>();
+            WeaponImage.transform.SetParent(Hud, false);
+            RectTransform WR = WeaponImage.rectTransform;
+            WR.anchorMin = WR.anchorMax = WR.pivot = Vector2.zero; WR.anchoredPosition = new Vector2(292, -4); WR.sizeDelta = new Vector2(76, 76);
+            WeaponImage.preserveAspect = true; WeaponImage.raycastTarget = false; WeaponImage.enabled = false;
             // style rank, top right
             Rank = Rect(View, "Rank", Vector2.one, Vector2.one, new Vector2(-30, -30), new Vector2(260, 100));
+            // a grey backdrop behind the rank, meter, freshness and bonuses, sized to them (LayoutRankBack): white text
+            // over a bright sky could not be read (PS VR2 tester)
+            RankBack = Box(Rank, "Backdrop", Vector2.zero, Vector2.one, new Color(.15f, .15f, .15f, .65f));
             RankImage = new GameObject("Sprite", typeof(RectTransform)).AddComponent<Image>();
             RankImage.transform.SetParent(Rank, false);
             RankImage.preserveAspect = true; RankImage.raycastTarget = false;
             RectTransform RI = RankImage.rectTransform; RI.anchorMin = new Vector2(0, .25f); RI.anchorMax = Vector2.one; RI.sizeDelta = Vector2.zero;
             RectTransform MeterBack = Box(Rank, "Meter", new Vector2(0, 0), new Vector2(1, 0), new Color(0, 0, 0, .55f), Vector2.zero, new Vector2(0, 10));
             RankFill = Box(MeterBack, "Fill", Vector2.zero, new Vector2(1, 1), new Color(1, 1, 1, .85f));
+            // under the meter: the weapon freshness ("FRESH: 1.50x"), then the style bonuses as the game lists them
+            // (+ PARRY, + HEADSHOT...), newest on top: in VR the game's own panel floats beside the view, and is left
+            // out of the streamer picture while this HUD shows (StreamerView)
+            FreshText = Text(Rect(Rank, "Freshness", new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, -34), new Vector2(0, 28)), "Text", 22, TextAlignmentOptions.Right);
+            FeedText = Text(Rect(Rank, "Bonuses", new Vector2(0, 0), new Vector2(1, 0), new Vector2(-40, -290), new Vector2(80, 250)), "Text", 24, TextAlignmentOptions.TopRight);
+            FeedText.overflowMode = TextOverflowModes.Truncate;
 
             // gaze ring and its trail, the parry path, the labels
             Sprite RingSprite = Sprite.Create(RingTexture(64, 25f, 31f), new Rect(0, 0, 64, 64), new Vector2(.5f, .5f));
@@ -190,8 +211,16 @@ namespace Plugin.Systems.VRCamera
             bool Triggers = Mode == "Always";
             string G = Triggers ? Feedback.AdaptiveTriggers.Describe(Gun: true) : null, A = Triggers ? Feedback.AdaptiveTriggers.Describe(Gun: false) : null;
             bool Left = Vars.Config.Controllers.LeftHanded;
-            SetText(GunText, G != null ? (Left ? "L2  " : "R2  ") + G : null, new Color(1, 1, 1, .85f));
-            SetText(ArmText, A != null ? (Left ? "R2  " : "L2  ") + A : null, new Color(1, 1, 1, .85f));
+            // a label that stayed on screen ("R2 CLICK" at rest) only added noise to a video
+            SetText(GunText, G != null ? (Left ? "L2  " : "R2  ") + G : null, new Color(1, 1, 1, .85f * Recent(G, ref GunShown, ref GunChanged, Now)));
+            SetText(ArmText, A != null ? (Left ? "R2  " : "L2  ") + A : null, new Color(1, 1, 1, .85f * Recent(A, ref ArmShown, ref ArmChanged, Now)));
+        }
+
+        // 1 for 1.5 s after the label changed, then fading out over 0.4 s
+        private static float Recent(string Label, ref string Shown, ref float Changed, float Now)
+        {
+            if (Label != Shown) { Shown = Label; Changed = Now; }
+            return Mathf.Clamp01(1f - (Now - Changed - 1.5f) / .4f);
         }
 
         // The OpenVR plugin copies the headset's right eye onto the window after the overlay canvases are drawn, so the
@@ -247,11 +276,57 @@ namespace Plugin.Systems.VRCamera
             Fill(HealthFill, NM.hp / 100f);
             SetText(HealthText, NM.hp.ToString(), Color.white); // made turned off, like every label
             for (int i = 0; i < 3; i++) Fill(Stamina[i], (NM.boostCharge - i * 100f) / 100f);
+            UpdateWeapon();
             if (!ShowRank) return;
             StyleRank R = Style.currentRank;
             if (RankImage.sprite != R.sprite) RankImage.sprite = R.sprite;
             RankImage.enabled = R.sprite != null;
             Fill(RankFill, R.maxMeter > 0 ? Style.currentMeter / R.maxMeter : 0f);
+            TMP_Text Fresh = Style.freshnessSliderText, Feed = Style.styleInfo;
+            SetText(FreshText, Fresh != null && Fresh.gameObject.activeInHierarchy && !string.IsNullOrEmpty(Fresh.text) ? Fresh.text : null, Color.white);
+            SetText(FeedText, Feed != null && !string.IsNullOrEmpty(Feed.text) ? Feed.text : null, Color.white);
+            string FeedNow = FeedText.enabled ? FeedText.text : null;
+            if (FeedNow != LaidOutFeed || FreshText.enabled != LaidOutFresh) LayoutRankBack(FeedNow, FreshText.enabled);
+        }
+
+        // Sizes the backdrop to what shows under the rank: the freshness line, and the bonus list (as tall and as wide
+        // as its lines, which can be wider than the rank). Only when they change, since measuring text costs.
+        private void LayoutRankBack(string Feed, bool Fresh)
+        {
+            LaidOutFeed = Feed; LaidOutFresh = Fresh;
+            float Below = Fresh ? 36f : 4f, Wider = 0f;
+            if (Feed != null)
+            {
+                Vector2 Size = FeedText.GetPreferredValues(Feed);
+                Below = 40f + Mathf.Min(Size.y, 250f);
+                Wider = Mathf.Clamp(Size.x - 260f, 0f, 80f);
+            }
+            RankBack.offsetMin = new Vector2(-14f - Wider, -Below - 10f);
+            RankBack.offsetMax = new Vector2(14f, 10f);
+        }
+
+        // The weapon in hand, as the game's weapon HUD shows it (on the wrist in VR): its icon, tinted with the
+        // variation's colour. Hidden with no weapon out.
+        private void UpdateWeapon()
+        {
+            WeaponHUD W = Vars.Registered<WeaponHUD>();
+            if (W != WeaponSource)
+            {
+                WeaponSource = W;
+                WeaponSourceIcon = W != null ? W.GetComponent<Image>() : null;
+            }
+            GunControl Guns = Vars.Registered<GunControl>();
+            bool Armed = Guns != null && !Guns.noWeapons && Guns.currentWeapon != null;
+            Copy(WeaponImage, Armed ? WeaponSourceIcon : null);
+        }
+        private static void Copy(Image To, Image From)
+        {
+            bool On = From != null && From.sprite != null;
+            if (To.enabled != On) To.enabled = On;
+            if (!On) return;
+            if (To.sprite != From.sprite) To.sprite = From.sprite;
+            Color C = From.color; C.a = 1f;
+            To.color = C;
         }
 
         // ---- Gaze ----

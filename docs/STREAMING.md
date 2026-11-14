@@ -14,12 +14,12 @@ The choice is saved. Off, the monitor shows the headset mirror (one eye, moving 
 - A camera at the middle of your eyes. Head turns are smoothed (less during fast turns, so a quick look stays readable), the horizon stays level, and the game's own motion (dashes, slides, the whiplash) is not delayed.
 - A 16:9 picture with a 90 degree field of view, letterboxed to the window.
 - No comfort vignette or low health glow: they are for your eyes only.
-- A HUD with health, stamina and the style rank, since in VR they sit on your wrist and at the edge of your view.
+- A HUD with health, stamina and the weapon in hand (in its variation's colour) at the bottom left, and at the top right the style rank with its meter, the weapon freshness and the bonuses as the game lists them (+ PARRY, + HEADSHOT...), on a grey backdrop so they read over a bright sky. In VR these sit on your wrist and at the edge of your view. The game's own style panel, which floats beside your view in VR, is left out of the picture while this HUD shows (with HUD on OFF it stays).
 - With **OVERLAY** on ALWAYS (the default):
   - a small ring where your eyes look (PS VR2 with the PSVR2 Toolkit and its eye tracking);
   - each eye-aimed parry: the ring pulses, "EYE-AIMED PARRY" shows, and a dotted line goes from your fist to where the projectile was sent;
   - "PARRY" when the parry warning ticks in your hand;
-  - what the adaptive triggers feel like right now (R2 CLICK, CHARGE 2/4, READY, LOCKED...), since viewers cannot feel them.
+  - what the adaptive triggers feel like when it changes (R2 CHARGE 2/4, READY, LOCKED, or another weapon's feel), for two seconds, since viewers cannot feel them.
 - OVERLAY on PARRIES shows the ring and the parry path only around parries; OFF shows neither (the HUD has its own setting).
 
 None of this is drawn in the headset.

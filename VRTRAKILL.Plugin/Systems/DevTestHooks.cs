@@ -43,6 +43,7 @@ namespace Plugin.Systems
                     VRSettingsTest = Array.Exists(Lines, L => L.Trim().Equals("vrsettingstest", StringComparison.OrdinalIgnoreCase));
                     Unfocused = Array.Exists(Lines, L => L.Trim().Equals("unfocused", StringComparison.OrdinalIgnoreCase));
                     StreamerTest = Array.Exists(Lines, L => L.Trim().Equals("streamertest", StringComparison.OrdinalIgnoreCase));
+                    StyleTest = Array.Exists(Lines, L => L.Trim().Equals("styletest", StringComparison.OrdinalIgnoreCase));
                 }
             }
             catch (Exception e) { Vars.Log.LogWarning("Test scene file unreadable: " + e.Message); }
@@ -72,6 +73,7 @@ namespace Plugin.Systems
             if (RangeView) yield return ShowRange(Clock);
             if (PerfTest) yield return MeasurePerformance(Clock);
             if (StreamerTest) yield return CheckStreamer(Clock);
+            if (StyleTest) yield return ShowStyle(Clock);
             if (LevelSweep) yield return SweepLevels(Clock);
             if (PauseDump) yield return DumpPause(Clock);
             if (PromptTest) yield return CheckPrompts(Clock);
@@ -653,6 +655,52 @@ namespace Plugin.Systems
         // often the monitor canvas showed it. In VR, reading the screen back returns an eye, not the window, so the window itself
         // (with the HUD and overlays) is checked with a desktop screenshot. The streamer view setting is put back.
         private static bool StreamerTest;
+
+        // A line "styletest": in the level, starts a style combo and adds a few bonuses half a second apart (KILL,
+        // HEADSHOT, DOUBLE KILL, PARRY), so the streamer view's rank, meter and bonus list show without a fight; logs
+        // "Style test: shown" (capture the window then) and what the game's panel says. The level is not finished, so
+        // nothing is saved.
+        private static bool StyleTest;
+        private static IEnumerator ShowStyle(System.Diagnostics.Stopwatch Clock)
+        {
+            double T = Clock.Elapsed.TotalSeconds;
+            while (Clock.Elapsed.TotalSeconds < T + 60 && (Vars.IsMainMenu || Vars.Registered<NewMovement>() == null)) yield return null;
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 4) yield return null;
+            StyleHUD Style = Vars.Registered<StyleHUD>();
+            if (Style == null) { Vars.Log.LogWarning("Style test: no style HUD. Style test: done."); yield break; }
+            Style.ComboStart();
+            string[] Ids = { "ultrakill.kill", "ultrakill.headshot", "ultrakill.doublekill", "ultrakill.parry" };
+            for (int i = 0; i < 4; i++)
+            {
+                Style.AddPoints(60, Ids[i]);
+                T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + .5) yield return null;
+            }
+            string Bonuses = Style.styleInfo != null ? Style.styleInfo.text.Replace('\n', '|') : "none";
+            string Fresh = Style.freshnessSliderText != null ? Style.freshnessSliderText.text : "none";
+            WeaponHUD W = Vars.Registered<WeaponHUD>();
+            GunControl Guns = Vars.Registered<GunControl>();
+            UnityEngine.UI.Image Icon = W != null ? W.GetComponent<UnityEngine.UI.Image>() : null;
+            Vars.Log.LogWarning($"Style test: shown (rank {Style.rankIndex}, combo {Style.comboActive}, bonuses \"{Bonuses}\", freshness \"{Fresh}\"; "
+                + $"weapon HUD {(W != null ? W.name + " active " + W.gameObject.activeInHierarchy : "none")}, icon {(Icon != null && Icon.sprite != null ? Icon.sprite.name : "none")}, "
+                + $"guns {(Guns != null ? "no weapons " + Guns.noWeapons + ", current " + (Guns.currentWeapon != null ? Guns.currentWeapon.name : "none") : "none")}).");
+            // bonuses leave the game's list after a few seconds: keep adding them while the window is captured
+            for (int i = 0; i < 16; i++)
+            {
+                Style.AddPoints(10, Ids[i % 4]);
+                T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + .5) yield return null;
+            }
+            // then the shotgun (slot 2), if the player has one: its icon replaces the revolver's, and its first start logs
+            // its parts when the game's arm is not found (PatchRemoveArms)
+            if (Guns != null && Guns.slots.Count >= 2 && Guns.slots[1].Count > 0)
+            {
+                Guns.SwitchWeapon(2);
+                T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 2) yield return null;
+                Vars.Log.LogWarning($"Style test: shotgun out (current {(Guns.currentWeapon != null ? Guns.currentWeapon.name : "none")}, icon {(Icon != null && Icon.sprite != null ? Icon.sprite.name : "none")}).");
+                T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 6) yield return null;
+            }
+            Vars.Log.LogWarning("Style test: done.");
+        }
+
         private static IEnumerator CheckStreamer(System.Diagnostics.Stopwatch Clock)
         {
             double T = Clock.Elapsed.TotalSeconds;

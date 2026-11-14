@@ -128,8 +128,42 @@ namespace Plugin.Systems.VRCamera
             Renderer Ring = ComfortVignette.Ring;
             bool RingWas = Ring != null && Ring.enabled;
             if (Ring != null) Ring.enabled = false;
+            // The game's style panel floats beside the view in VR and covered a good part of the picture, next to the
+            // monitor HUD's own rank, meter and bonus list. While that HUD shows, the panel is moved far below for this
+            // render only (a world space canvas is drawn where its transform is, with no rebuild).
+            Transform Style = Vars.Config.StreamerView.Hud != "Off" ? StylePanel() : null;
+            Vector3 StyleAt = Style != null ? Style.position : default;
+            if (Style != null) Style.position = StyleAt + Vector3.down * 100000f;
             try { World.Render(); UI.Render(); }
-            finally { if (Ring != null) Ring.enabled = RingWas; }
+            finally
+            {
+                if (Ring != null) Ring.enabled = RingWas;
+                if (Style != null) Style.position = StyleAt;
+            }
+        }
+
+        // The canvas of the game's style HUD (StyleCanvas, converted to world space for VR), or null. Only a canvas that
+        // holds nothing but the style HUD is moved, so a different layout never takes other UI out of the picture.
+        // Looked for again once a second until found: the canvas is converted to world space when its HUDPos first runs.
+        private StyleHUD StyleSource; private Transform StyleCanvas; private float StyleCheckedAt; private bool StyleLogged;
+        private Transform StylePanel()
+        {
+            StyleHUD S = Vars.Registered<StyleHUD>();
+            if (S != StyleSource) { StyleSource = S; StyleCanvas = null; StyleCheckedAt = -10f; StyleLogged = false; }
+            if (S == null || StyleCanvas != null || Time.unscaledTime - StyleCheckedAt < 1f) return StyleCanvas;
+            StyleCheckedAt = Time.unscaledTime;
+            Canvas C = S.GetComponentInParent<Canvas>();
+            C = C != null ? C.rootCanvas : null;
+            if (C == null || C.renderMode != RenderMode.WorldSpace) return null;
+            bool OnlyStyle = C.GetComponent<HUDPos>() != null && C.GetComponentsInChildren<HUDPos>(true).Length == 1;
+            if (OnlyStyle) StyleCanvas = C.transform;
+            if (!StyleLogged)
+            {
+                StyleLogged = true;
+                Vars.Log.LogInfo(OnlyStyle ? $"Streamer view: the game's style panel ({C.name}) is left out of the picture; the monitor HUD shows the rank and bonuses."
+                                           : $"Streamer view: the game's style panel stays in the picture (its canvas {C.name} holds other UI).");
+            }
+            return StyleCanvas;
         }
 
         // ---- Pose ----
