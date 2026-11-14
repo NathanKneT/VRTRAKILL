@@ -129,16 +129,18 @@ namespace VRBasePlugin.Systems.VRCamera
             float TurnX = Mathf.Abs(InputVars.TurnVector.x) >= Mathf.Abs(InputVars.TurnVector.y) ? InputVars.TurnVector.x : 0;
             if (!Vars.Config.Controllers.SnapTurn)
             {
+                // real time: the game's slow motion and hit stops slowed or froze the turn; never while paused
+                float Dt = Vars.IsPaused ? 0f : Time.unscaledDeltaTime;
                 if (TurnX > 0 + Vars.Config.Controllers.Deadzone)
-                    InputVars.TurnOffset += Vars.Config.Controllers.SmoothSpeed * Time.deltaTime;
+                    InputVars.TurnOffset += Vars.Config.Controllers.SmoothSpeed * Dt;
                 if (TurnX < 0 - Vars.Config.Controllers.Deadzone)
-                    InputVars.TurnOffset -= Vars.Config.Controllers.SmoothSpeed * Time.deltaTime;
+                    InputVars.TurnOffset -= Vars.Config.Controllers.SmoothSpeed * Dt;
             }
             else
             {
                 if (IsTurning)
                 {
-                    SnapTurnTimer += Time.deltaTime;
+                    SnapTurnTimer += Time.unscaledDeltaTime;
                     if (SnapTurnTimer >= .2f || TurnX == 0) { IsTurning = false; SnapTurnTimer = 0; }
                 }
                 else
