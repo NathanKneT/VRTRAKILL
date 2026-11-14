@@ -24,7 +24,12 @@ namespace VRPatcher
         public static void Patch(AssemblyDefinition assembly) { }
 
         // Installs a downloaded mod update; BepInEx calls Finish after it releases the game DLLs and before the plugins load.
+        // The Thunderstore build has no updater: the mod manager updates the mod.
+#if THUNDERSTORE
+        public static void Finish() { }
+#else
         public static void Finish() => UpdateApplier.Run();
+#endif
 
         // Finds the game data folder, installs the shipped game files and patches globalgamemanagers before the game loads.
         public static void Initialize()

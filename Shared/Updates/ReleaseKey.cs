@@ -1,3 +1,5 @@
+// Left out of the Thunderstore build (THUNDERSTORE, tools/package-thunderstore.ps1): mod managers update the mod.
+#if !THUNDERSTORE
 namespace VRTRAKILL.Updates
 {
     // The public half of the release signing key (RSA 3072); tools/sign-release.ps1 -Init writes this file.
@@ -7,3 +9,4 @@ namespace VRTRAKILL.Updates
         public const string ExponentBase64 = "AQAB";
     }
 }
+#endif

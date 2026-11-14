@@ -15,9 +15,5 @@ namespace Plugin
             PluginPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), // "~/BepInEx/plugins/VRTRAKILL"
             FullGamePath = Process.GetCurrentProcess().MainModule.FileName, // "~/ULTRAKILL/ULTRAKILL.exe"
             GamePath = Path.GetDirectoryName(FullGamePath); // "~/ULTRAKILL"
-
-        public const string
-            GithubRepoLink = "https://api.github.com/repos/whateverusername0/VRTRAKILL",
-            FriendlyGithubRepoLink = "https://github.com/whateverusername0/VRTRAKILL";
     }
 }

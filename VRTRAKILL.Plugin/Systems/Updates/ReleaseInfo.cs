@@ -1,3 +1,5 @@
+// Left out of the Thunderstore build (THUNDERSTORE, tools/package-thunderstore.ps1): mod managers update the mod.
+#if !THUNDERSTORE
 using System;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
@@ -50,3 +52,4 @@ namespace Plugin.Systems.Updates
         }
     }
 }
+#endif

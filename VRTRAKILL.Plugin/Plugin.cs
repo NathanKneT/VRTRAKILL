@@ -72,7 +72,12 @@ namespace Plugin
             try { SceneWorker.Init(host); }
             catch (Exception e) { Log.LogError("VRTRAKILL scene setup failed: " + e); }
 
+#if THUNDERSTORE
+            // the Thunderstore build makes no network request: the mod manager updates the mod
+            Log.LogInfo("Thunderstore build: no update check; your mod manager updates VRTRAKILL.");
+#else
             Systems.Updates.UpdateService.Begin(host); // background update check; never throws
+#endif
 
             // first try now, before the first scene, like before: when SteamVR is up with a headset the probe answers at
             // once and VR starts here; otherwise ModHost.Update keeps trying in the background

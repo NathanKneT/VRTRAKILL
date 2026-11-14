@@ -1,6 +1,6 @@
 # VRTRAKILL
 
-![Version 2.0.1](https://img.shields.io/badge/version-2.0.1-blue)
+![Version 2.0.2](https://img.shields.io/badge/version-2.0.2-blue)
 ![ULTRAKILL build 22957324](https://img.shields.io/badge/ULTRAKILL-build_22957324-b00)
 ![SteamVR](https://img.shields.io/badge/runtime-SteamVR-1b2838)
 ![BepInEx 5.4.23.5](https://img.shields.io/badge/BepInEx-5.4.23.5-orange)
@@ -221,7 +221,7 @@ Open an [issue](../../issues/new/choose) with the mod and game versions, your he
 
 Double-click `INSTALL VRTRAKILL.bat` from the new zip (your settings are kept), extract the new zip over the old install, or update in your mod manager. Files from older versions can stay. If SteamVR keeps an old layout, pick the default layout again (see [Controls](#controls)).
 
-Once per game start, the mod asks GitHub whether a newer VRTRAKILL release exists and shows a notice in the main menu if so. It sends one plain request with no personal data, and downloads nothing unless you set `"Auto update"` to `"Download"`; `"Off"` turns the check off. What the check sends and how a signed update is installed are in [docs/UPDATER.md](docs/UPDATER.md).
+Once per game start, the mod asks GitHub whether a newer VRTRAKILL release exists and shows a notice in the main menu if so. It sends one plain request with no personal data, and downloads nothing unless you set `"Auto update"` to `"Download"`; `"Off"` turns the check off. What the check sends and how a signed update is installed are in [docs/UPDATER.md](docs/UPDATER.md). The Thunderstore version has no update check at all: the mod manager updates it.
 
 ## VR or flat
 

@@ -1,4 +1,9 @@
 <Project>
+  <!-- -p:VRTRAKILLDistribution=Thunderstore (tools/package-thunderstore.ps1) defines THUNDERSTORE: a build with no update
+       check, download or install, since mod managers update the mod (asked by the Thunderstore moderators). -->
+  <PropertyGroup Condition="'$(VRTRAKILLDistribution)' == 'Thunderstore'">
+    <DefineConstants>$(DefineConstants);THUNDERSTORE</DefineConstants>
+  </PropertyGroup>
   <!-- Writes the VRTRAKILLVersion from Directory.Build.props into each mod assembly: assembly versions and the VRTRAKILL.BuildVersion constant. -->
   <PropertyGroup>
     <VRTRAKILLVersionFile>$(IntermediateOutputPath)VRTRAKILL.Version.g.cs</VRTRAKILLVersionFile>

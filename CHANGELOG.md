@@ -1,7 +1,8 @@
 # Changelog
 
-## Unreleased
+## 2.0.2
 
+- The Thunderstore version has no update check, download or install at all (asked by the Thunderstore moderators): it makes no network request, and your mod manager updates it. The GitHub zips keep the check and the signed installer.
 - Optional movement gestures, off by default (GESTURES in the VR column, "Movement gestures" in the config, version 24); the buttons keep working beside them:
   - Slam with fists: in the air, both fists driven down below the chest press slide, which the game turns into a ground slam; kept low after landing, the power slam. If the game refuses the slam (too close to the ground), the key is let go at once, so landing does not start a slide.
   - Pull the whiplash by yanking: once the hook has caught something, pulling the arm hand back toward the body lets the whiplash key go, which is when the game pulls, even with the button still held.

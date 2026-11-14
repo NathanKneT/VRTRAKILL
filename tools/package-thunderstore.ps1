@@ -94,7 +94,8 @@ function Test-Package($ZipPath) {
 }
 
 Write-Host "Building against $ULTRAKILLDir"
-& dotnet build (Join-Path $Repo 'VRTRAKILL.sln') -c Release -nologo -v m --no-incremental "-p:ULTRAKILLDir=$ULTRAKILLDir"
+# the Thunderstore build has no updater (THUNDERSTORE): no request to GitHub, no download or install; mod managers update
+& dotnet build (Join-Path $Repo 'VRTRAKILL.sln') -c Release -nologo -v m --no-incremental "-p:ULTRAKILLDir=$ULTRAKILLDir" "-p:VRTRAKILLDistribution=Thunderstore"
 if ($LASTEXITCODE -ne 0) { throw 'dotnet build failed' }
 
 if (Test-Path $Work) { Remove-Item $Work -Recurse -Force }

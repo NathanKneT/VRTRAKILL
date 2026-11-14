@@ -1,3 +1,5 @@
+// Left out of the Thunderstore build (THUNDERSTORE, tools/package-thunderstore.ps1): mod managers update the mod.
+#if !THUNDERSTORE
 using System;
 
 namespace VRTRAKILL.Updates
@@ -55,3 +57,4 @@ namespace VRTRAKILL.Updates
             => Major + "." + Minor + "." + Patch + (IsPrerelease ? "-" + Prerelease : "");
     }
 }
+#endif
