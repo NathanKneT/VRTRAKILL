@@ -30,9 +30,9 @@ namespace Plugin.Prefs
 
         // Version of the defaults this file was written with; null for files from before 2.0.0. See Migrate.
         [JsonProperty("Config version")] public int? ConfigVersion { get; set; }
-        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added. 4: auto height. 5: HUD on wrist. 6: "Left handed" renamed (was "Left handed (BROKEN)"). 7: "Windows key presses". 8: rumble settings. 9: comfort vignette. 10: smaller UI. 11: screen flashes. 12: coin throw. 13: low health warning. 14: adaptive triggers.
+        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added. 4: auto height. 5: HUD on wrist. 6: "Left handed" renamed (was "Left handed (BROKEN)"). 7: "Windows key presses". 8: rumble settings. 9: comfort vignette. 10: smaller UI. 11: screen flashes. 12: coin throw. 13: low health warning. 14: adaptive triggers. 15: weapon charge shake.
         // Bump it when settings are added, so existing files are rewritten and show the new settings.
-        public const int CurrentConfigVersion = 14;
+        public const int CurrentConfigVersion = 15;
 
         // Moves values that are still the old defaults to the new defaults, once. Returns true when the file should be
         // rewritten (which also adds settings the file does not have yet).
@@ -155,6 +155,9 @@ namespace Plugin.Prefs
             [JsonProperty("Screen flashes")] public string ScreenFlashes { get; set; } = "Reduced";
             // below 30 health: a heartbeat in both hands and a dark red glow at the edge of the view (Systems/Feedback/LowHealth)
             [JsonProperty("Low health warning")] public bool LowHealthWarning { get; set; } = true;
+            // how much of the game's shake a charging weapon keeps, 0 (steady) to 1 (the game's); the full shake is a
+            // rattle at arm's length in VR (Patches/ULTRAKILL/WeaponShakeP)
+            [JsonProperty("Weapon charge shake")] public float WeaponShake { get; set; } = .1f;
         }
 
         [JsonProperty("DesktopView Settings")] public _DesktopView DesktopView { get; set; }
