@@ -124,7 +124,17 @@ If the buttons act like an older version, pick the default layout again: SteamVR
 
 ## Settings
 
-Pause the game in the headset. A **VR** column next to the pause menu changes the main settings at once and saves them: turn mode (smooth, or snap 30, 45 or 90 degrees), turn speed, UI size, comfort vignette, screen flashes, HUD on the wrist or floating, rumble strength, height offset, recenter view, adaptive triggers, fingers, punch by swing or by button, and left handed (takes effect after a restart). Point the laser at a button and pull the trigger to move to the next value.
+Pause the game in the headset. A **VR** column next to the pause menu changes the main settings at once and saves them: a comfort preset, turn mode (smooth, or snap 30, 45 or 90 degrees), turn speed, UI size, comfort vignette, screen flashes, HUD on the wrist or floating, rumble strength, height offset, recenter view, adaptive triggers, fingers, punch by swing or by button, and left handed (takes effect after a restart). Point the laser at a button and pull the trigger to move to the next value.
+
+**COMFORT** sets several settings at once. Start with **BEGINNER** if you are new to VR or fast games make you sick, and move up when you feel ready:
+
+| Preset | Turning | Comfort vignette | Screen flashes | Weapon charge shake |
+|---|---|---|---|---|
+| BEGINNER | snap 45° | on (0.95) | off | none |
+| STANDARD (default) | smooth 300°/s | off | reduced | a tenth |
+| ULTRAKILL | smooth 360°/s | off | full | the game's |
+
+Changing one of these settings yourself shows CUSTOM. Movement and jump speed are never changed by a preset.
 
 ![The comfort vignette darkens the edge of the view while moving fast](docs/images/comfort-vignette.jpg)
 

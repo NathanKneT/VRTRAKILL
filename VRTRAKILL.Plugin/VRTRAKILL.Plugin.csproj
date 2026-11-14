@@ -261,6 +261,7 @@
     <Compile Include="Plugin.cs" />
     <Compile Include="PluginInfo.cs" />
     <Compile Include="Preferences\ConfigJSON.cs" />
+    <Compile Include="Preferences\ComfortPresets.cs" />
     <Compile Include="Preferences\ConfigMaster.cs" />
     <Compile Include="Preferences\NewConfig.cs" />
     <Compile Include="Preferences\UKBindings.cs" />

@@ -105,6 +105,12 @@ namespace Plugin.Systems.UI
         private void AddItems()
         {
             var C = Vars.Config.Controllers;
+            // first, so a new player finds it: sets turning, vignette, flashes and weapon shake together (Prefs/ComfortPresets)
+            Items.Add(new Item
+            {
+                Text = () => "COMFORT: " + Prefs.ComfortPresets.Current(),
+                Next = () => Prefs.ComfortPresets.Apply(Prefs.ComfortPresets.Next()),
+            });
             Items.Add(new Item
             {
                 Text = () => C.SnapTurn ? $"TURN: SNAP {C.SnapAngles:0}°" : "TURN: SMOOTH",
