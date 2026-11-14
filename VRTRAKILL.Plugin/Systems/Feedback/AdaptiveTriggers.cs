@@ -149,10 +149,17 @@ namespace Plugin.Systems.Feedback
         private static byte[] Weapon(byte Hand, byte Start, byte End, byte Strength) => Psvr2Toolkit.Packet(CmdWeapon, Hand, Start, End, Strength);
         private static byte[] Vibration(byte Hand, byte Position, byte Amplitude, byte Frequency) => Psvr2Toolkit.Packet(CmdVibration, Hand, Position, Amplitude, Frequency);
 
-        // At exit: free both triggers, so they are not left stiff for the next game.
+        // At exit: free both triggers, so they are not left stiff after the game (the Toolkit keeps the last effect when
+        // a client goes away: the PS VR2 tester's triggers stayed stiff outside the game). Written at once from this
+        // thread, not queued: the worker thread may not get its turn before the process ends. Called from every quit
+        // path (OnApplicationQuit, Application.quitting, process exit); the first call does it.
+        private static bool ShutDown;
         public static void Shutdown()
         {
-            if (Psvr2Toolkit.Connected) { Psvr2Toolkit.Send(Off(Left)); Psvr2Toolkit.Send(Off(Right)); }
+            if (ShutDown) return;
+            ShutDown = true;
+            bool Freed = Psvr2Toolkit.Connected && Psvr2Toolkit.SendNow(Off(Left), Off(Right));
+            if (Freed) Vars.Log.LogInfo("PSVR2 Toolkit: both triggers freed at exit.");
             Psvr2Toolkit.Shutdown();
         }
     }

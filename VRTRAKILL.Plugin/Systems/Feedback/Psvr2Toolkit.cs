@@ -25,6 +25,9 @@ namespace Plugin.Systems.Feedback
 
         private static Thread Worker;
         private static readonly object Gate = new object();
+        // the open stream, written only under WriteLock: by the worker, and at exit by the main thread (SendNow)
+        private static NetworkStream Live;
+        private static readonly object WriteLock = new object();
         private static readonly Queue<byte[]> Pending = new Queue<byte[]>();
         private static volatile bool Stopping;
         public static volatile bool TriggersWanted, GazeWanted;
@@ -130,6 +133,7 @@ namespace Plugin.Systems.Feedback
                         if (BitConverter.ToUInt16(Answer, 0) != CmdHandshakeResult || Answer[8] != 1)
                             throw new IOException($"handshake refused (result {Answer[8]}, server IPC version {BitConverter.ToUInt16(Answer, 10)})");
                         lock (Gate) Pending.Clear();
+                        lock (WriteLock) Live = Stream;
                         Connected = true; LoggedMissing = false;
                         Vars.Log.LogInfo($"PSVR2 Toolkit: connected (IPC version {BitConverter.ToUInt16(Answer, 10)}); adaptive triggers {(TriggersWanted ? "on" : "off")}, eye tracking {(GazeWanted ? "asked for" : "off")}.");
 
@@ -144,18 +148,22 @@ namespace Plugin.Systems.Feedback
                             }
                             if (Next != null)
                             {
-                                Stream.Write(Next, 0, Next.Length);
+                                lock (WriteLock) Stream.Write(Next, 0, Next.Length);
                                 Thread.Sleep(15); // the server reads one command per receive: keep sends apart
                             }
                             if (GazeWanted && Clock.ElapsedMilliseconds >= NextGaze)
                             {
                                 NextGaze = Clock.ElapsedMilliseconds + GazeEveryMs;
-                                Stream.Write(GazeRequest, 0, GazeRequest.Length);
-                                byte[] Head = ReadExactly(Stream, 8); // the answer comes before the next send, so sends stay apart
-                                int Length = BitConverter.ToInt32(Head, 4);
-                                if (Length < 0 || Length > 1024) throw new IOException("unexpected answer length " + Length);
-                                byte[] Data = ReadExactly(Stream, Length);
-                                if (BitConverter.ToUInt16(Head, 0) == CmdGazeResult && Length >= 66) ReadGaze(Data);
+                                byte[] Head, Data;
+                                lock (WriteLock)
+                                {
+                                    Stream.Write(GazeRequest, 0, GazeRequest.Length);
+                                    Head = ReadExactly(Stream, 8); // the answer comes before the next send, so sends stay apart
+                                    int Length = BitConverter.ToInt32(Head, 4);
+                                    if (Length < 0 || Length > 1024) throw new IOException("unexpected answer length " + Length);
+                                    Data = ReadExactly(Stream, Length);
+                                }
+                                if (BitConverter.ToUInt16(Head, 0) == CmdGazeResult && Data.Length >= 66) ReadGaze(Data);
                             }
                             else if (Next == null && !TriggersWanted && !GazeWanted) break;
                         }
@@ -166,6 +174,7 @@ namespace Plugin.Systems.Feedback
                     if (Connected) Vars.Log.LogInfo("PSVR2 Toolkit: connection lost (" + E.Message + ").");
                     else if (!LoggedMissing) { LoggedMissing = true; Vars.Log.LogInfo("PSVR2 Toolkit: not found (" + E.Message + "); trying again every few seconds."); }
                 }
+                lock (WriteLock) Live = null;
                 Connected = false;
                 if (!Stopping) Thread.Sleep(5000);
             }
@@ -184,15 +193,25 @@ namespace Plugin.Systems.Feedback
             return Buffer;
         }
 
-        // At exit: sends what is still queued (AdaptiveTriggers queues "off" for both triggers first), then stops.
+        // Writes commands at once from the calling thread, spaced like the worker's, and returns whether they went out.
+        // For exit: queued commands go out on the worker thread, which the process may not wait for.
+        public static bool SendNow(params byte[][] Packets)
+        {
+            lock (WriteLock)
+            {
+                if (Live == null) return false;
+                try
+                {
+                    foreach (byte[] P in Packets) { Live.Write(P, 0, P.Length); Live.Flush(); Thread.Sleep(15); }
+                    return true;
+                }
+                catch (Exception) { return false; }
+            }
+        }
+
+        // At exit: stops the worker; the caller frees what it set first (AdaptiveTriggers.Shutdown).
         public static void Shutdown()
         {
-            for (int i = 0; i < 20 && Connected; i++)
-            {
-                lock (Gate) { if (Pending.Count == 0) break; }
-                Thread.Sleep(10);
-            }
-            if (Connected) Thread.Sleep(40); // the last command may still be on its way out
             Stopping = true;
             lock (Gate) Monitor.Pulse(Gate);
         }

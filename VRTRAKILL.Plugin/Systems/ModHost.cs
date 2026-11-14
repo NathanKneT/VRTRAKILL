@@ -19,6 +19,9 @@ namespace Plugin.Systems
             GameObject go = new GameObject("VRTRAKILL Host") { hideFlags = HideFlags.HideAndDontSave };
             DontDestroyOnLoad(go);
             Instance = go.AddComponent<ModHost>();
+            // the triggers must be freed however the game ends: also when it is closed from SteamVR or Windows
+            Application.quitting += () => { try { Feedback.AdaptiveTriggers.Shutdown(); } catch { } };
+            System.AppDomain.CurrentDomain.ProcessExit += (s, e) => { try { Feedback.AdaptiveTriggers.Shutdown(); } catch { } };
             VRCamera.StreamerView.Create(go);
             return Instance;
         }
