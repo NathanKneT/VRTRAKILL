@@ -46,6 +46,12 @@ internal class CameraControllerTranspiler
         yield return AccessTools.Method(typeof(Washer), nameof(Washer.Update));
 
         yield return AccessTools.Method(typeof(Revolver), nameof(Revolver.Shoot));
+
+        // the sandbox spawner arm aims, moves and builds from the gun hand, as in 1.x (its patch was dropped in the
+        // 22957324 port); the moved object's distance is taken from the hand too (SandboxArmP)
+        yield return AccessTools.Method(typeof(Sandbox.Arm.SandboxArm), nameof(Sandbox.Arm.SandboxArm.Update));
+        yield return AccessTools.Method(typeof(Sandbox.Arm.MoveMode), nameof(Sandbox.Arm.MoveMode.Update));
+        yield return AccessTools.Method(typeof(Sandbox.Arm.BuildMode), nameof(Sandbox.Arm.BuildMode.Update));
     }
     // Replaces camera transform reads in the target methods, direct or through a dup of the kept CameraController.Instance, with the dominant hand transform.
     static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase original)

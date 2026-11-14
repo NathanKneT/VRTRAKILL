@@ -252,6 +252,7 @@
     <Compile Include="Patches\ULTRAKILL\PatchHookArm.cs" />
     <Compile Include="Patches\ULTRAKILL\ExplosionComfortP.cs" />
     <Compile Include="Patches\ULTRAKILL\WeaponShakeP.cs" />
+    <Compile Include="Patches\ULTRAKILL\SandboxArmP.cs" />
     <Compile Include="Patches\ULTRAKILL\PatchPunch.cs" />
     <Compile Include="Patches\ULTRAKILL\VrGunsController.cs" />
     <Compile Include="Patches\Visual\A.cs" />
