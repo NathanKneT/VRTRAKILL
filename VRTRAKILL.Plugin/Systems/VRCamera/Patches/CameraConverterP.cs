@@ -138,8 +138,32 @@ namespace Plugin.Systems.VRCamera.Patches
             __instance.ApplyRotations();
 
             if (__instance == CameraController.Instance) UpdateHeightAdjust(__instance);
-            PortalAwareSetTransformFromBody(leftEye.transform, InputTracking.GetLocalPosition(XRNode.LeftEye), __instance.transform.rotation);
-            PortalAwareSetTransformFromBody(rightEye.transform, InputTracking.GetLocalPosition(XRNode.RightEye), __instance.transform.rotation);
+            Vector3 Push = WallPush();
+            PortalAwareSetTransformFromBody(leftEye.transform, InputTracking.GetLocalPosition(XRNode.LeftEye), __instance.transform.rotation, false, Push);
+            PortalAwareSetTransformFromBody(rightEye.transform, InputTracking.GetLocalPosition(XRNode.RightEye), __instance.transform.rotation, false, Push);
+        }
+
+        // ---- Walls ----
+        // The eyes follow the real head, which can lean or step past the player body's collider: walking up to a wall
+        // then put the view inside it, which shows black. The view now stops a few centimetres before any level
+        // geometry between the body and the head, the way a real head stops at a wall; leaning still moves the view
+        // where there is room. One push for both eyes, so the stereo stays intact.
+        private const float WallMargin = .12f; // metres kept between the eyes and a wall
+        private static Vector3 WallPush()
+        {
+            CameraController cc = Vars.Registered<CameraController>();
+            if (cc == null || cc.transform.parent == null) return Vector3.zero;
+            Vector3 Head = InputTracking.GetLocalPosition(XRNode.Head);
+            Quaternion ParentRot = cc.gravityRotation * Quaternion.AngleAxis(InputVars.TurnOffset, Vector3.up);
+            // from the body's centre line at eye height out to the head, the way the eyes are placed below
+            Vector3 From = cc.transform.parent.position + ParentRot * new Vector3(0f, Head.y + HeightAdjust, 0f);
+            Vector3 Out = ParentRot * new Vector3(Head.x - HeadCentre.x, 0f, Head.z - HeadCentre.y);
+            float Distance = Out.magnitude;
+            if (Distance < .001f) return Vector3.zero;
+            Vector3 Direction = Out / Distance;
+            if (!Physics.SphereCast(From, WallMargin, Direction, out RaycastHit Hit, Distance, LayerMaskDefaults.Get(LMD.Environment), QueryTriggerInteraction.Ignore))
+                return Vector3.zero;
+            return Direction * Hit.distance - Out;
         }
 
         // ---- Height ----
@@ -156,6 +180,11 @@ namespace Plugin.Systems.VRCamera.Patches
         private static int FramesSinceCamera;
         private static bool CalibrationRequested;
         private static float GameEyeHeight, CalibratedHeadHeight = float.NaN;
+        // The tracked head's x/z at the last recenter. The eyes were placed at the player body plus the head's offset
+        // from the play area's centre, so a player standing away from that centre saw from beside or ahead of the body
+        // (and into walls the body touched). At each recenter the head's spot becomes the body's spot; the hands move
+        // with it, so they stay where they are relative to the head.
+        private static Vector2 HeadCentre;
 
         // Asks for a new height calibration on the next frames (the "Recalibrate height" key).
         public static void RequestHeightCalibration() => CalibrationRequested = true;
@@ -172,12 +201,16 @@ namespace Plugin.Systems.VRCamera.Patches
             }
             FramesSinceCamera++;
 
-            if (Vars.Config.AutoHeight && (CalibrationRequested || (float.IsNaN(CalibratedHeadHeight) && FramesSinceCamera >= CalibrationDelayFrames)))
+            // recentering runs with auto height off too; only the height part depends on it
+            if (CalibrationRequested || (float.IsNaN(CalibratedHeadHeight) && FramesSinceCamera >= CalibrationDelayFrames))
             {
                 CalibrationRequested = false;
-                CalibratedHeadHeight = InputTracking.GetLocalPosition(XRNode.Head).y;
+                Vector3 Head = InputTracking.GetLocalPosition(XRNode.Head);
+                CalibratedHeadHeight = Head.y;
+                HeadCentre = new Vector2(Head.x, Head.z);
                 Vars.Log.LogInfo($"Height calibrated: head {CalibratedHeadHeight:0.00} m above the tracking floor, game eye height {GameEyeHeight:0.00} m"
-                               + $" above the player body, \"Height offset\" {Vars.Config.HeightOffset:0.00} m.");
+                               + $" above the player body, \"Height offset\" {Vars.Config.HeightOffset:0.00} m"
+                               + $"{(Vars.Config.AutoHeight ? "" : " (auto height off: not applied)")}; head centred on the body, {HeadCentre.magnitude:0.00} m from the play area centre.");
             }
 
             float Adjust = Vars.Config.HeightOffset;
@@ -197,7 +230,7 @@ namespace Plugin.Systems.VRCamera.Patches
         }
 
         // Places a transform at a pose relative to the player body, with turn and gravity applied, then moves it through crossed portals.
-        public static void PortalAwareSetTransformFromBody(Transform t, Vector3 localPosition, Quaternion worldRotation, bool hands = false)
+        public static void PortalAwareSetTransformFromBody(Transform t, Vector3 localPosition, Quaternion worldRotation, bool hands = false, Vector3 worldPush = default)
         {
             CameraController cc = Vars.Registered<CameraController>();
             if (cc == null || cc.transform.parent == null) return;
@@ -207,9 +240,12 @@ namespace Plugin.Systems.VRCamera.Patches
 
             // auto height and "Height offset" move the eyes and the hands together, along the player's up (see UpdateHeightAdjust)
             localPosition.y += HeightAdjust;
+            // and the recenter puts the head, not the play area's centre, on the body (see HeadCentre)
+            localPosition.x -= HeadCentre.x;
+            localPosition.z -= HeadCentre.y;
 
             Vector3 transformedLocalPos = parentRot * localPosition;
-            t.position = cc.transform.parent.position + transformedLocalPos;
+            t.position = cc.transform.parent.position + transformedLocalPos + worldPush;
 
             if (hands) t.rotation = parentRot * worldRotation;
             else t.rotation = worldRotation;

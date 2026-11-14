@@ -153,7 +153,7 @@ namespace Plugin.Systems.UI
             });
             Items.Add(new Item
             {
-                Text = () => "RECENTER HEIGHT",
+                Text = () => "RECENTER VIEW",
                 Next = () => VRCamera.Patches.CameraConverterP.RequestHeightCalibration(),
             });
             Items.Add(new Item

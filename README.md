@@ -123,7 +123,7 @@ If the buttons act like an older version, pick the default layout again: SteamVR
 
 ## Settings
 
-Pause the game in the headset. A **VR** column next to the pause menu changes the main settings at once and saves them: turn mode (smooth, or snap 30, 45 or 90 degrees), turn speed, comfort vignette, HUD on the wrist or floating, rumble strength, height offset, recenter height, punch by swing or by button, and left handed (takes effect after a restart). Point the laser at a button and pull the trigger to move to the next value.
+Pause the game in the headset. A **VR** column next to the pause menu changes the main settings at once and saves them: turn mode (smooth, or snap 30, 45 or 90 degrees), turn speed, comfort vignette, HUD on the wrist or floating, rumble strength, height offset, recenter view, punch by swing or by button, and left handed (takes effect after a restart). Point the laser at a button and pull the trigger to move to the next value.
 
 ![The comfort vignette darkens the edge of the view while moving fast](docs/images/comfort-vignette.jpg)
 
@@ -167,7 +167,7 @@ Other problems:
 - Buttons do nothing: check that `BepInEx/LogOutput.log` says "VR buttons go to a virtual keyboard and mouse inside the game". If you turned on `Windows key presses`, click the ULTRAKILL window on your monitor so it has focus.
 - Buttons act like an old layout: SteamVR > Settings > Controllers > Manage Controller Bindings > ULTRAKILL > Default.
 - Punches do not register: lower `Required speed to punch`, or set `Enable movement-based punching` to `false` to punch with the button alone.
-- You feel too tall or too short: stand or sit as you play and use "Recenter height" in the VR column of the pause menu (or press `H`), or change the height offset there.
+- You feel too tall or too short: stand or sit as you play and use "Recenter view" in the VR column of the pause menu (or press `H`), or change the height offset there.
 
 ### Reporting a bug
 
