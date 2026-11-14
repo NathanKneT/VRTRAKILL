@@ -169,6 +169,7 @@ Other problems:
 - Buttons do nothing: check that `BepInEx/LogOutput.log` says "VR buttons go to a virtual keyboard and mouse inside the game". If you turned on `Windows key presses`, click the ULTRAKILL window on your monitor so it has focus.
 - Buttons act like an old layout: SteamVR > Settings > Controllers > Manage Controller Bindings > ULTRAKILL > Default.
 - Punches do not register: lower `Required speed to punch`, or set `Enable movement-based punching` to `false` to punch with the button alone.
+- A hand drifts or flies away (PS VR2): the headset's cameras lost the controller. The mod keeps that hand near you until it is found again. If it happens often, see the tracking tips in [docs/HEADSETS.md](docs/HEADSETS.md#known-issues).
 - You feel too tall or too short: stand or sit as you play and use "Recenter view" in the VR column of the pause menu (or press `H`), or change the height offset there.
 
 ### Reporting a bug

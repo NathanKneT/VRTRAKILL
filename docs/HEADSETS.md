@@ -118,6 +118,7 @@ If the buttons still act like an older version, reset SteamVR to the default bin
 ## Known issues
 
 - PS VR2 and Quest are tested on hardware. Index, Steam Frame, Pico, Vive and WMR bindings are checked against driver input profiles only.
+- PS VR2 controller drift: the headset finds each Sense controller by its light ring, timed over Bluetooth. Losses come with a weak Bluetooth link (Bluetooth headphones on the same adapter, an antenna behind the PC, 2.4 GHz dongles next to it), hands held low or close to the face, and see-through mode. Use wired headphones in VR, put the Bluetooth antenna in view of the play area, run "Check Bluetooth Connection Quality" in the PlayStation VR2 App, and start each session standing in the middle of the play area. While the cameras have lost a controller, the mod keeps its hand near you and keeps its rotation live.
 - Pico: the layout is checked against the Pico profile of SteamVR's Steam Link driver. PICO Connect's own driver could not be checked.
 - Quest: the (L) menu button opens the SteamVR menu. Games cannot use it, so pause is a double tap of (R) B.
 - WMR: the binding was checked against Valve's WMR example binding and ALVR's WMR controller profile, not against Microsoft's own driver profile.

@@ -56,6 +56,50 @@ namespace VRBasePlugin.Systems.VRCamera
             r.gameObject.SetActive(true);
         }
 
+        // ---- Lost controller tracking ----
+        // PS VR2 Sense controllers are found by the headset's cameras; when the cameras lose one (hands low or close to the
+        // face, Bluetooth timing), the driver goes on from the controller's motion sensors and the position drifts, once
+        // 3.7 m under the floor in the PS VR2 test's SteamVR log. The rotation stays right (gyroscope). While SteamVR says
+        // the pose is not valid or out of range, or the hand is farther from the head than an arm reaches, the hand keeps
+        // its last good place relative to the head (and turns with the head's yaw), and the rotation stays live, so
+        // aiming still works through a short loss. When tracking comes back, the hand is where it really is again.
+        private struct HandMemory { public bool Has, Held; public Vector3 Offset; public float LoggedAt; public int JumpFrame; }
+        private HandMemory LeftHeld, RightHeld;
+
+        // True on the frame a hand jumped between its held place and its tracked one; hand speed must skip that frame,
+        // or the jump would read as a punch.
+        public bool HandJumped(SteamVR_Input_Sources Source)
+            => (Source == SteamVR_Input_Sources.LeftHand ? LeftHeld.JumpFrame : RightHeld.JumpFrame) == Time.frameCount;
+        private const float MaxReach = 1.2f; // metres between the head and a hand, more than any arm
+
+        private Vector3 Guard(SteamVR_Action_Pose Action, SteamVR_Input_Sources Source, Vector3 Pos, ref HandMemory M, string Name)
+        {
+            if (Action == null || !SteamVR_Input.initialized) return Pos;
+            ETrackingResult State = Action[Source].trackingState;
+            bool Valid = Action.GetPoseIsValid(Source) && State != ETrackingResult.Running_OutOfRange && State != ETrackingResult.Calibrating_OutOfRange;
+            bool InReach = (Pos - headPos).sqrMagnitude <= MaxReach * MaxReach;
+            Quaternion Yaw = Quaternion.Euler(0f, headRot.eulerAngles.y, 0f);
+            if (Valid && InReach)
+            {
+                M.Offset = Quaternion.Inverse(Yaw) * (Pos - headPos);
+                M.Has = true;
+                if (M.Held) { M.Held = false; M.JumpFrame = Time.frameCount; Vars.Log.LogInfo($"{Name} controller tracked again."); }
+                return Pos;
+            }
+            if (!M.Has || !Action.GetDeviceIsConnected(Source)) return Pos;
+            if (!M.Held)
+            {
+                M.Held = true;
+                M.JumpFrame = Time.frameCount;
+                if (Time.unscaledTime - M.LoggedAt > 5f)
+                {
+                    M.LoggedAt = Time.unscaledTime;
+                    Vars.Log.LogInfo($"{Name} controller lost tracking ({(Valid ? $"{(Pos - headPos).magnitude:0.0} m from the head" : State.ToString())}); its hand stays at its last place until it is found again.");
+                }
+            }
+            return headPos + Yaw * M.Offset;
+        }
+
         internal static Pose? TestLeftPose, TestRightPose; // set only by the developer test hook (DevTestHooks)
         private bool IsTurning; private float SnapTurnTimer;
         // Reads the head and hand poses, updates the runtime-built actions and updates the turn offset for smooth or snap turning.
@@ -73,6 +117,8 @@ namespace VRBasePlugin.Systems.VRCamera
                 rightPos = _right.position;
                 rightRot = _right.rotation;
             }
+            leftPos = Guard(SteamVR_Actions._default.LeftPose, SteamVR_Input_Sources.LeftHand, leftPos, ref LeftHeld, "Left");
+            rightPos = Guard(SteamVR_Actions._default.RightPose, SteamVR_Input_Sources.RightHand, rightPos, ref RightHeld, "Right");
             // developer test hook only (DevTestHooks): fixed hand poses in tracking space, for headsets without controllers
             if (TestLeftPose.HasValue) { leftPos = TestLeftPose.Value.position; leftRot = TestLeftPose.Value.rotation; }
             if (TestRightPose.HasValue) { rightPos = TestRightPose.Value.position; rightRot = TestRightPose.Value.rotation; }

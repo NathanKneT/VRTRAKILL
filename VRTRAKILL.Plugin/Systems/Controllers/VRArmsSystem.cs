@@ -24,6 +24,8 @@ namespace Plugin.Systems.Controllers
             // world position and scaled time added locomotion and multiplied by the weapon wheel and hitstop time scales
             Vector3 Position = CC.source == SteamVR_Input_Sources.LeftHand ? VRControllerLocations.Instance.leftPos : VRControllerLocations.Instance.rightPos;
             float Delta = Time.unscaledDeltaTime;
+            // a hand that jumps back from where it was held during lost tracking is not a swing
+            if (VRControllerLocations.Instance.HandJumped(CC.source)) _HasPreviousPosition = false;
             if (_HasPreviousPosition && Delta > 0f) Speed = (Position - _PreviousPosition).magnitude / Delta;
             _PreviousPosition = Position; _HasPreviousPosition = true;
             if (TestHandSpeed.HasValue) Speed = TestHandSpeed.Value; // developer test hook only (DevTestHooks)
