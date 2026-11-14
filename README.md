@@ -42,7 +42,8 @@ This version runs on ULTRAKILL build 22957324 (Unity 2022.3.29f1), the current o
 - **No window juggling.** The buttons work while another window has focus, and they never reach Windows or other programs.
 - **Full frame rate.** The desktop frame cap and vsync are off while VR runs, so the game keeps up with a 90 or 120 Hz headset.
 - **A streamer view for recording.** Press `T`, or turn on STREAMER VIEW in the VR column, and the monitor shows a smoothed, level 16:9 view at 60 frames a second instead of the shaky headset mirror, with a HUD, and on PS VR2 a ring where your eyes look and the path of eye-aimed parries. The headset keeps its frame rate. Recording tips are in [docs/STREAMING.md](docs/STREAMING.md).
-- **VR starts by itself** as soon as SteamVR sees the headset. While it is not running, the game window on your monitor says why.
+- **One Play button for VR and flat.** With SteamVR running the game starts in VR; without it, it starts flat on the monitor as the unmodded game. Once in VR mode, VR starts by itself as soon as SteamVR sees the headset, and while it is not running the game window says why.
+- **Install in one click.** Extract the release zip anywhere and double-click `INSTALL VRTRAKILL.bat`: it finds the game through Steam and keeps your settings. `UNINSTALL VRTRAKILL.bat` takes it all out again. Or use a mod manager.
 
 The full list of changes is in [CHANGELOG.md](CHANGELOG.md).
 
@@ -263,7 +264,7 @@ Setup, testing in the game, the in-game test hooks, the left-handed layout gener
 - Raicuparta: the globalgamemanagers patcher approach comes from Two Forks VR (MIT).
 - BnuuySolutions: the [PSVR2 Toolkit](https://github.com/BnuuySolutions/PSVR2Toolkit) (MIT) opens the PS VR2 Sense adaptive triggers and the headset's eye tracking on PC; the mod sends its trigger effects to it and reads the gaze from it.
 - Motaweh updated the mod for build 22957324 (1.0.x).
-- NathanKneT made version 2.0.0: the fixes for the problems players reported most, buttons inside the game, controller layouts and button prompts, left-handed play, controller feedback, settings in the headset and the comfort vignette.
+- NathanKneT made version 2.0.0: the fixes for the problems players reported most, buttons inside the game, controller layouts and button prompts, left-handed play, controller feedback, settings in the headset and the comfort vignette, comfort presets, PS VR2 adaptive triggers and eye-aimed parries, the streamer view, the VR-or-flat start and the one-click installer.
 
 ## License
 
