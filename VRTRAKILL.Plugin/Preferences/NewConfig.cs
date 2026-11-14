@@ -30,9 +30,9 @@ namespace Plugin.Prefs
 
         // Version of the defaults this file was written with; null for files from before 2.0.0. See Migrate.
         [JsonProperty("Config version")] public int? ConfigVersion { get; set; }
-        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added. 4: auto height. 5: HUD on wrist. 6: "Left handed" renamed (was "Left handed (BROKEN)"). 7: "Windows key presses". 8: rumble settings. 9: comfort vignette. 10: smaller UI. 11: screen flashes. 12: coin throw. 13: low health warning. 14: adaptive triggers. 15: weapon charge shake. 16: parry aim.
+        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added. 4: auto height. 5: HUD on wrist. 6: "Left handed" renamed (was "Left handed (BROKEN)"). 7: "Windows key presses". 8: rumble settings. 9: comfort vignette. 10: smaller UI. 11: screen flashes. 12: coin throw. 13: low health warning. 14: adaptive triggers. 15: weapon charge shake. 16: parry aim. 17: parry warning.
         // Bump it when settings are added, so existing files are rewritten and show the new settings.
-        public const int CurrentConfigVersion = 16;
+        public const int CurrentConfigVersion = 17;
 
         // Moves values that are still the old defaults to the new defaults, once. Returns true when the file should be
         // rewritten (which also adds settings the file does not have yet).
@@ -69,6 +69,8 @@ namespace Plugin.Prefs
             [JsonProperty("Damage rumble")] public bool DamageRumble { get; set; } = true;
             // ticks when the menu laser reaches an item and when it clicks
             [JsonProperty("Menu rumble")] public bool MenuRumble { get; set; } = true;
+            // a tick in the arm hand when an enemy projectile comes within parry reach (Systems/Feedback/ParryWarning)
+            [JsonProperty("Parry warning")] public bool ParryWarning { get; set; } = true;
             // PS VR2 Sense adaptive trigger effects per weapon, through the PSVR2 Toolkit when it is installed (Systems/Feedback/AdaptiveTriggers)
             [JsonProperty("Adaptive triggers")] public bool AdaptiveTriggers { get; set; } = true;
             // guns in the left hand, arm in the right, and the buttons mirrored (Input/LeftHandedBindings)
