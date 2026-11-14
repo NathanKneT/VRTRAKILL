@@ -173,6 +173,10 @@
       <HintPath>$(ULTRAKILLManaged)\UnityEngine.UIModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="UnityEngine.VideoModule">
+      <HintPath>$(ULTRAKILLManaged)\UnityEngine.VideoModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="UnityEngine.VRModule">
       <HintPath>$(ULTRAKILLManaged)\UnityEngine.VRModule.dll</HintPath>
       <Private>False</Private>
@@ -214,6 +218,7 @@
     <Compile Include="Systems\UI\Patches\PauseMenuP.cs" />
     <Compile Include="Systems\UI\Patches\ButtonPrompts.cs" />
     <Compile Include="Systems\UI\Patches\GamePointerP.cs" />
+    <Compile Include="Systems\UI\Patches\IntroVideoP.cs" />
     <Compile Include="Input\ControlMessages\MessageContainer.cs" />
     <Compile Include="Input\ControlMessages\Patches.cs" />
     <Compile Include="Input\InputMap.cs" />
