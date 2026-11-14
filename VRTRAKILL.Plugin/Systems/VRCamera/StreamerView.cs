@@ -18,7 +18,7 @@ namespace Plugin.Systems.VRCamera
     // picture on the monitor, with a HUD and the gaze, parry and trigger overlays for videos. The toggle key ("Toggle
     // streamer view", T) and "STREAMER VIEW" in the VR column turn it on and off; the choice is saved. Off, the monitor
     // shows the headset mirror as before.
-    [DefaultExecutionOrder(1000)] // after CameraController (eyes placed) and PortalManagerV2 (999)
+    [DefaultExecutionOrder(1000)] // meant to run after CameraController and PortalManagerV2 (999); not guaranteed for a mod
     internal sealed class StreamerView : MonoBehaviour
     {
         public static StreamerView Instance { get; private set; }
@@ -61,8 +61,9 @@ namespace Plugin.Systems.VRCamera
             Camera L = Patches.CameraConverterP.leftEye, R = Patches.CameraConverterP.rightEye;
             if (L == null || R == null) return;
             if (MadeFor != L || World == null) MakeCameras(L);
-            // only on frames the eyes were placed: a loading level holds its last picture
-            if (Patches.CameraConverterP.EyesPlacedFrame != Time.frameCount) return;
+            // only while the eyes are being placed (this frame or the last: Unity may run this LateUpdate before the
+            // camera's, since [DefaultExecutionOrder] is not applied to a mod's scripts); a loading level holds its picture
+            if (Time.frameCount - Patches.CameraConverterP.EyesPlacedFrame > 1) return;
             Place(L, R);
             if (!Due()) return;
             MakeTarget();
@@ -175,7 +176,9 @@ namespace Plugin.Systems.VRCamera
             if (Level > 0f) Rot = Quaternion.Slerp(Rot, Quaternion.LookRotation(Forward, Up), Level);
 
             World.transform.SetPositionAndRotation(Body + Rig * LocalPos, Rot);
-            if (Patches.CameraConverterP.EyesThroughPortals) Patches.CameraConverterP.MoveFromPlayerThroughPortals(World.transform);
+            // the first frame of a level change can still see half torn-down portal data
+            if (Patches.CameraConverterP.EyesThroughPortals)
+                try { Patches.CameraConverterP.MoveFromPlayerThroughPortals(World.transform); } catch (System.NullReferenceException) { }
         }
 
 
