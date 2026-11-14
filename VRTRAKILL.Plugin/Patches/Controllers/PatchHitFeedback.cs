@@ -62,6 +62,21 @@ internal static class PatchHitFeedback
         Haptics.Add(H, HeavyHitters.Contains(Hitter) ? .5f : .3f, .03f, Haptics.Tick, "hit " + Hitter);
     }
 
+    // A parry is the game's sharpest moment: time stops for 0.25 s, the screen flashes, the camera shakes. In VR the
+    // flash is now faint and the camera shake does not reach the eyes, and the game's own parry rumble was lost among the
+    // others ("I don't really get feedback", PS VR2 test). A parry now has its own feel, stronger than anything else: a
+    // full-strength crack in the arm hand, then a deep knock that lasts through the time stop, and an echo in the gun
+    // hand. The vibrations run on real time, so they play while the game is stopped.
+    [HarmonyPostfix]
+    [HarmonyPatch(typeof(TimeController), nameof(TimeController.ParryFlash))]
+    static void Parried()
+    {
+        if (!Vars.Config.Controllers.HitRumble) return;
+        Haptics.Add(Haptics.Hand.Arm, 1f, .05f, Haptics.Tick, "parry crack");
+        Haptics.Add(Haptics.Hand.Arm, .85f, .28f, Haptics.Thud, "parry knock");
+        Haptics.Add(Haptics.Hand.Gun, .4f, .18f, Haptics.Thud, "parry echo");
+    }
+
     [HarmonyPrefix]
     [HarmonyPatch(typeof(NewMovement), nameof(NewMovement.GetHurt))]
     static void HurtPrefix(NewMovement __instance, out int __state) => __state = __instance.hp;

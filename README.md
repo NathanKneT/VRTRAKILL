@@ -35,7 +35,7 @@ This version runs on ULTRAKILL build 22957324 (Unity 2022.3.29f1), the current o
 - **Prompts name your controller's buttons.** The game says "Cross" on PS VR2, "A" on Quest, "D-pad down" on Steam Frame, and so on.
 - **Layouts for every common controller.** PS VR2 Sense, Quest Touch, Index, Steam Frame, Pico, Vive wands and WMR, each with a mirrored left-handed layout.
 - **VR settings in the pause menu.** Turning, comfort vignette, HUD, rumble, height, punch mode and left-handed play, changed in the headset.
-- **Controller feedback.** Each hand rumbles on its own: gunfire in the gun hand, punches and the whiplash in the other, a tick when a hit lands, a knock on a kill, a thud when you get hurt, and a heartbeat when your health is low.
+- **Controller feedback.** Each hand rumbles on its own: gunfire in the gun hand, punches and the whiplash in the other, a tick when a hit lands, a sharp crack and a deep knock on a parry, a knock on a kill, a thud when you get hurt, and a heartbeat when your health is low.
 - **Comfort options.** Snap or smooth turning, an optional vignette while moving fast, adjustable movement speed. Seated or standing play: your head is put at the game's eye height at each level.
 - **No window juggling.** The buttons work while another window has focus, and they never reach Windows or other programs.
 - **Full frame rate.** The desktop frame cap and vsync are off while VR runs, so the game keeps up with a 90 or 120 Hz headset.
@@ -147,7 +147,7 @@ All settings are in `BepInEx/plugins/VRTRAKILL/VRTRAKILL_Config.json`. Close the
 | `Screen flashes` | `"Reduced"` | The white flash of a parry and the red flash of damage cover the whole view in VR. `"Reduced"` keeps them faint, `"Off"` hides them, `"Full"` shows them as the game draws them. `"Reduced"` and `"Off"` also soften explosions: no white first frame, a fainter sphere, half the light. Fades to black are not changed. |
 | `Low health warning` | `true` | Below 30 health, both hands feel a heartbeat that quickens near death, and the edge of the view glows dark red with each beat (not with `"Screen flashes"` off). |
 | `Rumble strength` | `1.0` | Scales all controller vibration, from 0 to 2. The game's own rumble setting still applies on top. |
-| `Hit and kill rumble` / `Damage rumble` / `Menu rumble` | `true` | The tick when your shot or punch lands and the knock on a kill; the thud when you get hurt; the tick when the menu laser reaches or presses a button. |
+| `Hit and kill rumble` / `Damage rumble` / `Menu rumble` | `true` | The tick when your shot or punch lands, the crack and knock of a parry, and the knock on a kill; the thud when you get hurt; the tick when the menu laser reaches or presses a button. |
 | `Finger tracking` | `false` | The arm hand's fingers follow yours, from the controller's finger sensors. "Fingers" in the VR column switches it at once. |
 | `Windows key presses` | `false` | `false`: the VR buttons press a keyboard and mouse that exist only inside the game. `true`: real Windows key presses, like 1.0.x, which need the ULTRAKILL window in front. Use it only if a button does nothing with `false`, and report it. |
 
