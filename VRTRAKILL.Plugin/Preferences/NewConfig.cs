@@ -38,9 +38,9 @@ namespace Plugin.Prefs
 
         // Version of the defaults this file was written with; null for files from before 2.0.0. See Migrate.
         [JsonProperty("Config version")] public int? ConfigVersion { get; set; }
-        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added. 4: auto height. 5: HUD on wrist. 6: "Left handed" renamed (was "Left handed (BROKEN)"). 7: "Windows key presses". 8: rumble settings. 9: comfort vignette. 10: smaller UI. 11: screen flashes. 12: coin throw. 13: low health warning. 14: adaptive triggers. 15: weapon charge shake. 16: parry aim. 17: parry warning. 18: parry aim by the eyes. 19: "Enable controller-based aiming" and "WHIPLASH: camera-based aiming" removed (they did nothing). 20: streamer view replaces the desktop view. 21: streamer HUD and overlay. 22: "Start in VR". 23: streamer view headset comparison.
+        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added. 4: auto height. 5: HUD on wrist. 6: "Left handed" renamed (was "Left handed (BROKEN)"). 7: "Windows key presses". 8: rumble settings. 9: comfort vignette. 10: smaller UI. 11: screen flashes. 12: coin throw. 13: low health warning. 14: adaptive triggers. 15: weapon charge shake. 16: parry aim. 17: parry warning. 18: parry aim by the eyes. 19: "Enable controller-based aiming" and "WHIPLASH: camera-based aiming" removed (they did nothing). 20: streamer view replaces the desktop view. 21: streamer HUD and overlay. 22: "Start in VR". 23: streamer view headset comparison. 24: movement gestures.
         // Bump it when settings are added, so existing files are rewritten and show the new settings.
-        public const int CurrentConfigVersion = 23;
+        public const int CurrentConfigVersion = 24;
 
         // Moves values that are still the old defaults to the new defaults, once. Returns true when the file should be
         // rewritten (which also adds settings the file does not have yet).
@@ -172,6 +172,24 @@ namespace Plugin.Prefs
             [JsonProperty("Weapon charge shake")] public float WeaponShake { get; set; } = .1f;
         }
 
+        // optional gestures for moves that stay on their buttons too (Systems/Movement/MovementGestures); off by default
+        [JsonProperty("Movement gestures")] public _Gestures Gestures { get; set; }
+        public class _Gestures
+        {
+            // in the air, both fists driven down below the chest: ground slam; kept low after landing: power slam
+            [JsonProperty("Slam with fists")] public bool SlamWithFists { get; set; } = false;
+            // how fast both fists must go down, in m/s
+            [JsonProperty("Slam fist speed (m/s)")] public float SlamSpeed { get; set; } = 2f;
+            // while the whiplash has caught something, pulling the arm hand back toward you makes it pull
+            [JsonProperty("Pull the whiplash by yanking")] public bool YankWhiplash { get; set; } = false;
+            // how fast the arm hand must come back toward you, in m/s
+            [JsonProperty("Yank speed (m/s)")] public float YankSpeed { get; set; } = 1.5f;
+            // crouching for real slides; standing back up stops (not when playing seated)
+            [JsonProperty("Slide by crouching")] public bool CrouchSlide { get; set; } = false;
+            // how far the head must go below its standing height to slide, in metres
+            [JsonProperty("Crouch depth (meters)")] public float CrouchDepth { get; set; } = .3f;
+        }
+
         // what the PC monitor shows while you play, for recording and streaming (Systems/VRCamera/StreamerView)
         [JsonProperty("Streamer view")] public _StreamerView StreamerView { get; set; }
         public class _StreamerView
@@ -233,6 +251,7 @@ namespace Plugin.Prefs
             VRBody = new _VRBody();
             UIInteraction = new _UIInteraction();
             StreamerView = new _StreamerView();
+            Gestures = new _Gestures();
             Comfort = new _Comfort();
             Misc = new _Misc();
         }

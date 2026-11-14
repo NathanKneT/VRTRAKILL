@@ -11,7 +11,7 @@
     "Jump multiplier": 1.0,
     "Height offset (meters)": 0.0,
     "Auto height": true,
-    "Config version": 23,
+    "Config version": 24,
     "Controller Settings": {
       "Deadzone (from 0 to 1)": 0.4,
       "Smooth turning speed": 300.0,
@@ -61,6 +61,14 @@
       "Screen flashes": "Reduced",
       "Low health warning": true,
       "Weapon charge shake": 0.1
+    },
+    "Movement gestures": {
+      "Slam with fists": false,
+      "Slam fist speed (m/s)": 2.0,
+      "Pull the whiplash by yanking": false,
+      "Yank speed (m/s)": 1.5,
+      "Slide by crouching": false,
+      "Crouch depth (meters)": 0.3
     },
     "Streamer view": {
       "On": false,

@@ -336,7 +336,19 @@ namespace Plugin.Systems.Input
         }
         // Presses or releases the slide bind when the slide action changes.
         private static void SlideH(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
-        { if (newState != Slide) { Slide = newState; TriggerKey(Slide, !Slide, ConfigMaster.KSlide, ConfigMaster.MSlide); } }
+        { SlideButton = newState; ApplySlide(); }
+        // The slide key is down while the button or a movement gesture (slam with fists, crouch) asks for it.
+        private static bool SlideButton, SlideGesture;
+        internal static void SetSlideGesture(bool Down)
+        {
+            if (Down == SlideGesture) return;
+            SlideGesture = Down; ApplySlide();
+        }
+        private static void ApplySlide()
+        {
+            bool Now = SlideButton || SlideGesture;
+            if (Now != Slide) { Slide = Now; TriggerKey(Slide, !Slide, ConfigMaster.KSlide, ConfigMaster.MSlide); }
+        }
         // Presses or releases the dash bind when the dash action changes.
         private static void DashH(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
         { if (newState != Dash) { Dash = newState; TriggerKey(Dash, !Dash, ConfigMaster.KDash, ConfigMaster.MDash); } }
@@ -381,7 +393,25 @@ namespace Plugin.Systems.Input
         { if (newState != SwapHand) { SwapHand = newState; TriggerKey(SwapHand, !SwapHand, ConfigMaster.KSwapHand, ConfigMaster.MSwapHand); } }
         // Presses or releases the whiplash bind when the whiplash action changes.
         private static void WhiplashH(SteamVR_Action_Boolean fromAction, SteamVR_Input_Sources fromSource, bool newState)
-        { if (newState != Whiplash) { Whiplash = newState; TriggerKey(Whiplash, !Whiplash, ConfigMaster.KWhiplash, ConfigMaster.MWhiplash); } }
+        {
+            WhiplashButton = newState;
+            if (!newState) WhiplashYanked = false; // the next press throws again
+            ApplyWhiplash();
+        }
+        // The whiplash key is down while the button is held, until a yank of the arm hand lets it go: the game pulls on
+        // the release (MovementGestures, "Pull the whiplash by yanking").
+        private static bool WhiplashButton, WhiplashYanked;
+        internal static bool YankWhiplash()
+        {
+            if (!WhiplashButton || WhiplashYanked) return false;
+            WhiplashYanked = true; ApplyWhiplash();
+            return true;
+        }
+        private static void ApplyWhiplash()
+        {
+            bool Now = WhiplashButton && !WhiplashYanked;
+            if (Now != Whiplash) { Whiplash = Now; TriggerKey(Whiplash, !Whiplash, ConfigMaster.KWhiplash, ConfigMaster.MWhiplash); }
+        }
 
         private static bool ShootInMenu;
         // Presses or releases the shoot bind, but sends nothing for a press that started in a menu, where the trigger clicks the laser target.

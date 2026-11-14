@@ -147,6 +147,14 @@ namespace Plugin.Systems.UI
                 Text = () => "OVERLAY: " + Vars.Config.StreamerView.Overlay.ToUpperInvariant(),
                 Next = () => Vars.Config.StreamerView.Overlay = Vars.Config.StreamerView.Overlay == "Always" ? "Parries" : Vars.Config.StreamerView.Overlay == "Parries" ? "Off" : "Always",
             });
+            // the movement gestures as one switch: ON turns on all three, OFF all three; CUSTOM when set apart in the file
+            var Gest = Vars.Config.Gestures;
+            Items.Add(new Item
+            {
+                Text = () => "GESTURES: " + (Gest.SlamWithFists && Gest.YankWhiplash && Gest.CrouchSlide ? "ON"
+                                           : !Gest.SlamWithFists && !Gest.YankWhiplash && !Gest.CrouchSlide ? "OFF" : "CUSTOM"),
+                Next = () => { bool On = !(Gest.SlamWithFists && Gest.YankWhiplash && Gest.CrouchSlide); Gest.SlamWithFists = Gest.YankWhiplash = Gest.CrouchSlide = On; },
+            });
             Items.Add(new Item
             {
                 Text = () => "COMPARE: " + Vars.Config.StreamerView.Comparison.ToUpperInvariant(),

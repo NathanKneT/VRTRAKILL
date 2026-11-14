@@ -168,6 +168,10 @@ namespace Plugin.Systems.VRCamera.Patches
         // with it, so they stay where they are relative to the head.
         private static Vector2 HeadCentre;
 
+        // The head's height above the tracking floor when standing, measured at the last calibration; NaN before one.
+        // The crouch slide gesture compares the head with it (Systems/Movement/MovementGestures).
+        internal static float StandingHeadHeight => CalibratedHeadHeight;
+
         // Asks for a new height calibration on the next frames (the "Recalibrate height" key).
         public static void RequestHeightCalibration() => CalibrationRequested = true;
 

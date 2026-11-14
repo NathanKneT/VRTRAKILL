@@ -35,6 +35,8 @@ namespace Plugin.Systems
             catch (System.Exception e) { if (loggedErrors++ < 3) Vars.Log.LogError("VR start step failed: " + e); }
             try { Input.SVRActionsManager.TickVirtualInput(); VRCamera.FramePacing.Apply(); }
             catch (System.Exception e) { if (loggedErrors++ < 3) Vars.Log.LogError("Virtual input step failed: " + e); }
+            try { if (Vars.Config != null) Movement.MovementGestures.Tick(); }
+            catch (System.Exception e) { if (loggedErrors++ < 3) Vars.Log.LogError("Movement gesture step failed: " + e); }
         }
 
         // Sends controller vibration once a frame, after the game's rumble and the mod's pulses for this frame are in.

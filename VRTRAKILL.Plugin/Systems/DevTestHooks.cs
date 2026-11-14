@@ -57,6 +57,7 @@ namespace Plugin.Systems
                     StreamerTest = Array.Exists(Lines, L => L.Trim().Equals("streamertest", StringComparison.OrdinalIgnoreCase));
                     StyleTest = Array.Exists(Lines, L => L.Trim().Equals("styletest", StringComparison.OrdinalIgnoreCase));
                     CompareTest = Array.Exists(Lines, L => L.Trim().Equals("comparetest", StringComparison.OrdinalIgnoreCase));
+                    GestureTest = Array.Exists(Lines, L => L.Trim().Equals("gesturetest", StringComparison.OrdinalIgnoreCase));
                 }
             }
             catch (Exception e) { Vars.Log.LogWarning("Test scene file unreadable: " + e.Message); }
@@ -88,6 +89,7 @@ namespace Plugin.Systems
             if (StreamerTest) yield return CheckStreamer(Clock);
             if (StyleTest) yield return ShowStyle(Clock);
             if (CompareTest) yield return ShowComparison(Clock);
+            if (GestureTest) yield return CheckGestures(Clock);
             if (LevelSweep) yield return SweepLevels(Clock);
             if (PauseDump) yield return DumpPause(Clock);
             if (PromptTest) yield return CheckPrompts(Clock);
@@ -692,6 +694,69 @@ namespace Plugin.Systems
         // Side by side for 6 s each, logging "Comparison view: <mode>" (capture the window then), and puts the setting
         // back.
         private static bool CompareTest;
+
+        // A line "gesturetest": with the movement gestures on, in the level: (1) the head 45 cm lower than standing on
+        // the ground must start a slide and standing up must stop it; (2) lifted 12 m, both fists driven down must start
+        // a ground slam. The yank needs a caught whiplash target and is left to a headset test. Settings are put back.
+        private static bool GestureTest;
+        private static IEnumerator CheckGestures(System.Diagnostics.Stopwatch Clock)
+        {
+            double T = Clock.Elapsed.TotalSeconds;
+            while (Clock.Elapsed.TotalSeconds < T + 60 && (Vars.IsMainMenu || Vars.Registered<NewMovement>() == null)) yield return null;
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 4) yield return null;
+            var G = Vars.Config.Gestures;
+            bool WasSlam = G.SlamWithFists, WasYank = G.YankWhiplash, WasCrouch = G.CrouchSlide;
+            G.SlamWithFists = G.YankWhiplash = G.CrouchSlide = true;
+            NewMovement NM = Vars.Registered<NewMovement>();
+            // hands at the sides, still
+            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestLeftPose = BesideHead(new Vector3(-.2f, -.35f, .25f), Quaternion.identity);
+            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestRightPose = BesideHead(new Vector3(.2f, -.35f, .25f), Quaternion.identity);
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 1) yield return null;
+
+            // (1) crouch slide, as a player standing 1.70 m tall (a headset resting on a desk reads as seated): the head is
+            // moved to 1.68 m, then down to 1.20 m, then back up
+            float HeadNow = UnityEngine.XR.InputTracking.GetLocalPosition(UnityEngine.XR.XRNode.Head).y;
+            Movement.MovementGestures.TestStandingHeight = 1.7f;
+            Movement.MovementGestures.TestHeadDrop = HeadNow - 1.68f;
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + .3) yield return null;
+            bool SlidStanding = NM.sliding;
+            Movement.MovementGestures.TestHeadDrop = HeadNow - 1.2f;
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + .6) yield return null;
+            bool SlidDown = NM.sliding;
+            Movement.MovementGestures.TestHeadDrop = HeadNow - 1.68f;
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + .6) yield return null;
+            bool StoodUp = !NM.sliding;
+            Movement.MovementGestures.TestStandingHeight = null;
+            Movement.MovementGestures.TestHeadDrop = 0f;
+            Vars.Log.LogWarning($"Gesture test, crouch: sliding while standing {SlidStanding}, while crouched {SlidDown}, stopped after standing {StoodUp} -> {(!SlidStanding && SlidDown && StoodUp ? "OK" : "DIFFERENT")}");
+
+            // (2) slam: lift the player 60 m, let it fall for 0.6 s (the game wants half a second of fall and 3 m of air
+            // under the player), then both fists down 40 cm in 0.1 s (4 m/s)
+            NM.transform.position += NM.transform.up * 60f;
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + .6) yield return null;
+            bool Airborne = !NM.gc.onGround;
+            float Air = Physics.Raycast(NM.gc.transform.position + NM.transform.up, -NM.transform.up, out RaycastHit Below, 500f, LayerMaskDefaults.Get(LMD.Environment), QueryTriggerInteraction.Ignore) ? Below.distance : -1f;
+            Vars.Log.LogWarning($"Gesture test, slam: before the fists, {Air:0.0} m of air below, fall time {NM.fallTime:0.00} s, slam cooldown {NM.slamCooldown:0.00}, heavy fall {NM.gc.heavyFall}.");
+            double Start = Clock.Elapsed.TotalSeconds;
+            while (Clock.Elapsed.TotalSeconds < Start + .1)
+            {
+                float K = (float)((Clock.Elapsed.TotalSeconds - Start) / .1);
+                float Y = -.3f - .4f * K;
+                VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestLeftPose = BesideHead(new Vector3(-.2f, Y, .3f), Quaternion.identity);
+                VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestRightPose = BesideHead(new Vector3(.2f, Y, .3f), Quaternion.identity);
+                yield return null;
+            }
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + .15) yield return null;
+            bool Slammed = NM.gc.heavyFall || NM.slamForce > 0f;
+            T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 2) yield return null;
+            bool Landed = NM.gc.onGround;
+            Vars.Log.LogWarning($"Gesture test, slam: in the air {Airborne}, slam started {Slammed}, landed {Landed} -> {(Airborne && Slammed ? "OK" : "DIFFERENT")}");
+
+            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestLeftPose = null;
+            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestRightPose = null;
+            G.SlamWithFists = WasSlam; G.YankWhiplash = WasYank; G.CrouchSlide = WasCrouch;
+            Vars.Log.LogWarning("Gesture test: done (the whiplash yank needs a caught target: headset test).");
+        }
         private static IEnumerator ShowComparison(System.Diagnostics.Stopwatch Clock)
         {
             double T = Clock.Elapsed.TotalSeconds;

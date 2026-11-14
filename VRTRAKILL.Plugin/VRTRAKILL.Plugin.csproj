@@ -280,6 +280,7 @@
     <Compile Include="Systems\Controllers\VRArmsSystem.cs" />
     <Compile Include="Systems\Controllers\VRControllersSystem.cs" />
     <Compile Include="Systems\Controllers\VRGunsSystem.cs" />
+    <Compile Include="Systems\Movement\MovementGestures.cs" />
     <Compile Include="Systems\Movement\Patches\A.cs" />
     <Compile Include="Systems\Movement\Patches\MovementTranspiler.cs" />
     <Compile Include="Systems\Movement\Patches\NewMovementP.cs" />

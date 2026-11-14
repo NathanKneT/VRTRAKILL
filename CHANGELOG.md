@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Optional movement gestures, off by default (GESTURES in the VR column, "Movement gestures" in the config, version 24); the buttons keep working beside them:
+  - Slam with fists: in the air, both fists driven down below the chest press slide, which the game turns into a ground slam; kept low after landing, the power slam. If the game refuses the slam (too close to the ground), the key is let go at once, so landing does not start a slide.
+  - Pull the whiplash by yanking: once the hook has caught something, pulling the arm hand back toward the body lets the whiplash key go, which is when the game pulls, even with the button still held.
+  - Slide by crouching: on the ground, the head 30 cm below its standing height holds slide, standing back up stops it (10 cm of hysteresis); off when playing seated. In VR the eye height comes from the real head only, so the game's slide camera drop does not add to the crouch.
 - Headset comparison for videos: `Y` (or COMPARE in the VR column) shows the raw headset view, shaking and rolling with the head like a plain mirror recording, next to the streamer view, in a corner or side by side, each labelled. The headset side is one eye with the headset's own field of view, the comfort vignette and the game's floating panels, like a plain mirror recording; the streamer side keeps the gaze ring, the parry marks and the HUD. "Headset comparison" in the "Streamer view" settings (config version 23).
 
 ## 2.0.1
