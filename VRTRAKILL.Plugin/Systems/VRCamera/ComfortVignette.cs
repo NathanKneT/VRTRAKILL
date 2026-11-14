@@ -125,7 +125,8 @@ namespace Plugin.Systems.VRCamera
                     if (NM.slamForce > 0f || Velocity.y < -25f) Want = Mathf.Max(Want, .8f);        // slam, fast fall
                     // launched sideways (explosion, whiplash pull): horizontal only, so jumps and landings do not count,
                     // and above the game's quickest start from a standstill
-                    float Dt = Time.deltaTime;
+                    // the velocity changes once per physics step: a frame shorter than a step still holds one whole step
+                    float Dt = Mathf.Max(Time.deltaTime, Time.fixedDeltaTime);
                     Vector3 Change = Velocity - LastVelocity; Change.y = 0f;
                     if (Dt > 0f && Change.magnitude / Dt > 400f) Want = Mathf.Max(Want, .75f);
                     LastVelocity = Velocity;
