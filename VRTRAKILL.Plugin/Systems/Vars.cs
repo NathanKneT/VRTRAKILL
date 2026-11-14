@@ -87,12 +87,6 @@ namespace Plugin.Systems
         // Returns the VR UI camera.
         public static Camera UICamera
             => UI.UIConverter.UICamera;
-        // Returns the desktop world camera.
-        public static Camera DesktopCamera
-            => VRCamera.Patches.CameraConverterP.DesktopWorldCam;
-        // Returns the desktop UI camera.
-        public static Camera DesktopUICamera
-            => VRCamera.Patches.CameraConverterP.DesktopUICam;
         #endregion
 
         #region Controllers

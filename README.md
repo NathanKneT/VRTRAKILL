@@ -40,6 +40,7 @@ This version runs on ULTRAKILL build 22957324 (Unity 2022.3.29f1), the current o
 - **Comfort options.** Snap or smooth turning, an optional vignette while moving fast, adjustable movement speed. Seated or standing play: your head is put at the game's eye height at each level.
 - **No window juggling.** The buttons work while another window has focus, and they never reach Windows or other programs.
 - **Full frame rate.** The desktop frame cap and vsync are off while VR runs, so the game keeps up with a 90 or 120 Hz headset.
+- **A streamer view for recording.** Press `T`, or turn on STREAMER VIEW in the VR column, and the monitor shows a smoothed, level 16:9 view at 60 frames a second instead of the shaky headset mirror. The headset keeps its frame rate.
 - **VR starts by itself** as soon as SteamVR sees the headset. While it is not running, the game window on your monitor says why.
 
 The full list of changes is in [CHANGELOG.md](CHANGELOG.md).
@@ -124,7 +125,7 @@ If the buttons act like an older version, pick the default layout again: SteamVR
 
 ## Settings
 
-Pause the game in the headset. A **VR** column next to the pause menu changes the main settings at once and saves them: a comfort preset, turn mode (smooth, or snap 30, 45 or 90 degrees), turn speed, UI size, comfort vignette, screen flashes, HUD on the wrist or floating, rumble strength, height offset, recenter view, adaptive triggers, fingers, punch by swing or by button, and left handed (takes effect after a restart). Point the laser at a button and pull the trigger to move to the next value.
+Pause the game in the headset. A **VR** column next to the pause menu changes the main settings at once and saves them: a comfort preset, the streamer view, turn mode (smooth, or snap 30, 45 or 90 degrees), turn speed, UI size, comfort vignette, screen flashes, HUD on the wrist or floating, rumble strength, height offset, recenter view, adaptive triggers, fingers, punch by swing or by button, and left handed (takes effect after a restart). Point the laser at a button and pull the trigger to move to the next value.
 
 **COMFORT** sets several settings at once. Start with **BEGINNER** if you are new to VR or fast games make you sick, and move up when you feel ready:
 
@@ -165,6 +166,9 @@ All settings are in `BepInEx/plugins/VRTRAKILL/VRTRAKILL_Config.json`. Close the
 | `Adaptive triggers` | `true` | PS VR2 only, with the PSVR2 Toolkit installed: the gun trigger's resistance follows the weapon and its state (heavier while charging, a hum when charged, stiff while it cannot fire), and the punch trigger the fist. Menus, the shop and pause free both triggers. Without the Toolkit nothing happens. On PS VR2, R2 and L2 act at three quarters of their travel, just past each break, with or without the Toolkit. |
 | `Finger tracking` | `false` | The arm hand's fingers follow yours, from the controller's finger sensors. "Fingers" in the VR column switches it at once. |
 | `Windows key presses` | `false` | `false`: the VR buttons press a keyboard and mouse that exist only inside the game. `true`: real Windows key presses, like 1.0.x, which need the ULTRAKILL window in front. Use it only if a button does nothing with `false`, and report it. |
+| `Streamer view` › `On` | `false` | What the monitor shows. `false`: the headset mirror (one eye, it moves with every head movement). `true`: the streamer view, a camera at the middle of your eyes with smoothed head turns and a level horizon, made for recording and streaming. `T` ("Toggle streamer view", with the game window in front) or STREAMER VIEW in the VR column switches it. |
+| `Field of view (horizontal degrees)` / `Turn smoothing` / `Level horizon (0 to 1)` | `90` / `"Medium"` / `1.0` | The streamer view's field of view; how much head turns are smoothed (`"Off"`, `"Low"`, `"Medium"`, `"High"`; fast turns are always smoothed less, so a quick look stays readable); how level the horizon stays (1 always level, 0 rolls with your head). |
+| `Frame rate (0 = headset rate)` / `Height in pixels` | `60` / `1080` | How often the streamer view is drawn and how big: 60 is every second frame on a 120 Hz headset (on 90 Hz, 45 or 90 divide evenly). A picture of 1080 is 1920x1080, letterboxed to the window. Lower values cost the headset less. |
 
 When you update from an older version, the mod changes the old defaults in your file once (movement multiplier 0.575 to 1.0, punch speed 7.5 to 4.0) and adds the new settings. Values you changed yourself are kept.
 

@@ -41,7 +41,7 @@ namespace Plugin.Prefs
 
         // Joystick8Button9 is an unused placeholder; Unity rejects a null KeyCode
         public static UnityEngine.KeyCode?
-            ToggleDesktopView = UnityEngine.KeyCode.Joystick8Button9,
+            ToggleStreamerView = UnityEngine.KeyCode.Joystick8Button9,
 
             TPCamUp = UnityEngine.KeyCode.Joystick8Button9,
             TPCamDown = UnityEngine.KeyCode.Joystick8Button9,
@@ -133,13 +133,13 @@ namespace Plugin.Prefs
                 Vars.Log.LogError(E);
             }
         }
-        // Converts the VR desktop view and avatar size toggles to Unity key codes.
+        // Converts the streamer view, avatar size and height keys to Unity key codes.
         private static void ConvertJSONToKeys(NewConfig._VRBinds VRConfig)
         {
             try
             {
                 // a miss would store null, and VRKeybindsController's (KeyCode) cast of null throws every frame
-                ToggleDesktopView = UnityKey(VRConfig.ToggleDV);
+                ToggleStreamerView = UnityKey(VRConfig.ToggleStreamerView);
                 ToggleAvatarSizeAdj = UnityKey(VRConfig.ToggleAvatarSizeAdj);
                 RecalibrateHeight = UnityKey(VRConfig.RecalibrateHeight);
             }

@@ -19,6 +19,8 @@ namespace Plugin.Systems.VRCamera
         private Transform Vignette;
         private MeshRenderer Renderer;
         internal static float Amount { get; private set; } // 0 none, 1 strongest
+        // the ring of the current eyes, hidden from the streamer view while it renders
+        internal static Renderer Ring { get; private set; }
         // developer test hook only: forces the amount
         internal static float? TestAmount;
 
@@ -42,6 +44,7 @@ namespace Plugin.Systems.VRCamera
             Renderer.sharedMaterial = Mat;
             Renderer.shadowCastingMode = ShadowCastingMode.Off; Renderer.receiveShadows = false;
             Renderer.enabled = false;
+            Ring = Renderer;
             Vignette = G.transform;
         }
 

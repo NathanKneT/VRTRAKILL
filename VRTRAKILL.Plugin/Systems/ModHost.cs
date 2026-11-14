@@ -19,6 +19,7 @@ namespace Plugin.Systems
             GameObject go = new GameObject("VRTRAKILL Host") { hideFlags = HideFlags.HideAndDontSave };
             DontDestroyOnLoad(go);
             Instance = go.AddComponent<ModHost>();
+            VRCamera.StreamerView.Create(go);
             return Instance;
         }
 

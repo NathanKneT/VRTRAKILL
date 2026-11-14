@@ -214,6 +214,7 @@
     <Compile Include="Systems\UI\WristHud.cs" />
     <Compile Include="Systems\UI\VRSettingsMenu.cs" />
     <Compile Include="Systems\VRCamera\ComfortVignette.cs" />
+    <Compile Include="Systems\VRCamera\StreamerView.cs" />
     <Compile Include="Systems\VRCamera\FramePacing.cs" />
     <Compile Include="Systems\UI\Patches\TutorialTextP.cs" />
     <Compile Include="Systems\UI\Patches\PauseMenuP.cs" />
@@ -304,8 +305,6 @@
     <Compile Include="Systems\VRAvatar\Patches\A.cs" />
     <Compile Include="Systems\VRAvatar\Patches\VRIKP.cs" />
     <Compile Include="Systems\VRAvatar\VRigController.cs" />
-    <Compile Include="Systems\VRCamera\DesktopCamera.cs" />
-    <Compile Include="Systems\VRCamera\DesktopUICamera.cs" />
     <Compile Include="Systems\VRCamera\Patches\A.cs" />
     <Compile Include="Systems\VRCamera\Patches\CameraConverterP.cs" />
     <Compile Include="Systems\VRCamera\Patches\CrashBandicrootCCP.cs" />

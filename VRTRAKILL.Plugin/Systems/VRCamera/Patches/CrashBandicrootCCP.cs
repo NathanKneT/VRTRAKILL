@@ -20,6 +20,7 @@ namespace Plugin.Systems.VRCamera.Patches
             Vector3 headPos = InputTracking.GetLocalPosition(XRNode.Head);
             PlaceEye(CameraConverterP.leftEye.transform, origin, InputTracking.GetLocalPosition(XRNode.LeftEye) - headPos, headRot);
             PlaceEye(CameraConverterP.rightEye.transform, origin, InputTracking.GetLocalPosition(XRNode.RightEye) - headPos, headRot);
+            CameraConverterP.EyesPlacedFrame = Time.frameCount; CameraConverterP.EyesThroughPortals = false;
         }
         // Parents an eye to the platformer camera so it stays active, then places it at its offset from the head centre.
         static void PlaceEye(Transform eye, Transform origin, Vector3 offsetFromHead, Quaternion headRot)

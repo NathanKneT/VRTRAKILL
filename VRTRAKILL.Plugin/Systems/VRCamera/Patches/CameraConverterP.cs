@@ -12,10 +12,11 @@ namespace Plugin.Systems.VRCamera.Patches
     public class CameraConverterP
     {
         // adapted from HuskVR
-        public static Camera DesktopWorldCam, DesktopUICam;
         public static Camera leftEye, rightEye;
-        // null until the desktop view is toggled; then the toggle state carries over to the next scene
-        public static bool? DesktopViewOn;
+        // the frame the eyes were last placed, and whether the portal check placed them (not in 4-S); the streamer view
+        // follows the eyes only on those frames: while a level loads the portal data is being torn down
+        public static int EyesPlacedFrame = -1;
+        public static bool EyesThroughPortals;
 
         // Sets up the main camera for VR and creates the left and right eye cameras; logs and returns if there is no camera yet.
         public static void SetupEyeCameras()
@@ -47,32 +48,7 @@ namespace Plugin.Systems.VRCamera.Patches
             rightEye.stereoTargetEye = StereoTargetEyeMask.Right;
             ComfortVignette.Attach(leftEye, rightEye);
 
-            SetupDesktopCameras(cc);
-
             if (PendingHeadMaterial != null) { AddHead(PendingHeadMaterial); PendingHeadMaterial = null; }
-        }
-        // Creates the monitor-only world and UI cameras on the left eye, shown when the desktop view is on.
-        static void SetupDesktopCameras(CameraController cc)
-        {
-            if (DesktopWorldCam != null) Object.Destroy(DesktopWorldCam.gameObject);
-            if (DesktopUICam != null) Object.Destroy(DesktopUICam.gameObject);
-
-            DesktopWorldCam = new GameObject("Desktop World Camera", typeof(Camera)).GetComponent<Camera>();
-            VRTRAKILL.Utilities.Unity.CopyCameraValues(DesktopWorldCam, cc.cam);
-            DesktopWorldCam.transform.SetParent(leftEye.transform, false);
-            DesktopWorldCam.stereoTargetEye = StereoTargetEyeMask.None;
-            DesktopWorldCam.gameObject.AddComponent<DesktopCamera>();
-
-            DesktopUICam = new GameObject("Desktop UI Camera", typeof(Camera)).GetComponent<Camera>();
-            DesktopUICam.transform.SetParent(leftEye.transform, false);
-            DesktopUICam.stereoTargetEye = StereoTargetEyeMask.None;
-            DesktopUICam.clearFlags = CameraClearFlags.Depth;
-            DesktopUICam.cullingMask = 1 << (int)Layers.UI;
-            DesktopUICam.gameObject.AddComponent<DesktopUICamera>();
-
-            bool on = DesktopViewOn ?? Vars.Config.DesktopView.Enabled;
-            DesktopWorldCam.gameObject.SetActive(on);
-            DesktopUICam.gameObject.SetActive(on);
         }
         // Turns off the virtual camera and the main camera before the camera controller starts, if the camera is set.
         [HarmonyPrefix]
@@ -146,6 +122,7 @@ namespace Plugin.Systems.VRCamera.Patches
             Vector3 Push = WallPush();
             PortalAwareSetTransformFromBody(leftEye.transform, InputTracking.GetLocalPosition(XRNode.LeftEye), __instance.transform.rotation, false, Push);
             PortalAwareSetTransformFromBody(rightEye.transform, InputTracking.GetLocalPosition(XRNode.RightEye), __instance.transform.rotation, false, Push);
+            EyesPlacedFrame = Time.frameCount; EyesThroughPortals = true;
         }
 
         // ---- Walls ----

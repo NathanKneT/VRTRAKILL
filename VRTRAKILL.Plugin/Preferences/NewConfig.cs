@@ -9,7 +9,8 @@ namespace Plugin.Prefs
         [JsonProperty("VRTRAKILL Keybinds")] public _VRBinds VRBinds { get; set; }
         public class _VRBinds
         {
-            [JsonProperty("Toggle Desktop View")] public string ToggleDV { get; set; } = "T";
+            // the streamer view on the PC monitor (Systems/VRCamera/StreamerView); the game window needs focus
+            [JsonProperty("Toggle streamer view")] public string ToggleStreamerView { get; set; } = "T";
             [JsonProperty("Toggle Size Adjustment")] public string ToggleAvatarSizeAdj { get; set; } = "J";
             // stand (or sit) as you play and press it to match your head to the game's eye height again
             [JsonProperty("Recalibrate height")] public string RecalibrateHeight { get; set; } = "H";
@@ -30,9 +31,9 @@ namespace Plugin.Prefs
 
         // Version of the defaults this file was written with; null for files from before 2.0.0. See Migrate.
         [JsonProperty("Config version")] public int? ConfigVersion { get; set; }
-        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added. 4: auto height. 5: HUD on wrist. 6: "Left handed" renamed (was "Left handed (BROKEN)"). 7: "Windows key presses". 8: rumble settings. 9: comfort vignette. 10: smaller UI. 11: screen flashes. 12: coin throw. 13: low health warning. 14: adaptive triggers. 15: weapon charge shake. 16: parry aim. 17: parry warning. 18: parry aim by the eyes. 19: "Enable controller-based aiming" and "WHIPLASH: camera-based aiming" removed (they did nothing).
+        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added. 4: auto height. 5: HUD on wrist. 6: "Left handed" renamed (was "Left handed (BROKEN)"). 7: "Windows key presses". 8: rumble settings. 9: comfort vignette. 10: smaller UI. 11: screen flashes. 12: coin throw. 13: low health warning. 14: adaptive triggers. 15: weapon charge shake. 16: parry aim. 17: parry warning. 18: parry aim by the eyes. 19: "Enable controller-based aiming" and "WHIPLASH: camera-based aiming" removed (they did nothing). 20: streamer view replaces the desktop view.
         // Bump it when settings are added, so existing files are rewritten and show the new settings.
-        public const int CurrentConfigVersion = 19;
+        public const int CurrentConfigVersion = 20;
 
         // Moves values that are still the old defaults to the new defaults, once. Returns true when the file should be
         // rewritten (which also adds settings the file does not have yet).
@@ -164,12 +165,21 @@ namespace Plugin.Prefs
             [JsonProperty("Weapon charge shake")] public float WeaponShake { get; set; } = .1f;
         }
 
-        [JsonProperty("DesktopView Settings")] public _DesktopView DesktopView { get; set; }
-        public class _DesktopView
+        // what the PC monitor shows while you play, for recording and streaming (Systems/VRCamera/StreamerView)
+        [JsonProperty("Streamer view")] public _StreamerView StreamerView { get; set; }
+        public class _StreamerView
         {
-            [JsonProperty("Enabled by default")] public bool Enabled { get; set; } = false;
-            [JsonProperty("World view FOV")] public float WorldCamFOV { get; set; } = 90;
-            [JsonProperty("UI view FOV")] public float UICamFOV { get; set; } = 90;
+            // false: the monitor shows the headset mirror
+            [JsonProperty("On")] public bool On { get; set; } = false;
+            [JsonProperty("Field of view (horizontal degrees)")] public float FieldOfView { get; set; } = 90f;
+            // Off, Low, Medium or High: how much head turns are smoothed
+            [JsonProperty("Turn smoothing")] public string TurnSmoothing { get; set; } = "Medium";
+            // 1: the horizon stays level whatever the head roll; 0: the view rolls with the head
+            [JsonProperty("Level horizon (0 to 1)")] public float LevelHorizon { get; set; } = 1f;
+            // pictures per second, 0 for every headset frame; 60 is every second frame at 120 Hz
+            [JsonProperty("Frame rate (0 = headset rate)")] public int FrameRate { get; set; } = 60;
+            // the picture is 16:9 at this height (1080 = 1920x1080)
+            [JsonProperty("Height in pixels")] public int Height { get; set; } = 1080;
         }
 
         [JsonProperty("Miscellaneous/Unsorted Settings")] public _Misc Misc { get; set; }
@@ -190,7 +200,7 @@ namespace Plugin.Prefs
             VRBody ??= new _VRBody();
             UIInteraction ??= new _UIInteraction();
             UIInteraction.ControllerLines ??= new _UIInteraction._ControllerLines();
-            DesktopView ??= new _DesktopView();
+            StreamerView ??= new _StreamerView();
             Comfort ??= new _Comfort();
             Misc ??= new _Misc();
         }
@@ -207,7 +217,7 @@ namespace Plugin.Prefs
             MBP = new _MBP();
             VRBody = new _VRBody();
             UIInteraction = new _UIInteraction();
-            DesktopView = new _DesktopView();
+            StreamerView = new _StreamerView();
             Comfort = new _Comfort();
             Misc = new _Misc();
         }

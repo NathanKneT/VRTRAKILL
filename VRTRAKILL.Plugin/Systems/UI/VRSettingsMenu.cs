@@ -139,6 +139,11 @@ namespace Plugin.Systems.UI
             });
             Items.Add(new Item
             {
+                Text = () => Vars.Config.StreamerView.On ? "STREAMER VIEW: ON" : "STREAMER VIEW: OFF",
+                Next = () => VRCamera.StreamerView.Toggle(),
+            });
+            Items.Add(new Item
+            {
                 Text = () => Vars.Config.UIInteraction.WristHud ? "HUD: ON WRIST" : "HUD: FLOATING",
                 Next = () => Vars.Config.UIInteraction.WristHud = !Vars.Config.UIInteraction.WristHud,
             });

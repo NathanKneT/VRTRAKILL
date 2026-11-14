@@ -1,7 +1,7 @@
 {
   "VRTRAKILL Settings": {
     "VRTRAKILL Keybinds": {
-      "Toggle Desktop View": "T",
+      "Toggle streamer view": "T",
       "Toggle Size Adjustment": "J",
       "Recalibrate height": "H"
     },
@@ -9,7 +9,7 @@
     "Jump multiplier": 1.0,
     "Height offset (meters)": 0.0,
     "Auto height": true,
-    "Config version": 19,
+    "Config version": 20,
     "Controller Settings": {
       "Deadzone (from 0 to 1)": 0.4,
       "Smooth turning speed": 300.0,
@@ -60,10 +60,13 @@
       "Low health warning": true,
       "Weapon charge shake": 0.1
     },
-    "DesktopView Settings": {
-      "Enabled by default": false,
-      "World view FOV": 90.0,
-      "UI view FOV": 90.0
+    "Streamer view": {
+      "On": false,
+      "Field of view (horizontal degrees)": 90.0,
+      "Turn smoothing": "Medium",
+      "Level horizon (0 to 1)": 1.0,
+      "Frame rate (0 = headset rate)": 60,
+      "Height in pixels": 1080
     },
     "Miscellaneous/Unsorted Settings": {
       "Game blood and oil stains (experimental)": false
