@@ -48,11 +48,13 @@ namespace Plugin.Systems.VRCamera
         private Vector2 Gaze; private bool HaveGaze; private float GazeAlpha;
         private readonly Queue<(Vector2 P, float T)> TrailPoints = new Queue<(Vector2, float)>();
 
-        public static void Create()
+        // A child of the mod's hidden host object: the game destroys visible objects kept across scenes shortly after it
+        // starts (see ModHost), and took this canvas with them, so the monitor never showed the picture.
+        public static void Create(GameObject Host)
         {
             if (Instance != null) return;
             GameObject G = new GameObject("VRTRAKILL Streamer Screen", typeof(RectTransform));
-            DontDestroyOnLoad(G);
+            G.transform.SetParent(Host.transform, false);
             G.AddComponent<MonitorOnly>(); // before the canvas exists, so no conversion pass can take it
             Instance = G.AddComponent<StreamerOverlay>();
         }

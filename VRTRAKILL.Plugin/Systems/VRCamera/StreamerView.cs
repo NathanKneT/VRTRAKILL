@@ -38,7 +38,7 @@ namespace Plugin.Systems.VRCamera
         public static void Create(GameObject Host)
         {
             if (Instance == null) Instance = Host.AddComponent<StreamerView>();
-            StreamerOverlay.Create();
+            StreamerOverlay.Create(Host);
         }
 
         public static void Toggle()
