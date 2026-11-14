@@ -203,6 +203,64 @@ namespace Plugin.Systems.UI
                 Text = () => (C.LeftHanded ? "LEFT HANDED: ON" : "LEFT HANDED: OFF") + (C.LeftHanded != LeftHandedAtStart ? " (RESTART)" : ""),
                 Next = () => C.LeftHanded = !C.LeftHanded,
             });
+            Items.Add(new Item
+            {
+                Text = () => Vars.IsMainMenu ? "CHEATS: IN LEVELS" : Vars.Registered<CheatsController>() is CheatsController Ch && Ch.cheatsEnabled ? "CHEATS MENU" : "CHEATS: OFF",
+                Next = OpenCheats,
+            });
+        }
+
+        // The game opens its cheat menu (the sandbox's spawner arm and tools, noclip, ...) with Home, ~ or ` on a
+        // keyboard or Select + right trigger on a gamepad, and turns cheats on with the Konami code: none of them exist on
+        // VR controllers, so the sandbox could not be used in VR. With cheats on (always in the sandbox) this opens the
+        // cheat menu in place of the pause menu, as the keys do; with cheats off it shows the game's consent screen, as
+        // the code does (CheatsMenuP brings the pause menu back after it). Pausing again closes the cheat menu.
+        private void OpenCheats()
+        {
+            // the main menu has the cheat objects but hides their parent: nothing could show there
+            if (Vars.IsMainMenu) return;
+            CheatsController Ch = Vars.Registered<CheatsController>();
+            CheatsManager Manager = Vars.Registered<CheatsManager>();
+            if (Ch == null) return;
+            GameObject Shown;
+            if (!Ch.cheatsEnabled)
+            {
+                if (Ch.consentScreen == null) return;
+                Ch.consentScreen.SetActive(true);
+                Shown = Ch.consentScreen;
+            }
+            else
+            {
+                if (Manager == null || Manager.cheatsManagerMenu == null) return;
+                Manager.ShowMenu();
+                Shown = Manager.cheatsManagerMenu;
+            }
+            // the pause menu goes away only when the cheat screen really shows
+            if (!Shown.activeInHierarchy)
+            {
+                Shown.SetActive(false);
+                Vars.Log.LogWarning($"Cheat menu: \"{Shown.name}\" cannot show here (a parent is hidden); the pause menu stays.");
+                return;
+            }
+            PauseMenu.SetActive(false);
+            ShowInVR(Shown);
+        }
+
+        // The cheat menu and the consent screen sit on a canvas that is inactive while the level loads, so the VR canvas
+        // conversion (which scans active canvases) never saw it: opened, it drew only on the monitor and the headset
+        // showed nothing ("the whole menu disappeared", PS VR2 test). It is converted when it opens. Logged, for tests.
+        private static void ShowInVR(GameObject Shown)
+        {
+            Canvas C = Shown.GetComponentInParent<Canvas>();
+            if (C != null) C = C.rootCanvas;
+            if (C == null) { Vars.Log.LogWarning($"Cheat menu: \"{Shown.name}\" has no canvas."); return; }
+            RenderMode Was = C.renderMode;
+            if (Was == RenderMode.ScreenSpaceOverlay)
+            {
+                UIConverter.ConvertCanvas(C);
+                VRTRAKILL.Utilities.Unity.RecursiveChangeLayer(C.gameObject, (int)Layers.UI);
+            }
+            Vars.Log.LogInfo($"Cheat menu: \"{Shown.name}\" on canvas \"{C.name}\", {Was}{(Was == RenderMode.ScreenSpaceOverlay ? ", converted for VR" : "")}, active {Shown.activeInHierarchy}.");
         }
 
         // A copied pause button can carry the game's own behaviours (event triggers, scripts that resume or quit on

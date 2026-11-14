@@ -125,7 +125,7 @@ If the buttons act like an older version, pick the default layout again: SteamVR
 
 ## Settings
 
-Pause the game in the headset. A **VR** column next to the pause menu changes the main settings at once and saves them: a comfort preset, the streamer view, turn mode (smooth, or snap 30, 45 or 90 degrees), turn speed, UI size, comfort vignette, screen flashes, HUD on the wrist or floating, rumble strength, height offset, recenter view, adaptive triggers, fingers, punch by swing or by button, and left handed (takes effect after a restart). Point the laser at a button and pull the trigger to move to the next value.
+Pause the game in the headset. A **VR** column next to the pause menu changes the main settings at once and saves them: a comfort preset, the streamer view, turn mode (smooth, or snap 30, 45 or 90 degrees), turn speed, UI size, comfort vignette, screen flashes, HUD on the wrist or floating, rumble strength, height offset, recenter view, adaptive triggers, fingers, punch by swing or by button, left handed (takes effect after a restart), and the cheat menu (CHEATS: the sandbox tools and the other cheats, which the game opens with keyboard keys). Point the laser at a button and pull the trigger to move to the next value.
 
 **COMFORT** sets several settings at once. Start with **BEGINNER** if you are new to VR or fast games make you sick, and move up when you feel ready:
 

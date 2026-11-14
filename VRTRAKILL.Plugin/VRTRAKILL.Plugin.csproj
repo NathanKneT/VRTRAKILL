@@ -218,6 +218,7 @@
     <Compile Include="Systems\VRCamera\StreamerOverlay.cs" />
     <Compile Include="Systems\VRCamera\FramePacing.cs" />
     <Compile Include="Systems\UI\Patches\TutorialTextP.cs" />
+    <Compile Include="Systems\UI\Patches\CheatsMenuP.cs" />
     <Compile Include="Systems\UI\Patches\PauseMenuP.cs" />
     <Compile Include="Systems\UI\Patches\ButtonPrompts.cs" />
     <Compile Include="Systems\UI\Patches\GamePointerP.cs" />
