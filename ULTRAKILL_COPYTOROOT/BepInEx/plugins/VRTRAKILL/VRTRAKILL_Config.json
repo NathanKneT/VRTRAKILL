@@ -9,7 +9,7 @@
     "Jump multiplier": 1.0,
     "Height offset (meters)": 0.0,
     "Auto height": true,
-    "Config version": 9,
+    "Config version": 18,
     "Controller Settings": {
       "Deadzone (from 0 to 1)": 0.4,
       "Smooth turning speed": 300.0,
@@ -21,6 +21,8 @@
       "Hit and kill rumble": true,
       "Damage rumble": true,
       "Menu rumble": true,
+      "Parry warning": true,
+      "Adaptive triggers": true,
       "Left handed": false,
       "Finger tracking": false,
       "Windows key presses": false
@@ -34,7 +36,9 @@
     "Enable movement-based punching": true,
     "MBP Settings": {
       "Required speed to punch": 4.0,
-      "WHIPLASH: camera-based aiming": false
+      "WHIPLASH: camera-based aiming": false,
+      "Coin follows the throw": true,
+      "Parry aim": "Eyes"
     },
     "Enable VRAvatar": false,
     "VRAvatar Settings": {
@@ -42,7 +46,7 @@
       "Enable legs IK": true
     },
     "UI Interaction Settings": {
-      "UI Size (from 0 to 0.1)": 0.0625,
+      "UI Size (from 0 to 0.1)": 0.04,
       "Controller-based": true,
       "HUD on wrist": true,
       "Controller Lines": {
@@ -53,7 +57,10 @@
     },
     "Comfort Settings": {
       "Comfort vignette": false,
-      "Comfort vignette strength": 0.85
+      "Comfort vignette strength": 0.85,
+      "Screen flashes": "Reduced",
+      "Low health warning": true,
+      "Weapon charge shake": 0.1
     },
     "DesktopView Settings": {
       "Enabled by default": false,
