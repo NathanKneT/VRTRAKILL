@@ -144,6 +144,11 @@ namespace Plugin.Systems.UI
             });
             Items.Add(new Item
             {
+                Text = () => "OVERLAY: " + Vars.Config.StreamerView.Overlay.ToUpperInvariant(),
+                Next = () => Vars.Config.StreamerView.Overlay = Vars.Config.StreamerView.Overlay == "Always" ? "Parries" : Vars.Config.StreamerView.Overlay == "Parries" ? "Off" : "Always",
+            });
+            Items.Add(new Item
+            {
                 Text = () => Vars.Config.UIInteraction.WristHud ? "HUD: ON WRIST" : "HUD: FLOATING",
                 Next = () => Vars.Config.UIInteraction.WristHud = !Vars.Config.UIInteraction.WristHud,
             });

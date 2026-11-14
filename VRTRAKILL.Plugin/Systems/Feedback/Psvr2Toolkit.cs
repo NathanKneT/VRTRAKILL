@@ -12,7 +12,8 @@ namespace Plugin.Systems.Feedback
     // driver leaves out: adaptive trigger effects and eye tracking. It listens on 127.0.0.1:3364 (its "legacy IPC"):
     // an 8-byte header { uint16 type; 2 bytes padding; int32 dataLen; } then the data, little endian; a handshake, then
     // one command per send. Trigger effects are sent as they change (AdaptiveTriggers); while "Parry aim" is "Eyes", the
-    // gaze is asked for about 30 times a second and kept for the parry aim (Patches/ULTRAKILL/PatchPunch). Everything runs on its own thread, so
+    // gaze is asked for about 30 times a second and kept for the parry aim (Patches/ULTRAKILL/PatchPunch), or 60 when
+    // the streamer view's overlay draws it. Everything runs on its own thread, so
     // the game never waits on it. Without the Toolkit, or without PS VR2 Sense controllers, nothing connects.
     internal static class Psvr2Toolkit
     {
@@ -20,7 +21,7 @@ namespace Plugin.Systems.Feedback
         private const int Port = 3364;
         private const ushort IpcVersion = 1; // the oldest: accepted by every Toolkit server, and its gaze answer is the shortest
         private const ushort CmdHandshake = 2, CmdHandshakeResult = 3, CmdRequestGaze = 4, CmdGazeResult = 5;
-        private const int GazeEveryMs = 33;
+        private static volatile int GazeEveryMs = 33;
 
         private static Thread Worker;
         private static readonly object Gate = new object();
@@ -35,7 +36,8 @@ namespace Plugin.Systems.Feedback
         {
             bool OnPSVR2 = UnityEngine.XR.XRSettings.isDeviceActive && UI.Patches.ButtonPrompts.ControllerType() == "playstation_vr2_sense";
             TriggersWanted = OnPSVR2 && Vars.Config.Controllers.AdaptiveTriggers;
-            GazeWanted = OnPSVR2 && Vars.Config.MBP.ParryAim == "Eyes";
+            GazeWanted = OnPSVR2 && (Vars.Config.MBP.ParryAim == "Eyes" || VRCamera.StreamerOverlay.WantsGaze);
+            GazeEveryMs = VRCamera.StreamerOverlay.WantsGaze ? 16 : 33; // the overlay draws it: about 60 a second
             if ((TriggersWanted || GazeWanted) && Worker == null)
             {
                 Worker = new Thread(Run) { IsBackground = true, Name = "VRTRAKILL PSVR2 Toolkit" };

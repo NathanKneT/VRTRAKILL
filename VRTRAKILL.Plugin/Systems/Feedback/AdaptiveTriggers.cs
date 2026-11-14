@@ -38,6 +38,27 @@ namespace Plugin.Systems.Feedback
             Apply(ArmHand, Free ? ("off", Off(ArmHand)) : ArmEffect(ArmHand));
         }
 
+        // What a trigger feels like now, in words for the streamer overlay (CLICK, CHARGE 2/4, READY, LOCKED...), or null
+        // when it is free or the Toolkit is not connected.
+        public static string Describe(bool Gun)
+        {
+            if (!Psvr2Toolkit.Connected || !Psvr2Toolkit.TriggersWanted) return null;
+            bool LeftHanded = Vars.Config.Controllers.LeftHanded;
+            string Key = Sent[Gun ? (LeftHanded ? Left : Right) : (LeftHanded ? Right : Left)];
+            if (Key == null || Key == "off") return null;
+            if (Key.EndsWith(" ready")) return "READY";
+            if (Key.EndsWith(" charging") || Key.EndsWith(" burnt out")) return "LOCKED";
+            if (Key.EndsWith(" overpumped")) return "OVERPUMPED";
+            char Last = Key[Key.Length - 1];
+            if (char.IsDigit(Last)) return "CHARGE " + Last + "/4";
+            switch (Key)
+            {
+                case "nailgun": return "RATTLE";
+                case "jackhammer": case "knuckleblaster": return "RESIST";
+                default: return "CLICK";
+            }
+        }
+
         private static void Apply(byte Hand, (string Key, byte[] Packet) Effect)
         {
             if (Sent[Hand] == Effect.Key) return;

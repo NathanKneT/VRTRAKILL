@@ -213,8 +213,10 @@ public sealed class PatchPunch
         bool Look = Aim != "Hand" && L != null && R != null;
         Vector3 From = Look ? (L.transform.position + R.transform.position) * .5f : Vars.NDHC.transform.position;
         Vector3 vector = Look ? L.transform.forward : Vars.NonDominantHand.transform.forward;
+        bool ByEyes = false;
         if (Look && Aim == "Eyes" && Systems.Feedback.Psvr2Toolkit.TryGetGaze(GazeMaxAge, out Vector3 Gaze))
         {
+            ByEyes = true;
             vector = L.transform.rotation * Gaze;
             // the first few, so a test can check the eyes, not the head, aimed the parry
             if (LoggedEyeParries < 5) { LoggedEyeParries++; Vars.Log.LogInfo($"Parry aimed by the eyes, {Vector3.Angle(Vector3.forward, Gaze):0}° from the head's forward."); }
@@ -229,6 +231,11 @@ public sealed class PatchPunch
             ? Physics.SphereCast(From, ParryAimRadius, vector, out var hitInfo, float.PositiveInfinity, Enemies, QueryTriggerInteraction.Ignore)
             : Physics.Raycast(From, vector, out hitInfo, float.PositiveInfinity, Enemies, QueryTriggerInteraction.Ignore);
         __result = Hit ? hitInfo.point : From + vector.normalized * 1000f;
+        // for the streamer overlay: the path from the arm hand to where the parry sends it
+        Systems.VRCamera.StreamerOverlay.LastParryTime = Time.unscaledTime;
+        Systems.VRCamera.StreamerOverlay.LastParryFrom = Vars.NonDominantHand.transform.position;
+        Systems.VRCamera.StreamerOverlay.LastParryTo = __result;
+        Systems.VRCamera.StreamerOverlay.LastParryByEyes = ByEyes;
         return false;
     }
 }

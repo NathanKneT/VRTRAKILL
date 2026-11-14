@@ -215,6 +215,7 @@
     <Compile Include="Systems\UI\VRSettingsMenu.cs" />
     <Compile Include="Systems\VRCamera\ComfortVignette.cs" />
     <Compile Include="Systems\VRCamera\StreamerView.cs" />
+    <Compile Include="Systems\VRCamera\StreamerOverlay.cs" />
     <Compile Include="Systems\VRCamera\FramePacing.cs" />
     <Compile Include="Systems\UI\Patches\TutorialTextP.cs" />
     <Compile Include="Systems\UI\Patches\PauseMenuP.cs" />

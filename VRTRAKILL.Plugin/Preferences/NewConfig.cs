@@ -31,9 +31,9 @@ namespace Plugin.Prefs
 
         // Version of the defaults this file was written with; null for files from before 2.0.0. See Migrate.
         [JsonProperty("Config version")] public int? ConfigVersion { get; set; }
-        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added. 4: auto height. 5: HUD on wrist. 6: "Left handed" renamed (was "Left handed (BROKEN)"). 7: "Windows key presses". 8: rumble settings. 9: comfort vignette. 10: smaller UI. 11: screen flashes. 12: coin throw. 13: low health warning. 14: adaptive triggers. 15: weapon charge shake. 16: parry aim. 17: parry warning. 18: parry aim by the eyes. 19: "Enable controller-based aiming" and "WHIPLASH: camera-based aiming" removed (they did nothing). 20: streamer view replaces the desktop view.
+        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added. 4: auto height. 5: HUD on wrist. 6: "Left handed" renamed (was "Left handed (BROKEN)"). 7: "Windows key presses". 8: rumble settings. 9: comfort vignette. 10: smaller UI. 11: screen flashes. 12: coin throw. 13: low health warning. 14: adaptive triggers. 15: weapon charge shake. 16: parry aim. 17: parry warning. 18: parry aim by the eyes. 19: "Enable controller-based aiming" and "WHIPLASH: camera-based aiming" removed (they did nothing). 20: streamer view replaces the desktop view. 21: streamer HUD and overlay.
         // Bump it when settings are added, so existing files are rewritten and show the new settings.
-        public const int CurrentConfigVersion = 20;
+        public const int CurrentConfigVersion = 21;
 
         // Moves values that are still the old defaults to the new defaults, once. Returns true when the file should be
         // rewritten (which also adds settings the file does not have yet).
@@ -180,6 +180,11 @@ namespace Plugin.Prefs
             [JsonProperty("Frame rate (0 = headset rate)")] public int FrameRate { get; set; } = 60;
             // the picture is 16:9 at this height (1080 = 1920x1080)
             [JsonProperty("Height in pixels")] public int Height { get; set; } = 1080;
+            // health, stamina and style rank drawn on the streamer view: Off, Small, Medium or Large
+            [JsonProperty("HUD")] public string Hud { get; set; } = "Medium";
+            // Always: where your eyes look (PS VR2 eye tracking), eye-aimed parries and the trigger feel; Parries: only
+            // around parries; Off (Systems/VRCamera/StreamerOverlay)
+            [JsonProperty("Overlay")] public string Overlay { get; set; } = "Always";
         }
 
         [JsonProperty("Miscellaneous/Unsorted Settings")] public _Misc Misc { get; set; }

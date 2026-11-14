@@ -44,6 +44,7 @@ namespace Plugin.Systems.Feedback
                 if (Time.unscaledTime - LastTick < Gap) continue;
                 LastTick = Time.unscaledTime;
                 Haptics.Add(Haptics.Hand.Arm, .35f, .03f, Haptics.Tick, "parry warning");
+                VRCamera.StreamerOverlay.LastWarningTime = Time.unscaledTime;
             }
         }
     }

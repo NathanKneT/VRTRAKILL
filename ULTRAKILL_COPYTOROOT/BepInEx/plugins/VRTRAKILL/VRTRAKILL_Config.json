@@ -9,7 +9,7 @@
     "Jump multiplier": 1.0,
     "Height offset (meters)": 0.0,
     "Auto height": true,
-    "Config version": 20,
+    "Config version": 21,
     "Controller Settings": {
       "Deadzone (from 0 to 1)": 0.4,
       "Smooth turning speed": 300.0,
@@ -66,7 +66,9 @@
       "Turn smoothing": "Medium",
       "Level horizon (0 to 1)": 1.0,
       "Frame rate (0 = headset rate)": 60,
-      "Height in pixels": 1080
+      "Height in pixels": 1080,
+      "HUD": "Medium",
+      "Overlay": "Always"
     },
     "Miscellaneous/Unsorted Settings": {
       "Game blood and oil stains (experimental)": false

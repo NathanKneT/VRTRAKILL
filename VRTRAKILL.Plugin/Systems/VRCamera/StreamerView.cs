@@ -14,7 +14,8 @@ namespace Plugin.Systems.VRCamera
     //  - a horizontal field of view (90 degrees by default) on a 16:9 picture, letterboxed to the window;
     //  - rendered at "Frame rate" (60 by default: every second frame at 120 Hz) into a picture of "Height in pixels",
     //    so the headset keeps its frame rate. The window shows the last picture every frame.
-    // The comfort vignette and the low health glow belong to the eyes and are hidden from it. The toggle key ("Toggle streamer view", T) and "STREAMER VIEW" in the VR column turn
+    // The comfort vignette and the low health glow belong to the eyes and are hidden from it. A HUD and the gaze,
+    // parry and trigger overlays for videos are drawn on top (StreamerOverlay). The toggle key ("Toggle streamer view", T) and "STREAMER VIEW" in the VR column turn
     // it on and off; the choice is saved. Off, the window shows the headset mirror as before.
     [DefaultExecutionOrder(1000)] // after CameraController (eyes placed) and PortalManagerV2 (999)
     internal sealed class StreamerView : MonoBehaviour
@@ -199,6 +200,7 @@ namespace Plugin.Systems.VRCamera
             if (H > Screen.height) { H = Screen.height; W = H * 16f / 9f; }
             ScreenRect = new Rect((Screen.width - W) * .5f, (Screen.height - H) * .5f, W, H);
             GUI.DrawTexture(ScreenRect, Target, ScaleMode.StretchToFill, false);
+            StreamerOverlay.Draw(ScreenRect);
         }
 
         private void OnDestroy()
