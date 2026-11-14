@@ -185,8 +185,8 @@ namespace Plugin.Systems
             while (Clock.Elapsed.TotalSeconds < T + 60 && (Guns == null || Guns.allWeapons.Count == 0)) { Guns = Vars.Registered<GunControl>(); yield return null; }
             if (Guns == null) { Vars.Log.LogWarning("Weapon view: no guns."); yield break; }
             // controller pitched up 45 degrees: the gun offset (45 degrees down from the controller) then aims level
-            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestRightPose = new Pose(new Vector3(.22f, -.38f, .38f), Quaternion.Euler(-45, 0, 0));
-            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestLeftPose = new Pose(new Vector3(-.22f, -.38f, .38f), Quaternion.Euler(-45, 0, 0));
+            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestRightPose = BesideHead(new Vector3(.22f, -.38f, .38f), Quaternion.Euler(-45, 0, 0));
+            VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestLeftPose = BesideHead(new Vector3(-.22f, -.38f, .38f), Quaternion.Euler(-45, 0, 0));
             var Shown = new System.Collections.Generic.HashSet<string>();
             foreach (GameObject Weapon in new System.Collections.Generic.List<GameObject>(Guns.allWeapons))
             {
@@ -201,6 +201,18 @@ namespace Plugin.Systems
             Vars.Log.LogWarning("Weapon view: done.");
             VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestRightPose = null;
             VRBasePlugin.Systems.VRCamera.VRControllerLocations.TestLeftPose = null;
+        }
+
+        // A pose in tracking space at this offset from the headset, turned with its heading: with a real headset the head
+        // is not at the tracking origin (the null driver's is), and hands placed from the origin were out of view.
+        private static Pose BesideHead(Vector3 Offset, Quaternion Turn)
+        {
+            UnityEngine.XR.InputDevice Head = UnityEngine.XR.InputDevices.GetDeviceAtXRNode(UnityEngine.XR.XRNode.Head);
+            if (!Head.TryGetFeatureValue(UnityEngine.XR.CommonUsages.devicePosition, out Vector3 At)
+                || !Head.TryGetFeatureValue(UnityEngine.XR.CommonUsages.deviceRotation, out Quaternion Facing))
+                return new Pose(Offset, Turn);
+            Quaternion Heading = Quaternion.Euler(0f, Facing.eulerAngles.y, 0f);
+            return new Pose(At + Heading * Offset, Heading * Turn);
         }
 
         // A line "whiplashtest": checks the whiplash aim marker (visible, on the arm hand's aim line) and throws the
