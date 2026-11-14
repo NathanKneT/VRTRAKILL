@@ -27,7 +27,8 @@ public sealed class PatchPunch
         VRArmTransformer AT = __instance.gameObject.AddComponent<VRArmTransformer>();
         VRArmControllerBase AC = __instance.gameObject.AddComponent<VRArmController>();
         AT.Arm = A; AC.Arm = A;
-        if (Vars.Config.Controllers.FingerTracking && A != null)
+        // always added; it follows the "Finger tracking" setting live (FINGERS in the VR column)
+        if (A != null)
             __instance.gameObject.AddComponent<VRFingerCurl>().Setup(A, AC, __instance);
 
         foreach (SkinnedMeshRenderer SMR in __instance.GetComponentsInChildren<SkinnedMeshRenderer>())

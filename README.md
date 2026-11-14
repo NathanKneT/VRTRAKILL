@@ -123,7 +123,7 @@ If the buttons act like an older version, pick the default layout again: SteamVR
 
 ## Settings
 
-Pause the game in the headset. A **VR** column next to the pause menu changes the main settings at once and saves them: turn mode (smooth, or snap 30, 45 or 90 degrees), turn speed, UI size, comfort vignette, screen flashes, HUD on the wrist or floating, rumble strength, height offset, recenter view, punch by swing or by button, and left handed (takes effect after a restart). Point the laser at a button and pull the trigger to move to the next value.
+Pause the game in the headset. A **VR** column next to the pause menu changes the main settings at once and saves them: turn mode (smooth, or snap 30, 45 or 90 degrees), turn speed, UI size, comfort vignette, screen flashes, HUD on the wrist or floating, rumble strength, height offset, recenter view, fingers, punch by swing or by button, and left handed (takes effect after a restart). Point the laser at a button and pull the trigger to move to the next value.
 
 ![The comfort vignette darkens the edge of the view while moving fast](docs/images/comfort-vignette.jpg)
 
@@ -148,7 +148,7 @@ All settings are in `BepInEx/plugins/VRTRAKILL/VRTRAKILL_Config.json`. Close the
 | `Low health warning` | `true` | Below 30 health, both hands feel a heartbeat that quickens near death, and the edge of the view glows dark red with each beat (not with `"Screen flashes"` off). |
 | `Rumble strength` | `1.0` | Scales all controller vibration, from 0 to 2. The game's own rumble setting still applies on top. |
 | `Hit and kill rumble` / `Damage rumble` / `Menu rumble` | `true` | The tick when your shot or punch lands and the knock on a kill; the thud when you get hurt; the tick when the menu laser reaches or presses a button. |
-| `Finger tracking` | `false` | A cosmetic finger curl on the punch hand. |
+| `Finger tracking` | `false` | The arm hand's fingers follow yours, from the controller's finger sensors. "Fingers" in the VR column switches it at once. |
 | `Windows key presses` | `false` | `false`: the VR buttons press a keyboard and mouse that exist only inside the game. `true`: real Windows key presses, like 1.0.x, which need the ULTRAKILL window in front. Use it only if a button does nothing with `false`, and report it. |
 
 When you update from an older version, the mod changes the old defaults in your file once (movement multiplier 0.575 to 1.0, punch speed 7.5 to 4.0) and adds the new settings. Values you changed yourself are kept.

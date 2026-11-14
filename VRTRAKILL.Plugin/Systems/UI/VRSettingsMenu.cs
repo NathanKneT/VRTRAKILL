@@ -169,6 +169,11 @@ namespace Plugin.Systems.UI
             });
             Items.Add(new Item
             {
+                Text = () => C.FingerTracking ? "FINGERS: ON" : "FINGERS: OFF",
+                Next = () => C.FingerTracking = !C.FingerTracking,
+            });
+            Items.Add(new Item
+            {
                 Text = () => Vars.Config.EnableMBP ? "PUNCH: SWING" : "PUNCH: BUTTON",
                 Next = () => Vars.Config.EnableMBP = !Vars.Config.EnableMBP,
             });

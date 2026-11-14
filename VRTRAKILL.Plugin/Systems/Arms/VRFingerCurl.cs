@@ -104,7 +104,8 @@ internal class VRFingerCurl : MonoBehaviour
     // Rotates each finger bone from its animated pose by its smoothed curl, and fades back to the game pose when tracking stops.
     private void LateUpdate()
     {
-        bool Track = ResolveSource() && CanAnimate() && SkeletonInput.TryGetCurls(Source, Raw);
+        // switched off: the fingers ease back to the game's pose
+        bool Track = Vars.Config.Controllers.FingerTracking && ResolveSource() && CanAnimate() && SkeletonInput.TryGetCurls(Source, Raw);
         float Delta = Time.deltaTime;
         Weight = Mathf.MoveTowards(Weight, Track ? 1f : 0f, Delta / FadeTime);
         if (Track)
