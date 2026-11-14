@@ -41,7 +41,7 @@ namespace Plugin.Systems
             catch (System.Exception e) { if (loggedErrors++ < 3) Vars.Log.LogError("Low health warning step failed: " + e); }
             try { Feedback.ParryWarning.Tick(); }
             catch (System.Exception e) { if (loggedErrors++ < 3) Vars.Log.LogError("Parry warning step failed: " + e); }
-            try { Feedback.AdaptiveTriggers.Tick(); }
+            try { Feedback.Psvr2Toolkit.Tick(); Feedback.AdaptiveTriggers.Tick(); }
             catch (System.Exception e) { if (loggedErrors++ < 3) Vars.Log.LogError("Adaptive trigger step failed: " + e); }
             try { Feedback.Haptics.Flush(); }
             catch (System.Exception e) { if (loggedErrors++ < 3) Vars.Log.LogError("Haptics step failed: " + e); }

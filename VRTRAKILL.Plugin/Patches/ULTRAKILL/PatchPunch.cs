@@ -199,17 +199,26 @@ public sealed class PatchPunch
     // Returns where a parried projectile, cannonball, nail or chainsaw goes: where you look, like the flat game's camera,
     // or toward the auto aim target. It went along the arm hand before; a punch points the fist anywhere, so parried
     // shots flew off in every direction and almost never back at the enemy ("I can never send the ball back", PS VR2
-    // test). "Parry aim": "Hand" brings that back. Looking aim checks a 0.5 m wide line for an enemy, since the head
-    // moves with the punch.
-    private const float ParryAimRadius = .5f;
+    // test). With "Parry aim" on "Eyes" (the default) and a PS VR2 whose eyes the PSVR2 Toolkit tracks, it goes where
+    // your eyes look, so you can watch the enemy while your head follows the punch; without a gaze from the last 0.25 s
+    // it uses the head. "Hand" brings back the old aim. Looking aim checks a 0.5 m wide line for an enemy.
+    private const float ParryAimRadius = .5f, GazeMaxAge = .25f;
+    private static int LoggedEyeParries;
     [HarmonyPrefix]
     [HarmonyPatch(nameof(Punch.GetParryLookTarget))]
     private static bool GetParryLookTarget(ref Vector3 __result)
     {
         Camera L = Systems.VRCamera.Patches.CameraConverterP.leftEye, R = Systems.VRCamera.Patches.CameraConverterP.rightEye;
-        bool Look = Vars.Config.MBP.ParryAim != "Hand" && L != null && R != null;
+        string Aim = Vars.Config.MBP.ParryAim;
+        bool Look = Aim != "Hand" && L != null && R != null;
         Vector3 From = Look ? (L.transform.position + R.transform.position) * .5f : Vars.NDHC.transform.position;
         Vector3 vector = Look ? L.transform.forward : Vars.NonDominantHand.transform.forward;
+        if (Look && Aim == "Eyes" && Systems.Feedback.Psvr2Toolkit.TryGetGaze(GazeMaxAge, out Vector3 Gaze))
+        {
+            vector = L.transform.rotation * Gaze;
+            // the first few, so a test can check the eyes, not the head, aimed the parry
+            if (LoggedEyeParries < 5) { LoggedEyeParries++; Vars.Log.LogInfo($"Parry aimed by the eyes, {Vector3.Angle(Vector3.forward, Gaze):0}° from the head's forward."); }
+        }
 
         if ((bool)MonoSingleton<CameraFrustumTargeter>.Instance && (bool)MonoSingleton<CameraFrustumTargeter>.Instance.CurrentTarget && MonoSingleton<CameraFrustumTargeter>.Instance.IsAutoAimed)
         {

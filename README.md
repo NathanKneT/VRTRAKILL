@@ -33,7 +33,7 @@ This version runs on ULTRAKILL build 22957324 (Unity 2022.3.29f1), the current o
 - **The arm in your other hand.** The Feedbacker and Knuckleblaster punch from it, the whiplash throws from it with a small marker where it will go, and a coin tossed with a throwing move flies along your throw.
 - **Health and stamina on your wrist.** Raise your arm like reading a watch, or keep the HUD floating in the view.
 - **Prompts name your controller's buttons.** The game says "Cross" on PS VR2, "A" on Quest, "D-pad down" on Steam Frame, and so on.
-- **PS VR2 adaptive triggers.** With the [PSVR2 Toolkit](https://github.com/BnuuySolutions/PSVR2Toolkit) installed, each weapon has its own trigger feel: a crisp break on the revolver, a heavy one on the shotgun, rising resistance on the railcannon, a rattle on the nailgun.
+- **PS VR2 adaptive triggers.** With the [PSVR2 Toolkit](https://github.com/BnuuySolutions/PSVR2Toolkit) installed, each weapon has its own trigger feel: a crisp break on the revolver, a heavy one on the shotgun, a rattle on the nailgun. The trigger follows the weapon's state: heavier as a charge builds, a hum when it is charged, stiff while it cannot fire. The same Toolkit gives eye tracking: parried projectiles go where your eyes look.
 - **Layouts for every common controller.** PS VR2 Sense, Quest Touch, Index, Steam Frame, Pico, Vive wands and WMR, each with a mirrored left-handed layout.
 - **VR settings in the pause menu.** Turning, comfort vignette, HUD, rumble, height, punch mode and left-handed play, changed in the headset.
 - **Controller feedback.** Each hand rumbles on its own: gunfire in the gun hand, punches and the whiplash in the other, a tick when a hit lands, a sharp crack and a deep knock on a parry, a knock on a kill, a thud when you get hurt, and a heartbeat when your health is low.
@@ -139,7 +139,7 @@ All settings are in `BepInEx/plugins/VRTRAKILL/VRTRAKILL_Config.json`. Close the
 | `Enable movement-based punching` | `true` | `true`: hold punch and swing your fist. `false`: the punch button alone punches, like the flat game. |
 | `Required speed to punch` | `4.0` | Twice the hand speed in m/s that a swing needs (4 = 2 m/s). Lower it if punches do not register. |
 | `Coin follows the throw` | `true` | A coin (Marksman revolver) leaves your arm hand, and one tossed while your arm hand makes a throwing move flies along the throw, harder for a harder throw. A still hand tosses it as the game does. |
-| `Parry aim` | `"Head"` | Where a parried projectile, cannonball or nail goes. `"Head"`: where you look, like the flat game, and an enemy within half a metre of that line is hit. `"Hand"`: along your arm hand. The game's auto-aim still applies on top. |
+| `Parry aim` | `"Eyes"` | Where a parried projectile, cannonball or nail goes. `"Eyes"`: where your eyes look, on PS VR2 with the PSVR2 Toolkit; elsewhere, or when the eyes are not tracked, where your head looks. `"Head"`: where your head looks, like the flat game's camera. An enemy within half a metre of that line is hit. `"Hand"`: along your arm hand. The game's auto-aim still applies on top. |
 | `Snap turning` / `Smooth turning speed` | `false` / `300` | Snap or smooth turning on the right stick. |
 | `HUD on wrist` | `true` | Health, stamina and the weapon panel sit on your arm-hand forearm, facing you, like a watch. `false` brings back the panel floating low in the view. |
 | `UI Size (from 0 to 0.1)` | `0.04` | Size of the menus and the floating HUD: 0.04 spans about 56 degrees of your view. Raise it for bigger text, lower it if the edges are hard to read. "UI size" in the VR column changes it in the headset. |
@@ -218,7 +218,7 @@ Setup, testing in the game, the in-game test hooks, the left-handed layout gener
 - Guillaume-Lechevallier: thank you for your [VRTRAKILL_FRAUD fork](https://github.com/Guillaume-Lechevallier/VRTRAKILL_FRAUD), which did the groundwork for the current game build (the Unity 2022.3 VRPatcher, the OpenVR start-up and the portal overlay). Our weapon wheel, desktop view, 4-S and Clash camera, late HUD conversion and opt-in VR body are based on your work, and your notes pointed us at the shop preview problem.
 - Graze, Rokic, Party Wumpus and NavaShield contributed to the original mod.
 - Raicuparta: the globalgamemanagers patcher approach comes from Two Forks VR (MIT).
-- BnuuySolutions: the [PSVR2 Toolkit](https://github.com/BnuuySolutions/PSVR2Toolkit) (MIT) opens the PS VR2 Sense adaptive triggers on PC; the mod sends its trigger effects to it.
+- BnuuySolutions: the [PSVR2 Toolkit](https://github.com/BnuuySolutions/PSVR2Toolkit) (MIT) opens the PS VR2 Sense adaptive triggers and the headset's eye tracking on PC; the mod sends its trigger effects to it and reads the gaze from it.
 - Motaweh updated the mod for build 22957324 (1.0.x).
 - NathanKneT made version 2.0.0: the fixes for the problems players reported most, buttons inside the game, controller layouts and button prompts, left-handed play, controller feedback, settings in the headset and the comfort vignette.
 
