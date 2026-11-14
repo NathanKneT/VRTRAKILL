@@ -30,8 +30,28 @@ namespace Plugin.Systems.UI
 
         private bool WasOn;
 
+        // The panel is a child of the main canvas, which UICanvas moves every LateUpdate to 72 m ahead of the game camera
+        // and turns with it. When that ran after this script, the panel was carried along: it trailed behind the wrist
+        // whenever the player moved or turned (PS VR2 test, "it doesn't follow my left hand"). Placing it again just
+        // before rendering, after every LateUpdate, keeps it on the wrist.
+        private void OnEnable() => Application.onBeforeRender += BeforeRender;
+        private void OnDisable() => Application.onBeforeRender -= BeforeRender;
+
+        private Vector3 PlacedAt;
+        private bool Placed, LoggedMove;
+        private void BeforeRender()
+        {
+            if (Placed && !LoggedMove && (transform.position - PlacedAt).sqrMagnitude > .0025f)
+            {
+                LoggedMove = true;
+                Vars.Log.LogInfo($"Wrist HUD: moved {(transform.position - PlacedAt).magnitude * 100f:0} cm after it was placed; it is now placed again just before each frame renders.");
+            }
+            LateUpdate();
+        }
+
         private void LateUpdate()
         {
+            Placed = false;
             if (!Vars.Config.UIInteraction.WristHud)
             {
                 // switched off: the game's HUDPos puts the panel back where it floats (only on CheckPos, not every frame)
@@ -60,6 +80,7 @@ namespace Plugin.Systems.UI
             transform.localScale = new Vector3(Scale / Parent.x, Scale / Parent.y, Scale / Parent.z);
             // put the middle of what is shown at the wrist point, not the canvas's pivot
             transform.position = Pos - transform.TransformVector(ContentCenter);
+            PlacedAt = transform.position; Placed = true;
         }
 
         // Finds the bounds of the visible graphics in the canvas's local units.
