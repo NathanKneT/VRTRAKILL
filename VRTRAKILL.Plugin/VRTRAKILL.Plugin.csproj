@@ -246,6 +246,7 @@
     <Compile Include="Patches\ULTRAKILL\PatchRocketLauncher.cs" />
     <Compile Include="Patches\ULTRAKILL\PatchShotgunHammer.cs" />
     <Compile Include="Patches\ULTRAKILL\PatchHookArm.cs" />
+    <Compile Include="Patches\ULTRAKILL\ExplosionComfortP.cs" />
     <Compile Include="Patches\ULTRAKILL\PatchPunch.cs" />
     <Compile Include="Patches\ULTRAKILL\VrGunsController.cs" />
     <Compile Include="Patches\Visual\A.cs" />
