@@ -650,7 +650,7 @@ namespace Plugin.Systems
         // A line "streamertest": in the level, records 8 s of frame times and SteamVR's dropped and reprojected frames
         // with the streamer view off, then 8 s with it on; saves the streamer picture as a BMP file in the BepInEx folder,
         // logs its mean brightness and colour count (a black or single-colour picture means nothing was drawn) and how
-        // often the window drew it. In VR, reading the screen back returns an eye, not the window, so the window itself
+        // often the monitor canvas showed it. In VR, reading the screen back returns an eye, not the window, so the window itself
         // (with the HUD and overlays) is checked with a desktop screenshot. The streamer view setting is put back.
         private static bool StreamerTest;
         private static IEnumerator CheckStreamer(System.Diagnostics.Stopwatch Clock)
@@ -663,9 +663,9 @@ namespace Plugin.Systems
             yield return StreamerFrames(Clock, "off");
             Vars.Config.StreamerView.On = true;
             T = Clock.Elapsed.TotalSeconds; while (Clock.Elapsed.TotalSeconds < T + 2) yield return null;
-            int Draws = VRCamera.StreamerView.Draws;
+            int Draws = VRCamera.StreamerOverlay.Shown;
             yield return StreamerFrames(Clock, "on");
-            Vars.Log.LogWarning($"Streamer test: the window drew the picture {VRCamera.StreamerView.Draws - Draws} times in 8 s; camera at {(VRCamera.StreamerView.WorldCamera != null ? VRCamera.StreamerView.WorldCamera.transform.position.ToString() : "none")}.");
+            Vars.Log.LogWarning($"Streamer test: the monitor showed the picture {VRCamera.StreamerOverlay.Shown - Draws} times in 8 s; camera at {(VRCamera.StreamerView.WorldCamera != null ? VRCamera.StreamerView.WorldCamera.transform.position.ToString() : "none")}.");
 
             RenderTexture Pic = VRCamera.StreamerView.Picture;
             if (Pic == null) Vars.Log.LogWarning("Streamer test: no picture.");

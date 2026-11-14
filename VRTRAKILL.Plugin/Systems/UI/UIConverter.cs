@@ -71,6 +71,7 @@ namespace Plugin.Systems.UI
         public static void ConvertCanvas(Canvas C, bool Force = false, bool DontAddComponent = false)
         {
             if (C == null) return; // callers pass GetComponent results; a missing canvas must not throw inside a game method
+            if (C.GetComponent<VRCamera.MonitorOnly>() != null) return; // the streamer view's monitor canvas (StreamerOverlay)
             C.worldCamera = UIEventCamera;
             if (!Force && C.renderMode != RenderMode.ScreenSpaceOverlay) return;
             C.gameObject.layer = (int)Layers.UI;

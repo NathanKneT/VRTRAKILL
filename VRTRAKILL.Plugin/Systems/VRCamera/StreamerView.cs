@@ -13,20 +13,18 @@ namespace Plugin.Systems.VRCamera
     //  - the horizon is levelled ("Level horizon", 1 = always level), fading out when looking straight up or down;
     //  - a horizontal field of view (90 degrees by default) on a 16:9 picture, letterboxed to the window;
     //  - rendered at "Frame rate" (60 by default: every second frame at 120 Hz) into a picture of "Height in pixels",
-    //    so the headset keeps its frame rate. The window shows the last picture every frame.
-    // The comfort vignette and the low health glow belong to the eyes and are hidden from it. A HUD and the gaze,
-    // parry and trigger overlays for videos are drawn on top (StreamerOverlay). The toggle key ("Toggle streamer view", T) and "STREAMER VIEW" in the VR column turn
-    // it on and off; the choice is saved. Off, the window shows the headset mirror as before.
+    //    so the headset keeps its frame rate. The monitor shows the last picture every frame.
+    // The comfort vignette and the low health glow belong to the eyes and are hidden from it. StreamerOverlay shows the
+    // picture on the monitor, with a HUD and the gaze, parry and trigger overlays for videos. The toggle key ("Toggle
+    // streamer view", T) and "STREAMER VIEW" in the VR column turn it on and off; the choice is saved. Off, the monitor
+    // shows the headset mirror as before.
     [DefaultExecutionOrder(1000)] // after CameraController (eyes placed) and PortalManagerV2 (999)
     internal sealed class StreamerView : MonoBehaviour
     {
         public static StreamerView Instance { get; private set; }
         public static Camera WorldCamera => Instance != null ? Instance.World : null;
-        // where the picture is drawn in the window, for overlays
-        public static Rect ScreenRect { get; private set; }
-        // for the developer test hook: the last picture, and how many times the window has drawn it
+        // the last picture, shown on the monitor by StreamerOverlay
         internal static RenderTexture Picture => Instance != null ? Instance.Target : null;
-        internal static int Draws;
         public static bool Showing => Instance != null && Instance.Target != null && Vars.Config.StreamerView.On && XRSettings.isDeviceActive;
 
         private Camera World, UI;
@@ -36,11 +34,11 @@ namespace Plugin.Systems.VRCamera
         private Vector3 LocalPos;
         private Quaternion LocalRot, Rig, LastLocalTarget;
         private float Accumulated;
-        private bool MirrorChanged; private GameViewRenderMode SavedMirror;
 
         public static void Create(GameObject Host)
         {
             if (Instance == null) Instance = Host.AddComponent<StreamerView>();
+            StreamerOverlay.Create();
         }
 
         public static void Toggle()
@@ -59,7 +57,6 @@ namespace Plugin.Systems.VRCamera
         private void LateUpdate()
         {
             bool Want = Vars.Config.StreamerView.On && XRSettings.isDeviceActive;
-            SetMirror(!Want);
             if (!Want) { Smoothed = false; return; }
             Camera L = Patches.CameraConverterP.leftEye, R = Patches.CameraConverterP.rightEye;
             if (L == null || R == null) return;
@@ -181,36 +178,11 @@ namespace Plugin.Systems.VRCamera
             if (Patches.CameraConverterP.EyesThroughPortals) Patches.CameraConverterP.MoveFromPlayerThroughPortals(World.transform);
         }
 
-        // Off: the window shows the headset mirror, as it did. On: the mirror copy is skipped, the picture covers the window.
-        private void SetMirror(bool Mirror)
-        {
-            try
-            {
-                if (!Mirror && !MirrorChanged) { SavedMirror = XRSettings.gameViewRenderMode; XRSettings.gameViewRenderMode = GameViewRenderMode.None; MirrorChanged = true; }
-                else if (Mirror && MirrorChanged) { XRSettings.gameViewRenderMode = SavedMirror; MirrorChanged = false; }
-            }
-            catch (System.Exception) { MirrorChanged = !Mirror; } // runtimes without a mirror setting: the picture covers it anyway
-        }
 
-        private void OnGUI()
-        {
-            if (Event.current.type != EventType.Repaint || !Showing) return;
-            GUI.depth = 10; // under the start-up status message
-            Color Was = GUI.color; GUI.color = Color.black;
-            GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture);
-            GUI.color = Was;
-            float W = Screen.width, H = W * 9f / 16f;
-            if (H > Screen.height) { H = Screen.height; W = H * 16f / 9f; }
-            ScreenRect = new Rect((Screen.width - W) * .5f, (Screen.height - H) * .5f, W, H);
-            GUI.DrawTexture(ScreenRect, Target, ScaleMode.StretchToFill, false);
-            Draws++;
-            StreamerOverlay.Draw(ScreenRect);
-        }
 
         private void OnDestroy()
         {
             if (Target != null) { Target.Release(); Destroy(Target); }
-            SetMirror(true);
         }
     }
 }
