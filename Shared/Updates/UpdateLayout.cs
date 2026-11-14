@@ -10,8 +10,8 @@ namespace VRTRAKILL.Updates
     // File names, folders and path rules shared by the update check (plugin) and the update install (VRPatcher).
     internal static class UpdateLayout
     {
-        public const string LatestReleaseUrl = "https://api.github.com/repos/motaweh/VRTRAKILL/releases/latest";
-        public const string ReleasesPageUrl = "https://github.com/motaweh/VRTRAKILL/releases";
+        public const string LatestReleaseUrl = "https://api.github.com/repos/NathanKneT/VRTRAKILL/releases/latest";
+        public const string ReleasesPageUrl = "https://github.com/NathanKneT/VRTRAKILL/releases";
         public const string SumsName = "SHA256SUMS.txt";
         public const string SignatureName = "SHA256SUMS.txt.sig";
         public const string ReadyName = "ready.txt";

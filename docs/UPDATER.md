@@ -1,6 +1,6 @@
 # Update check and auto update
 
-Once per game start, a few seconds after launch, the mod asks GitHub for the latest VRTRAKILL release. It sends one plain GET request to `https://api.github.com/repos/motaweh/VRTRAKILL/releases/latest` with the header `User-Agent: VRTRAKILL/<your version>`. It sends no personal data, no game data and no ID. If you are offline or GitHub does not answer within 10 seconds, the check is skipped until the next start. Prereleases are ignored.
+Once per game start, a few seconds after launch, the mod asks GitHub for the latest VRTRAKILL release. It sends one plain GET request to `https://api.github.com/repos/NathanKneT/VRTRAKILL/releases/latest` with the header `User-Agent: VRTRAKILL/<your version>`. It sends no personal data, no game data and no ID. If you are offline or GitHub does not answer within 10 seconds, the check is skipped until the next start. Prereleases are ignored.
 
 The `"Auto update"` setting in `VRTRAKILL_Config.json` controls what happens:
 

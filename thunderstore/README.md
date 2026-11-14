@@ -85,7 +85,7 @@ While VR is not running, a box at the top of the game window on your monitor say
 - A single press of (R) Circle or (R) B does nothing in play, so the button only pauses on a double tap. In a menu, one press goes back one page.
 - With "Left handed" on, every button and stick swaps sides, and the prompts follow.
 
-Maps for Index, Steam Frame, Vive and WMR, and the launch steps for each connection, are in [docs/HEADSETS.md](https://github.com/motaweh/VRTRAKILL/blob/ultrakill-22957324/docs/HEADSETS.md) on GitHub.
+Maps for Index, Steam Frame, Vive and WMR, and the launch steps for each connection, are in [docs/HEADSETS.md](https://github.com/NathanKneT/VRTRAKILL/blob/main/docs/HEADSETS.md) on GitHub.
 
 If the buttons act like an older version, pick the default layout again: SteamVR > Settings > Controllers > Manage Controller Bindings > ULTRAKILL > Default.
 
@@ -121,6 +121,6 @@ Steam's verify step does not remove extra files, so do step 2 as well. "Start va
 
 ## License
 
-AGPL-3.0. The source code is on [GitHub](https://github.com/motaweh/VRTRAKILL). `LICENSE.md` and `THIRD_PARTY_NOTICES.md` are in the mod's plugin folder. Third-party files (SteamVR plugin, OpenVR, Unity XR packages, AssetsTools.NET, Newtonsoft.Json and others) keep their own licenses.
+AGPL-3.0. The source code is on [GitHub](https://github.com/NathanKneT/VRTRAKILL). `LICENSE.md` and `THIRD_PARTY_NOTICES.md` are in the mod's plugin folder. Third-party files (SteamVR plugin, OpenVR, Unity XR packages, AssetsTools.NET, Newtonsoft.Json and others) keep their own licenses.
 
 This is a fan project. It is not made by or connected to New Blood. You need your own copy of ULTRAKILL.
