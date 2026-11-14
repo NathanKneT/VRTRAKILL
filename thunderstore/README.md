@@ -1,6 +1,6 @@
 # VRTRAKILL
 
-Play ULTRAKILL in VR, through SteamVR. You aim with your hands, punch by swinging your fist, throw the whiplash from your other hand and read your health on your wrist. Version 2.0.0.
+Play ULTRAKILL in VR, through SteamVR. You aim with your hands, punch by swinging your fist, throw the whiplash from your other hand and read your health on your wrist. Version 2.0.1.
 
 This version runs on the current ULTRAKILL on Steam: build 22957324 (Unity 2022.3.29f1). You do not need to downgrade the game. It was built and tested on build 22957324 only. If Steam updates the game, the mod can break until it gets an update.
 
@@ -114,6 +114,10 @@ With `"Start in VR"` on `"Auto"` (the default), the game starts in VR when Steam
 3. In Steam, right-click ULTRAKILL > Properties > Installed Files > Verify integrity of game files. This restores the original `globalgamemanagers`.
 
 Steam's verify step does not remove extra files, so do step 2 as well. "Start vanilla" in the mod manager does not undo these changes.
+
+## AI use
+
+Version 2.0 was made with the help of an AI assistant: Anthropic's Claude wrote and refactored much of the new code, the tests and the documentation, under the maintainer's direction. The changes were reviewed and tested in game, with automated in-game checks and by playing with a PS VR2. The code of earlier versions comes from the authors listed under Credits. As Thunderstore asks of mods made with AI, the mod's DLLs also say so in their assembly metadata (`AI_Assisted_Creation`, `AI_Model_Vendor`).
 
 ## Credits
 

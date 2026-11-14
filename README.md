@@ -1,6 +1,6 @@
 # VRTRAKILL
 
-![Version 2.0.0](https://img.shields.io/badge/version-2.0.0-blue)
+![Version 2.0.1](https://img.shields.io/badge/version-2.0.1-blue)
 ![ULTRAKILL build 22957324](https://img.shields.io/badge/ULTRAKILL-build_22957324-b00)
 ![SteamVR](https://img.shields.io/badge/runtime-SteamVR-1b2838)
 ![BepInEx 5.4.23.5](https://img.shields.io/badge/BepInEx-5.4.23.5-orange)
@@ -25,6 +25,7 @@ This version runs on ULTRAKILL build 22957324 (Unity 2022.3.29f1), the current o
 - [VR or flat](#vr-or-flat)
 - [Uninstall](#uninstall)
 - [Building from source](#building-from-source)
+- [AI use](#ai-use)
 - [Credits](#credits)
 - [License](#license)
 
@@ -254,6 +255,10 @@ dotnet build VRTRAKILL.sln -c Release -p:ULTRAKILLDir="<game folder>"
 ```
 
 Setup, testing in the game, the in-game test hooks, the left-handed layout generator and packaging are in [docs/BUILDING.md](docs/BUILDING.md).
+
+## AI use
+
+Version 2.0 was made with the help of an AI assistant: Anthropic's Claude wrote and refactored much of the new code, the tests and the documentation, under the maintainer's direction. The changes were reviewed and tested in game, with automated in-game checks and by playing with a PS VR2. The code of earlier versions comes from the authors listed under Credits. As Thunderstore asks of mods made with AI, the mod's DLLs also say so in their assembly metadata (`AI_Assisted_Creation`, `AI_Model_Vendor`).
 
 ## Credits
 

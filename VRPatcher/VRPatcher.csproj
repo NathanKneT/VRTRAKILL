@@ -68,6 +68,7 @@
   <ItemGroup>
     <Compile Include="Patcher.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="..\Shared\AIDisclosure.cs" Link="Properties\AIDisclosure.cs" />
     <Compile Include="UpdateApplier.cs" />
     <Compile Include="..\Shared\Updates\ReleaseKey.cs" Link="Updates\ReleaseKey.cs" />
     <Compile Include="..\Shared\Updates\ReleaseVerifier.cs" Link="Updates\ReleaseVerifier.cs" />

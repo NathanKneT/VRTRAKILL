@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.0.1
+
+- The README and the mod's DLLs now say that version 2.0 was made with the help of an AI assistant (Anthropic's Claude), as Thunderstore asks of mods made with AI. Nothing else changed.
+
 ## 2.0.0
 
 A new version of motaweh's 1.0.2: the problems players reported most are fixed (from the 171 issues of the original mod), and the VR feel goes further (buttons inside the game, prompts that name your controller's buttons, layouts for more headsets, left-handed play, controller feedback, HUD on the wrist, auto height, settings in the headset):

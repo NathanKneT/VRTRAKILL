@@ -125,6 +125,7 @@
     <Compile Include="Libraries\WindowsInput\WindowsInputMessageDispatcher.cs" />
     <Compile Include="Patcher.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="..\Shared\AIDisclosure.cs" Link="Properties\AIDisclosure.cs" />
     <Compile Include="Unity.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
