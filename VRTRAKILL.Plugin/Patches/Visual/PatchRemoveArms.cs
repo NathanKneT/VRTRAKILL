@@ -41,8 +41,20 @@ internal class PatchRemoveArms
         if (Arm != null && !(GunBone != null && GunBone.IsChildOf(Arm))) { Arm.gameObject.SetActive(false); return; }
         if (LoggedShotgunParts) return;
         LoggedShotgunParts = true;
+        // the first three levels named no arm on build 22957324, so the meshes and any part named like an arm or a hand
+        // are listed at every depth, with their path
         Vars.Log.LogWarning("No right arm found to hide on the shotgun; its parts: "
-            + string.Join(", ", __instance.GetComponentsInChildren<Transform>(true).Where(T => Depth(T, __instance.transform) <= 3).Select(T => T.name)));
+            + string.Join(", ", __instance.GetComponentsInChildren<Transform>(true).Where(T => Depth(T, __instance.transform) <= 3).Select(T => T.name))
+            + ". Meshes: " + string.Join(", ", __instance.GetComponentsInChildren<Renderer>(true).Select(R => PathOf(R.transform, __instance.transform) + " (" + R.GetType().Name + ")"))
+            + ". Arm or hand parts: " + string.Join(", ", __instance.GetComponentsInChildren<Transform>(true)
+                .Where(T => T.name.IndexOf("arm", StringComparison.OrdinalIgnoreCase) >= 0 || T.name.IndexOf("hand", StringComparison.OrdinalIgnoreCase) >= 0)
+                .Select(T => PathOf(T, __instance.transform))));
+    }
+    private static string PathOf(Transform T, Transform Root)
+    {
+        string P = T.name;
+        for (T = T.parent; T != null && T != Root; T = T.parent) P = T.name + "/" + P;
+        return P;
     }
     private static int Depth(Transform T, Transform Root)
     {
