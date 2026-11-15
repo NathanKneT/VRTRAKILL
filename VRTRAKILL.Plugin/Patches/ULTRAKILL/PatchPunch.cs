@@ -219,7 +219,7 @@ public sealed class PatchPunch
             ByEyes = true;
             vector = L.transform.rotation * Gaze;
             // the first few, so a test can check the eyes, not the head, aimed the parry
-            if (LoggedEyeParries < 5) { LoggedEyeParries++; Vars.Log.LogInfo($"Parry aimed by the eyes, {Vector3.Angle(Vector3.forward, Gaze):0}° from the head's forward."); }
+            if (LoggedEyeParries < 500) { LoggedEyeParries++; Vars.Log.LogInfo($"Parry aimed by the eyes, {Vector3.Angle(Vector3.forward, Gaze):0}° from the head's forward."); }
         }
 
         if ((bool)MonoSingleton<CameraFrustumTargeter>.Instance && (bool)MonoSingleton<CameraFrustumTargeter>.Instance.CurrentTarget && MonoSingleton<CameraFrustumTargeter>.Instance.IsAutoAimed)
