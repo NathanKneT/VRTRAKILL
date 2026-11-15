@@ -1,6 +1,6 @@
 # VRTRAKILL
 
-![Version 2.0.2](https://img.shields.io/badge/version-2.0.2-blue)
+![Version 2.0.3](https://img.shields.io/badge/version-2.0.3-blue)
 ![ULTRAKILL build 22957324](https://img.shields.io/badge/ULTRAKILL-build_22957324-b00)
 ![SteamVR](https://img.shields.io/badge/runtime-SteamVR-1b2838)
 ![BepInEx 5.4.23.5](https://img.shields.io/badge/BepInEx-5.4.23.5-orange)
