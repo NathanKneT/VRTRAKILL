@@ -131,6 +131,10 @@ namespace Plugin.Systems.VRCamera
             UI.enabled = false;
             UI.clearFlags = CameraClearFlags.Depth;
             UI.allowMSAA = false;
+            // the menus sit 72 m away: with occlusion culling the level's walls hid them, and the pause menu and VR column
+            // never showed in the picture in a level (only the controller's laser did). Same as the headset's UI camera
+            // (UIConverter): UI is never culled by the level.
+            UI.useOcclusionCulling = false;
             Smoothed = false;
         }
 

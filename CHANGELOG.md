@@ -4,6 +4,7 @@
 
 - Streamer view: the gaze ring is thicker and more opaque (85% instead of 50%), so it stays visible in a compressed video.
 - Streamer view: the game's full-screen effects (parry flash, hurt screen, fades to black or white, underwater tint) now cover the whole picture. The mod makes them bigger to fill the headset's view; seen from the streamer camera they covered only part of the picture, in big pixel blocks (a parry showed a brown shape over half the screen).
+- Streamer view: the pause menu and the VR column show in levels. The level's walls hid them from the streamer camera (Unity's occlusion culling), so only the controller's laser could be seen.
 
 ## 2.0.2
 
