@@ -166,11 +166,11 @@ namespace Plugin.Systems.VRCamera
             FeedText.overflowMode = TextOverflowModes.Truncate;
 
             // gaze ring and its trail, the parry path, the labels
-            Sprite RingSprite = Sprite.Create(RingTexture(64, 25f, 31f), new Rect(0, 0, 64, 64), new Vector2(.5f, .5f));
+            Sprite RingSprite = Sprite.Create(RingTexture(64, 21f, 31f), new Rect(0, 0, 64, 64), new Vector2(.5f, .5f));
             Sprite Dot = Sprite.Create(RingTexture(16, 0f, 7f), new Rect(0, 0, 16, 16), new Vector2(.5f, .5f));
             for (int i = 0; i < TrailDots; i++) Trail.Add(Marker(Dot, 7f));
             for (int i = 0; i < PathDots; i++) Path.Add(Marker(Dot, 7f));
-            RingImage = Marker(RingSprite, 36f); Ring = RingImage.rectTransform;
+            RingImage = Marker(RingSprite, 42f); Ring = RingImage.rectTransform;
             ParryText = Text(Rect(View, "Parry", new Vector2(.5f, .88f), new Vector2(.5f, .88f), Vector2.zero, new Vector2(900, 60)), "Text", 40, TextAlignmentOptions.Center);
             WarningText = Text(Rect(View, "Warning", new Vector2(.5f, .38f), new Vector2(.5f, .38f), Vector2.zero, new Vector2(600, 50)), "Text", 34, TextAlignmentOptions.Center);
             RectTransform Triggers = Rect(View, "Triggers", new Vector2(1, 0), new Vector2(1, 0), new Vector2(-30, 30), new Vector2(320, 64));
@@ -440,7 +440,7 @@ namespace Plugin.Systems.VRCamera
             if (!HaveGaze || GazeAlpha <= 0f) { RingImage.enabled = false; return; }
             float Age = Now - LastParryTime;
             float Pulse = Age < .5f && LastParryByEyes ? 1f + (1f - Age / .5f) * 1.2f : 1f;
-            Place(RingImage, Gaze, new Color(1, 1, 1, .5f * GazeAlpha), Pulse);
+            Place(RingImage, Gaze, new Color(1, 1, 1, .85f * GazeAlpha), Pulse);
         }
 
         // ---- Parry: the path from the arm hand to where it was sent ----

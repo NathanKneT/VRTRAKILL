@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.0.3
+
+- Streamer view: the gaze ring is thicker and more opaque (85% instead of 50%), so it stays visible in a compressed video.
+
 ## 2.0.2
 
 - The Thunderstore version has no update check, download or install at all (asked by the Thunderstore moderators): it makes no network request, and your mod manager updates it. The GitHub zips keep the check and the signed installer.
