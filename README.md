@@ -8,7 +8,7 @@
 
 Play ULTRAKILL in VR. You aim with your hands, punch by swinging your fist, throw the whiplash from your other hand and read your health on your wrist. It runs on the current Steam version of the game, through SteamVR, on PS VR2, Quest, Index, Steam Frame, Pico and more.
 
-![The shotgun in the gun hand and the Feedbacker in the other, seen from the headset](docs/images/shotgun.jpg)
+![An eye-aimed parry on PS VR2: the projectile flies back to the enemy the player looks at (streamer view)](docs/images/eye-aimed-parry.gif)
 
 This version runs on ULTRAKILL build 22957324 (Unity 2022.3.29f1), the current one on Steam. You do not need to downgrade the game. It was built and tested on that build only. If Steam updates the game, the mod can break until it gets an update.
 
@@ -46,6 +46,17 @@ This version runs on ULTRAKILL build 22957324 (Unity 2022.3.29f1), the current o
 - **A streamer view for recording.** Press `T`, or turn on STREAMER VIEW in the VR column, and the monitor shows a smoothed, level 16:9 view at 60 frames a second instead of the shaky headset mirror, with a HUD, and on PS VR2 a ring where your eyes look and the path of eye-aimed parries. The headset keeps its frame rate. Recording tips are in [docs/STREAMING.md](docs/STREAMING.md).
 - **One Play button for VR and flat.** With SteamVR running the game starts in VR; without it, it starts flat on the monitor as the unmodded game. Once in VR mode, VR starts by itself as soon as SteamVR sees the headset, and while it is not running the game window says why.
 - **Install in one click.** Extract the release zip anywhere and double-click `INSTALL VRTRAKILL.bat`: it finds the game through Steam and keeps your settings. `UNINSTALL VRTRAKILL.bat` takes it all out again. Or use a mod manager.
+
+| | |
+|---|---|
+| ![A coin thrown with the hand, then shot](docs/images/coin-toss.gif) | ![The whiplash pulled by yanking the arm back](docs/images/whiplash-yank.gif) |
+| Throw the coin with your hand, then shoot it. | Yank your arm back to pull the whiplash (optional gesture). |
+| ![The trigger label of the streamer view going from CHARGE 1/4 to READY](docs/images/adaptive-triggers.gif) | ![A ground slam made by driving both fists down](docs/images/ground-slam.gif) |
+| PS VR2: the trigger follows the charge. The streamer view shows what your finger feels. | Slam by driving both fists down (optional gesture). |
+| ![The VR column next to the main menu](docs/images/comfort-settings.gif) | ![The shotgun in the gun hand and the Feedbacker in the other, seen from the headset](docs/images/shotgun.jpg) |
+| The VR column: comfort presets, turning, vignette, flashes, HUD. | Seen from the headset. |
+
+The clips come from the streamer view, recorded with a PS VR2.
 
 The full list of changes is in [CHANGELOG.md](CHANGELOG.md).
 

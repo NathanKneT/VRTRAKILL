@@ -2,6 +2,8 @@
 
 Play ULTRAKILL in VR, through SteamVR. You aim with your hands, punch by swinging your fist, throw the whiplash from your other hand and read your health on your wrist. Version 2.0.2.
 
+![An eye-aimed parry on PS VR2: the projectile flies back to the enemy the player looks at](https://raw.githubusercontent.com/NathanKneT/VRTRAKILL/main/docs/images/eye-aimed-parry.gif)
+
 This version runs on the current ULTRAKILL on Steam: build 22957324 (Unity 2022.3.29f1). You do not need to downgrade the game. It was built and tested on build 22957324 only. If Steam updates the game, the mod can break until it gets an update.
 
 ## Features
