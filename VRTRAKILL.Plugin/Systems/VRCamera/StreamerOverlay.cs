@@ -125,6 +125,8 @@ namespace Plugin.Systems.VRCamera
             Picture.raycastTarget = false;
             View = Picture.rectTransform;
             View.anchorMin = View.anchorMax = View.pivot = new Vector2(.5f, .5f); // sized every frame: Letterbox
+            // the game's screen effects over the whole picture, under everything else (UpdateEffects)
+            EffectLayer = Rect(View, "Screen effects", Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
 
             // the headset comparison, made before the HUD so the HUD stays on top (UpdateComparison)
             HeadsetFrame = Frame("Headset", out HeadsetImage, out HeadsetLabel);
@@ -193,6 +195,7 @@ namespace Plugin.Systems.VRCamera
             Picture.texture = StreamerView.Picture;
             Letterbox();
             UpdateComparison();
+            UpdateEffects();
             Shown++;
             // the game's font is loaded with its UI, after this canvas is made
             if (!FontSet && GameFont() is TMP_FontAsset Font)
@@ -473,6 +476,39 @@ namespace Plugin.Systems.VRCamera
         }
 
         private static void Fill(RectTransform R, float Amount) => R.anchorMax = new Vector2(Mathf.Clamp01(Amount), 1f);
+
+        // ---- The game's screen effects (StreamerView.ScreenEffects), over the whole picture ----
+        // Each one shown in the game is copied here every frame (sprite, colour, the "Screen flashes" cap), so a parry
+        // flash, a fade or the hurt screen fills the picture as it fills the player's view. Not in the comparison, which
+        // shows two pictures side by side.
+        private RectTransform EffectLayer;
+        private readonly List<Image> Effects = new List<Image>();
+        private void UpdateEffects()
+        {
+            int n = 0;
+            if (string.Equals(Vars.Config.StreamerView.Comparison ?? "Off", "Off", System.StringComparison.OrdinalIgnoreCase))
+                foreach (Image S in StreamerView.ScreenEffects)
+                {
+                    if (S == null || !S.isActiveAndEnabled) continue;
+                    Color C = S.color;
+                    if (S.GetComponent<UI.FlashLimiter>() != null) C.a = Mathf.Min(C.a, UI.FlashLimiter.Cap);
+                    if (C.a <= .005f) continue;
+                    if (n == Effects.Count)
+                    {
+                        Image New = new GameObject("Effect", typeof(RectTransform)).AddComponent<Image>();
+                        New.transform.SetParent(EffectLayer, false);
+                        RectTransform R = New.rectTransform; R.anchorMin = Vector2.zero; R.anchorMax = Vector2.one; R.sizeDelta = Vector2.zero;
+                        New.raycastTarget = false;
+                        Effects.Add(New);
+                    }
+                    Image E = Effects[n++];
+                    E.sprite = S.sprite;
+                    E.type = S.type == Image.Type.Sliced ? Image.Type.Sliced : Image.Type.Simple;
+                    E.color = C;
+                    E.enabled = true;
+                }
+            for (; n < Effects.Count; n++) Effects[n].enabled = false;
+        }
 
         private static void SetText(TMP_Text T, string S, Color C)
         {

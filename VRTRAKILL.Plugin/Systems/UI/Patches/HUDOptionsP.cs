@@ -28,6 +28,8 @@ namespace Plugin.Systems.UI.Patches
                     // the bright ones are capped by "Screen flashes"; fades to black are left alone
                     if (ScreenEffect == "HurtScreen" || ScreenEffect == "ParryFlash" || ScreenEffect == "White")
                         FlashLimiter.Attach(T);
+                    // the streamer view draws them over its whole picture instead (StreamerView.ScreenEffects)
+                    VRCamera.StreamerView.AddScreenEffect(T.GetComponent<Image>());
                 }
                 catch { continue; }
 

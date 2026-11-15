@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.XR;
 
 namespace Plugin.Systems.VRCamera
@@ -153,8 +155,22 @@ namespace Plugin.Systems.VRCamera
             return true;
         }
 
-        // ForViewers: hides what belongs to the player's eyes (the vignette) and the game's floating style panel, which
-        // the monitor HUD replaces. VerticalFov below 0: the "Field of view" setting.
+        // The game's full-screen effects (parry flash, hurt screen, fades to black or white, the underwater tint), made 10
+        // times bigger so they fill the headset's view (HUDOptionsP). Seen from this camera, which is not at the eyes and
+        // has a narrower view, they covered only part of the picture, in big pixel blocks (a parry showed a brown shape
+        // over half the screen). The viewers' render leaves them out and the monitor HUD draws them over the whole picture
+        // (StreamerOverlay.UpdateEffects).
+        internal static readonly List<Image> ScreenEffects = new List<Image>();
+        private static readonly List<Image> HiddenEffects = new List<Image>();
+        internal static void AddScreenEffect(Image I)
+        {
+            ScreenEffects.RemoveAll(E => E == null);
+            if (I != null && !ScreenEffects.Contains(I)) ScreenEffects.Add(I);
+        }
+
+        // ForViewers: hides what belongs to the player's eyes (the vignette), the game's floating style panel, which
+        // the monitor HUD replaces, and the game's screen effects (ScreenEffects). VerticalFov below 0: the "Field of
+        // view" setting.
         private void Draw(Camera L, RenderTexture Into, float VerticalFov = -1f, bool ForViewers = true)
         {
             World.nearClipPlane = L.nearClipPlane; World.farClipPlane = L.farClipPlane;
@@ -177,11 +193,17 @@ namespace Plugin.Systems.VRCamera
             Transform Style = ForViewers && Vars.Config.StreamerView.Hud != "Off" ? StylePanel() : null;
             Vector3 StyleAt = Style != null ? Style.position : default;
             if (Style != null) Style.position = StyleAt + Vector3.down * 100000f;
+            HiddenEffects.Clear();
+            if (ForViewers)
+                foreach (Image E in ScreenEffects)
+                    if (E != null && E.enabled) { E.enabled = false; HiddenEffects.Add(E); }
             try { World.Render(); UI.Render(); }
             finally
             {
                 if (Ring != null) Ring.enabled = RingWas;
                 if (Style != null) Style.position = StyleAt;
+                foreach (Image E in HiddenEffects) if (E != null) E.enabled = true;
+                HiddenEffects.Clear();
             }
         }
 
