@@ -5,6 +5,7 @@
 ![SteamVR](https://img.shields.io/badge/runtime-SteamVR-1b2838)
 ![BepInEx 5.4.23.5](https://img.shields.io/badge/BepInEx-5.4.23.5-orange)
 ![License AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-green)
+[![On Thunderstore](https://img.shields.io/badge/Thunderstore-VRTRAKILL-23FFB0)](https://thunderstore.io/c/ultrakill/p/NathanKneT/VRTRAKILL/)
 
 Play ULTRAKILL in VR. You aim with your hands, punch by swinging your fist, throw the whiplash from your other hand and read your health on your wrist. It runs on the current Steam version of the game, through SteamVR, on PS VR2, Quest, Index, Steam Frame, Pico and more.
 
@@ -45,7 +46,7 @@ This version runs on ULTRAKILL build 22957324 (Unity 2022.3.29f1), the current o
 - **Full frame rate.** The desktop frame cap and vsync are off while VR runs, so the game keeps up with a 90 or 120 Hz headset.
 - **A streamer view for recording.** Press `T`, or turn on STREAMER VIEW in the VR column, and the monitor shows a smoothed, level 16:9 view at 60 frames a second instead of the shaky headset mirror, with a HUD, and on PS VR2 a ring where your eyes look and the path of eye-aimed parries. The headset keeps its frame rate. Recording tips are in [docs/STREAMING.md](docs/STREAMING.md).
 - **One Play button for VR and flat.** With SteamVR running the game starts in VR; without it, it starts flat on the monitor as the unmodded game. Once in VR mode, VR starts by itself as soon as SteamVR sees the headset, and while it is not running the game window says why.
-- **Install in one click.** Extract the release zip anywhere and double-click `INSTALL VRTRAKILL.bat`: it finds the game through Steam and keeps your settings. `UNINSTALL VRTRAKILL.bat` takes it all out again. Or use a mod manager.
+- **Install in one click.** Extract the release zip anywhere and double-click `INSTALL VRTRAKILL.bat`: it finds the game through Steam and keeps your settings. `UNINSTALL VRTRAKILL.bat` takes it all out again. Or install it [from Thunderstore](https://thunderstore.io/c/ultrakill/p/NathanKneT/VRTRAKILL/) with a mod manager.
 
 | | |
 |---|---|
@@ -77,7 +78,7 @@ It finds ULTRAKILL through Steam, on any drive, and copies the mod into the game
 
 ### With a mod manager (r2modman, Gale)
 
-Install VRTRAKILL from the mod manager, start SteamVR, then start the game with "Start modded". The steps and the files the mod copies into the game folder are in [thunderstore/README.md](thunderstore/README.md).
+VRTRAKILL is [on Thunderstore](https://thunderstore.io/c/ultrakill/p/NathanKneT/VRTRAKILL/). Search for "VRTRAKILL" in the mod manager's ULTRAKILL profile and install it, start SteamVR, then start the game with "Start modded". The steps and the files the mod copies into the game folder are in [thunderstore/README.md](thunderstore/README.md).
 
 ### By hand
 
