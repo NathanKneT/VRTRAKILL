@@ -90,7 +90,9 @@ namespace Plugin.Systems.VRCamera
             if (!Instance.gameObject.activeSelf) { Instance.gameObject.SetActive(true); Note("its object was turned off"); }
             if (!Instance.enabled) { Instance.enabled = true; Note("it was disabled"); }
             // the same pass turns off the canvas scaler, and the HUD sizes are for its 1920x1080 reference
-            foreach (Behaviour B in Instance.GetComponents<Behaviour>())
+            // into a kept list: this runs every frame, streamer view on or off, and GetComponents<T>() made a new array each time
+            Instance.GetComponents(Behaviours);
+            foreach (Behaviour B in Behaviours)
                 if (!B.enabled && !(B is Canvas)) { B.enabled = true; Note(B.GetType().Name + " was disabled"); }
             // and the images inside it: the background, the picture and the HUD bars (a test capture of the window had
             // the gaze ring, which is turned on every frame, but no HUD)
@@ -100,6 +102,7 @@ namespace Plugin.Systems.VRCamera
                 if (G != null && !G.enabled) { G.enabled = true; Off++; }
             if (Off > 0) Note("images", Off + " of its " + Instance.AlwaysOn.Length + " picture and HUD images were disabled");
         }
+        private static readonly List<Behaviour> Behaviours = new List<Behaviour>();
         // each kind once, so a pass that runs again on every scene load does not fill the log
         private static readonly HashSet<string> Noted = new HashSet<string>();
         private static void Note(string Kind, string What = null)

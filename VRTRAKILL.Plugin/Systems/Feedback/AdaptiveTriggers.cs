@@ -92,7 +92,7 @@ namespace Plugin.Systems.Feedback
                 case "jackhammer":
                     ShotgunHammer H = (ShotgunHammer)CachedComponent;
                     if (H.chargingSwing && H.swingCharge >= 1f) return ("jackhammer ready", Ready(Hand));
-                    if (H.chargingSwing) { int L = Level(H.swingCharge); return ("jackhammer " + L, Feedback(Hand, 2, (byte)Mathf.Min(8, 5 + L))); }
+                    if (H.chargingSwing) { int L = Level(H.swingCharge); return (LevelKey("jackhammer", L), Feedback(Hand, 2, (byte)Mathf.Min(8, 5 + L))); }
                     return ("jackhammer", Feedback(Hand, 2, 6));                    // firm all the way
                 case "nailgun":
                     if (((Nailgun)CachedComponent).burnOut) return ("nailgun burnt out", Locked(Hand));
@@ -114,7 +114,14 @@ namespace Plugin.Systems.Feedback
         private static (string, byte[]) Charging(string Name, byte Hand, float Charge, byte Start, byte End, byte Strength)
         {
             int L = Level(Charge);
-            return (Name + " " + L, Weapon(Hand, Start, End, (byte)Mathf.Min(8, Strength + L)));
+            return (LevelKey(Name, L), Weapon(Hand, Start, End, (byte)Mathf.Min(8, Strength + L)));
+        }
+        // "shotgun 2" and the like, made once instead of every frame of a charge
+        private static readonly System.Collections.Generic.Dictionary<string, string[]> LevelKeys = new System.Collections.Generic.Dictionary<string, string[]>();
+        private static string LevelKey(string Name, int L)
+        {
+            if (!LevelKeys.TryGetValue(Name, out string[] Keys)) LevelKeys[Name] = Keys = new string[5];
+            return Keys[L] ??= Name + " " + L;
         }
         private static int Level(float Charge) => Mathf.Clamp(Mathf.CeilToInt(Charge * 4f), 1, 4);
         // a hum from the first tenth of the pull: charged, fire when you like
@@ -144,10 +151,29 @@ namespace Plugin.Systems.Feedback
             return null;
         }
 
-        private static byte[] Off(byte Hand) => Psvr2Toolkit.Packet(CmdOff, Hand);
-        private static byte[] Feedback(byte Hand, byte Position, byte Strength) => Psvr2Toolkit.Packet(CmdFeedback, Hand, Position, Strength);
-        private static byte[] Weapon(byte Hand, byte Start, byte End, byte Strength) => Psvr2Toolkit.Packet(CmdWeapon, Hand, Start, End, Strength);
-        private static byte[] Vibration(byte Hand, byte Position, byte Amplitude, byte Frequency) => Psvr2Toolkit.Packet(CmdVibration, Hand, Position, Amplitude, Frequency);
+        private static byte[] Off(byte Hand) => Cached(CmdOff, Hand, 0, 0, 0, 0);
+        private static byte[] Feedback(byte Hand, byte Position, byte Strength) => Cached(CmdFeedback, Hand, 2, Position, Strength, 0);
+        private static byte[] Weapon(byte Hand, byte Start, byte End, byte Strength) => Cached(CmdWeapon, Hand, 3, Start, End, Strength);
+        private static byte[] Vibration(byte Hand, byte Position, byte Amplitude, byte Frequency) => Cached(CmdVibration, Hand, 3, Position, Amplitude, Frequency);
+
+        // Tick works out both triggers' effects every frame and sends only the ones that changed, so each frame built two
+        // packets to throw away, four small arrays each (the params array, the packet, two BitConverter arrays), 90 to
+        // 120 times a second with the Toolkit connected. There are only a few dozen different packets, and a sent packet
+        // is only ever written to the Toolkit's socket, never changed, so each is built once and reused.
+        private static readonly System.Collections.Generic.Dictionary<long, byte[]> Packets = new System.Collections.Generic.Dictionary<long, byte[]>();
+        private static byte[] Cached(ushort Cmd, byte Hand, int Count, byte A, byte B, byte C)
+        {
+            long Key = ((long)Cmd << 40) | ((long)Count << 32) | ((long)Hand << 24) | ((long)A << 16) | ((long)B << 8) | C;
+            if (Packets.TryGetValue(Key, out byte[] P)) return P;
+            switch (Count)
+            {
+                case 0: P = Psvr2Toolkit.Packet(Cmd, Hand); break;
+                case 2: P = Psvr2Toolkit.Packet(Cmd, Hand, A, B); break;
+                default: P = Psvr2Toolkit.Packet(Cmd, Hand, A, B, C); break;
+            }
+            Packets[Key] = P;
+            return P;
+        }
 
         // At exit: free both triggers, so they are not left stiff after the game (the Toolkit keeps the last effect when
         // a client goes away: the PS VR2 tester's triggers stayed stiff outside the game). Written at once from this
