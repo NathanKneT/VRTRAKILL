@@ -1,6 +1,6 @@
 # VRTRAKILL
 
-Play ULTRAKILL in VR, through SteamVR. You aim with your hands, punch by swinging your fist, throw the whiplash from your other hand and read your health on your wrist. Version 2.0.3.
+Play ULTRAKILL in VR, through SteamVR. You aim with your hands, punch by swinging your fist, throw the whiplash from your other hand and read your health on your wrist. Version 2.0.4.
 
 ![An eye-aimed parry on PS VR2: the projectile flies back to the enemy the player looks at](https://raw.githubusercontent.com/NathanKneT/VRTRAKILL/main/docs/images/eye-aimed-parry.gif)
 
