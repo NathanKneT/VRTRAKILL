@@ -3,6 +3,7 @@
 ## 2.0.4
 
 - Mirrors in the headset, two fixes (#2). The game draws a mirror by flipping the picture of a camera reflected in it, which is only right for a camera that looks through the middle of its picture, like a monitor's. A headset eye does not: each eye sees further to the outside than toward the nose. So each eye's reflection landed to the side, the two eyes in opposite directions, and portals seen in a mirror could lose their picture. The mirrored side of the view now takes each eye's own field of view into account. And a mirror seen by the right eye only (at the right edge of the view) could leave the game's "drawing a mirror" flag on while the left eye drew the rest of the level. Nothing changes outside mirrors. "Mirror fix for VR eyes" in the config (on by default, config version 25) turns both off.
+- Smooth gravity changes, for players who want them (#3). A gravity change, or a portal that turns you over, turns the view over at once, which is the comfortable choice and stays the default. GRAVITY in the VR column (or "Smooth gravity changes" in the config, config version 26) turns it over smoothly instead, in about half a second, on the curve the game uses for its own roll on a monitor ("Smooth gravity time (seconds)" sets how long): the view turns around your head while your head glides to its new place, and a portal stays seamless. Your body and movement take the new gravity at once either way; the view and your hands, and so your aim, ease into it. A checkpoint, a respawn or a teleport stays instant.
 
 ## 2.0.3
 

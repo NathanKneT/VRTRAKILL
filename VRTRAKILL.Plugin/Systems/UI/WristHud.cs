@@ -81,8 +81,8 @@ namespace Plugin.Systems.UI
 
             Transform Hand = Arms.transform;
             Vector3 Pos = Hand.TransformPoint(WristOffset);
-            CameraController CC = Vars.Registered<CameraController>();
-            Vector3 Up = CC != null ? CC.gravityRotation * Vector3.up : Vector3.up;
+            // the up the hands are placed with, so the panel turns with them while a smooth gravity change eases out
+            Vector3 Up = VRCamera.Patches.CameraConverterP.TrackingToWorld() * Vector3.up;
             // a world-space canvas reads from the side its forward points away from
             transform.rotation = Quaternion.LookRotation(Pos - Head, Up);
 

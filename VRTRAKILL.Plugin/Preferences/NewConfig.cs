@@ -38,9 +38,9 @@ namespace Plugin.Prefs
 
         // Version of the defaults this file was written with; null for files from before 2.0.0. See Migrate.
         [JsonProperty("Config version")] public int? ConfigVersion { get; set; }
-        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added. 4: auto height. 5: HUD on wrist. 6: "Left handed" renamed (was "Left handed (BROKEN)"). 7: "Windows key presses". 8: rumble settings. 9: comfort vignette. 10: smaller UI. 11: screen flashes. 12: coin throw. 13: low health warning. 14: adaptive triggers. 15: weapon charge shake. 16: parry aim. 17: parry warning. 18: parry aim by the eyes. 19: "Enable controller-based aiming" and "WHIPLASH: camera-based aiming" removed (they did nothing). 20: streamer view replaces the desktop view. 21: streamer HUD and overlay. 22: "Start in VR". 23: streamer view headset comparison. 24: movement gestures. 25: mirror fix for VR eyes.
+        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added. 4: auto height. 5: HUD on wrist. 6: "Left handed" renamed (was "Left handed (BROKEN)"). 7: "Windows key presses". 8: rumble settings. 9: comfort vignette. 10: smaller UI. 11: screen flashes. 12: coin throw. 13: low health warning. 14: adaptive triggers. 15: weapon charge shake. 16: parry aim. 17: parry warning. 18: parry aim by the eyes. 19: "Enable controller-based aiming" and "WHIPLASH: camera-based aiming" removed (they did nothing). 20: streamer view replaces the desktop view. 21: streamer HUD and overlay. 22: "Start in VR". 23: streamer view headset comparison. 24: movement gestures. 25: mirror fix for VR eyes. 26: smooth gravity changes.
         // Bump it when settings are added, so existing files are rewritten and show the new settings.
-        public const int CurrentConfigVersion = 25;
+        public const int CurrentConfigVersion = 26;
 
         // Moves values that are still the old defaults to the new defaults, once. Returns true when the file should be
         // rewritten (which also adds settings the file does not have yet).
@@ -170,6 +170,11 @@ namespace Plugin.Prefs
             // how much of the game's shake a charging weapon keeps, 0 (steady) to 1 (the game's); the full shake is a
             // rattle at arm's length in VR (Patches/ULTRAKILL/WeaponShakeP)
             [JsonProperty("Weapon charge shake")] public float WeaponShake { get; set; } = .1f;
+            // false: a gravity change turns the view over at once. true: it turns over smoothly, on the game's own curve for
+            // its roll on a monitor (Systems/VRCamera/Patches/CameraConverterP, "Smooth gravity changes")
+            [JsonProperty("Smooth gravity changes")] public bool SmoothGravity { get; set; } = false;
+            // about how long the smooth turn takes, in seconds (0.1 to 3)
+            [JsonProperty("Smooth gravity time (seconds)")] public float SmoothGravityTime { get; set; } = .5f;
         }
 
         // optional gestures for moves that stay on their buttons too (Systems/Movement/MovementGestures); off by default

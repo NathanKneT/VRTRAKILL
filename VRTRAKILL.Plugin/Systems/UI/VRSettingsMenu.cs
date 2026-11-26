@@ -137,6 +137,12 @@ namespace Plugin.Systems.UI
                 Text = () => "SCREEN FLASHES: " + (FlashLimiter.Cap >= 1f ? "FULL" : FlashLimiter.Cap <= 0f ? "OFF" : "REDUCED"),
                 Next = () => Vars.Config.Comfort.ScreenFlashes = FlashLimiter.Cap >= 1f ? "Reduced" : FlashLimiter.Cap <= 0f ? "Full" : "Off",
             });
+            // how a gravity change turns the view: at once (the comfortable default) or smoothly (VRCamera/Patches/CameraConverterP)
+            Items.Add(new Item
+            {
+                Text = () => Vars.Config.Comfort.SmoothGravity ? "GRAVITY: SMOOTH" : "GRAVITY: INSTANT",
+                Next = () => Vars.Config.Comfort.SmoothGravity = !Vars.Config.Comfort.SmoothGravity,
+            });
             Items.Add(new Item
             {
                 Text = () => Vars.Config.StreamerView.On ? "STREAMER VIEW: ON" : "STREAMER VIEW: OFF",

@@ -94,7 +94,7 @@ namespace Plugin.Systems.VRCamera.Patches
         // Drives the FPS camera rotation from the headset and places the eye cameras on the FPS player, through portals if needed.
         [HarmonyPostfix]
         [HarmonyPatch(typeof(CameraController), nameof(CameraController.LateUpdate))]
-        static void HandleRotationsAndPositions(CameraController __instance)
+        internal static void HandleRotationsAndPositions(CameraController __instance)
         {
             // the platformer camera is handled by CrashBandicrootCCP; leave its eyes there
             if (__instance.platformerCamera) return;
@@ -136,7 +136,7 @@ namespace Plugin.Systems.VRCamera.Patches
             CameraController cc = Vars.Registered<CameraController>();
             if (cc == null || cc.transform.parent == null) return Vector3.zero;
             Vector3 Head = InputTracking.GetLocalPosition(XRNode.Head);
-            Quaternion ParentRot = cc.gravityRotation * Quaternion.AngleAxis(InputVars.TurnOffset, Vector3.up);
+            Quaternion ParentRot = TargetRig(cc);
             // from the body's centre line at eye height out to the head, the way the eyes are placed below
             Vector3 From = cc.transform.parent.position + ParentRot * new Vector3(0f, Head.y + HeightAdjust, 0f);
             Vector3 Out = ParentRot * new Vector3(Head.x - HeadCentre.x, 0f, Head.z - HeadCentre.y);
@@ -219,7 +219,9 @@ namespace Plugin.Systems.VRCamera.Patches
         public static Quaternion TrackingToWorld()
         {
             CameraController cc = Vars.Registered<CameraController>();
-            return cc == null ? Quaternion.identity : cc.gravityRotation * Quaternion.AngleAxis(InputVars.TurnOffset, Vector3.up);
+            if (cc == null) return Quaternion.identity;
+            Quaternion Target = TargetRig(cc);
+            return UpdateGravityEase(cc) ? GravityEase * Target : Target;
         }
 
         // Places a transform at a pose relative to the player body, with turn and gravity applied, then moves it through crossed portals.
@@ -227,9 +229,7 @@ namespace Plugin.Systems.VRCamera.Patches
         {
             CameraController cc = Vars.Registered<CameraController>();
             if (cc == null || cc.transform.parent == null) return;
-            Quaternion parentRot =
-                cc.gravityRotation *
-                Quaternion.AngleAxis(InputVars.TurnOffset, Vector3.up);
+            Quaternion parentRot = TargetRig(cc);
 
             // auto height and "Height offset" move the eyes and the hands together, along the player's up (see UpdateHeightAdjust)
             localPosition.y += HeightAdjust;
@@ -243,7 +243,90 @@ namespace Plugin.Systems.VRCamera.Patches
             if (hands) t.rotation = parentRot * worldRotation;
             else t.rotation = worldRotation;
 
+            // a smoothed gravity change still easing out: turned around the head, which glides to its new place
+            if (UpdateGravityEase(cc))
+            {
+                Vector3 Head = TargetHead(cc, parentRot);
+                t.SetPositionAndRotation(Head + GravityEase * (t.position - Head) + GravityShift, GravityEase * t.rotation);
+            }
+
             MoveFromPlayerThroughPortals(t);
+        }
+
+        // ---- Smooth gravity changes ----
+        // A gravity change turns the player's whole frame at once (CameraController.Transform, from NewMovement.SwitchGravity
+        // and from portals that change gravity or turn you over). On a monitor the game keeps the view where it was and
+        // rolls it to the new up in about half a second (transitionRotationZ, rotationOffset); the mod drops that roll
+        // (HandleRotationsAndPositions), so in VR the room turned over in one frame, which is the comfortable choice for
+        // most players. "Smooth gravity changes" (off by default, issue #3) turns it over smoothly instead: the player's
+        // body and movement take the new gravity at once as before, but the view and the hands (and so the aim), which are
+        // placed from the tracking space, keep their old orientation and ease into the new one. They turn around the head,
+        // and the head glides in a straight line from where it was to its new place (through a portal, from where the
+        // portal carries it, so a portal stays seamless); both shrink to nothing on the game's own curve. Only changes made
+        // through CameraController.Transform ease, the ones the game rolls out on a monitor too. A checkpoint, a teleport or
+        // the camera's own reset puts the view straight at once, as on a monitor.
+        private static Quaternion GravityEase = Quaternion.identity; // the turn still to ease out, in world space, around the head
+        private static Vector3 GravityShift;                             // where the head still is from its new place, in world space
+        private static float GravityEaseSpeed;                          // the curve's speed, degrees per second
+        private static Quaternion RigBeforeTransform = Quaternion.identity;
+        private static Vector3 HeadBeforeTransform;
+        internal static Vector3? HeadAfterTravel;                         // a portal's head point, until the body has moved (OnTravel)
+        internal static int TravelFrame = -1, InstantFrame = -1;
+        private static CameraController EaseFor;
+        private static int EasedFrame = -1;
+
+        // gravity and stick turning: what the tracking space is placed with when nothing is easing
+        private static Quaternion TargetRig(CameraController cc) => cc.gravityRotation * Quaternion.AngleAxis(InputVars.TurnOffset, Vector3.up);
+        // where the head goes with that rotation (the eyes and hands are placed the same way)
+        private static Vector3 TargetHead(CameraController cc, Quaternion Rig)
+        {
+            Vector3 Head = InputTracking.GetLocalPosition(XRNode.Head);
+            Head.y += HeightAdjust; Head.x -= HeadCentre.x; Head.z -= HeadCentre.y;
+            return cc.transform.parent.position + Rig * Head;
+        }
+
+        // Moves the easing along its curve once a frame and says whether anything is still easing. With the setting off or
+        // in a new level there is nothing.
+        private static bool UpdateGravityEase(CameraController cc)
+        {
+            if (!Vars.Config.Comfort.SmoothGravity || cc != EaseFor)
+            {
+                EaseFor = cc; StopGravityEase();
+                return false;
+            }
+            // a portal head point the travel never came back for (OnTravel threw)
+            if (HeadAfterTravel.HasValue && TravelFrame != Time.frameCount) ResolveTravel(cc);
+            if (EasedFrame != Time.frameCount)
+            {
+                EasedFrame = Time.frameCount;
+                float Angle = Quaternion.Angle(Quaternion.identity, GravityEase);
+                if (Angle < .05f) StopGravityEase();
+                else
+                {
+                    // the game's own curve for its roll (Mathf.SmoothDampAngle, 0.25 s for about half a second); real time,
+                    // so slow motion and hit stops do not stretch it
+                    float SmoothTime = Mathf.Clamp(Vars.Config.Comfort.SmoothGravityTime, .1f, 3f) * .5f;
+                    float Left = Mathf.SmoothDamp(Angle, 0f, ref GravityEaseSpeed, SmoothTime, Mathf.Infinity, Time.unscaledDeltaTime);
+                    float Keep = Mathf.Clamp01(Left / Angle);
+                    GravityEase = Quaternion.Slerp(Quaternion.identity, GravityEase, Keep);
+                    GravityShift *= Keep;
+                }
+            }
+            return GravityEase != Quaternion.identity || GravityShift != Vector3.zero;
+        }
+
+        internal static void StopGravityEase()
+        {
+            GravityEase = Quaternion.identity; GravityShift = Vector3.zero; GravityEaseSpeed = 0f; HeadAfterTravel = null;
+        }
+
+        // The head glides from the point it was carried to; a jump too long to be a portal or a gravity change is dropped.
+        internal static void ResolveTravel(CameraController cc)
+        {
+            if (!HeadAfterTravel.HasValue) return;
+            Vector3 Shift = HeadAfterTravel.Value - TargetHead(cc, TargetRig(cc));
+            GravityShift = Shift.sqrMagnitude < 25f ? Shift : Vector3.zero;
+            HeadAfterTravel = null;
         }
 
         // Moves a transform through any portal crossed between the player and the transform.
@@ -300,20 +383,38 @@ namespace Plugin.Systems.VRCamera.Patches
             }
         }
 
-        // Stores the camera yaw before CameraController.Transform runs.
+        // Stores the camera yaw before CameraController.Transform runs, and where the view and the head were (smooth gravity).
         [HarmonyPrefix]
         [HarmonyPatch(typeof(CameraController), nameof(CameraController.Transform))]
         static void TransformBefore(CameraController __instance, ref float __state)
         {
             __state = __instance.rotationY;
+            if (!Vars.Config.Comfort.SmoothGravity || __instance != EaseFor || __instance.transform.parent == null) return;
+            Quaternion Target = TargetRig(__instance);
+            RigBeforeTransform = GravityEase * Target;
+            HeadBeforeTransform = TargetHead(__instance, Target) + GravityShift;
         }
-        // Adds the yaw change from CameraController.Transform to the turn offset.
+        // Adds the yaw change from CameraController.Transform to the turn offset, then, with smooth gravity changes on, keeps
+        // the view and the head where they were (carried through a portal) and leaves the change to ease out.
         [HarmonyPostfix]
         [HarmonyPatch(typeof(CameraController), nameof(CameraController.Transform))]
-        static void TransformAfter(CameraController __instance, ref float __state)
+        static void TransformAfter(CameraController __instance, ref float __state, Matrix4x4 matrix)
         {
             InputVars.TurnOffset += __instance.rotationY - __state;
+            if (!Vars.Config.Comfort.SmoothGravity || __instance != EaseFor || __instance.transform.parent == null) return;
+            if (InstantFrame == Time.frameCount) { StopGravityEase(); return; }
+            Quaternion Ease = matrix.rotation * RigBeforeTransform * Quaternion.Inverse(TargetRig(__instance));
+            // a portal that only turns you around the up axis needs no easing
+            if (Quaternion.Angle(Quaternion.identity, Ease) < .5f) { StopGravityEase(); return; }
+            GravityEase = Ease;
+            HeadAfterTravel = matrix.MultiplyPoint3x4(HeadBeforeTransform);
+            // through a portal the body moves after this (NewMovement.OnTravel); a gravity switch leaves it where it is
+            if (TravelFrame != Time.frameCount) ResolveTravel(__instance);
         }
+        // A checkpoint, a teleport or the camera's own reset puts the view straight (as on a monitor); no easing is left over.
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(CameraController), nameof(CameraController.ResetCamera))]
+        static void ResetCameraAfter() => StopGravityEase();
 
         // Returns the gun hand position as the camera default position.
         [HarmonyPrefix]
@@ -355,6 +456,64 @@ namespace Plugin.Systems.VRCamera.Patches
             __instance.GetComponentsInChildren<SkinnedMeshRenderer>(true).ToList().ForEach(x => UnityEngine.Object.Destroy(x));
             __instance.GetComponentsInChildren<MeshRenderer>(true).ToList().ForEach(x => UnityEngine.Object.Destroy(x));
             __instance.GetComponentsInChildren<GunColorGetter>(true).ToList().ForEach(x => UnityEngine.Object.Destroy(x));
+        }
+    }
+
+    // The smooth gravity change's exceptions (CameraConverterP, "Smooth gravity changes"), apart so that a game update that
+    // changes one of these methods only loses them, not the eye placement in CameraConverterP.
+    [HarmonyPatch]
+    internal static class SmoothGravityP
+    {
+        // A respawn and the teleport cheat set the gravity straight and then hand the checkpoint's own gravity to
+        // CameraController.Transform in the same call: that is put straight at once too, as on a monitor.
+        private static void Instant() { CameraConverterP.InstantFrame = Time.frameCount; CameraConverterP.StopGravityEase(); }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(CheckPoint), nameof(CheckPoint.OnRespawn))]
+        static void RespawnBefore() => Instant();
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(CheckPoint), nameof(CheckPoint.OnRespawn))]
+        static void RespawnAfter() => CameraConverterP.StopGravityEase();
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(TeleportCheat), nameof(TeleportCheat.Teleport))]
+        static void CheatTeleportBefore() => Instant();
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(TeleportCheat), nameof(TeleportCheat.Teleport))]
+        static void CheatTeleportAfter() => CameraConverterP.StopGravityEase();
+
+        // a level's teleport only sets the gravity straight when it also sets the view's own rotation; a teleport that
+        // only moves the player keeps an easing that is under way, which moves with the player
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(TeleportPlayer), nameof(TeleportPlayer.PerformTheTeleport), new[] { typeof(Transform) })]
+        static void TeleportBefore(TeleportPlayer __instance, out bool __state)
+        {
+            __state = __instance.affectRotation && __instance.notRelativeRotation;
+            if (__state) Instant();
+        }
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(TeleportPlayer), nameof(TeleportPlayer.PerformTheTeleport), new[] { typeof(Transform) })]
+        static void TeleportAfter(bool __state) { if (__state) CameraConverterP.StopGravityEase(); }
+
+        // Marks a portal traversal, whose CameraController.Transform comes before the body is moved.
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(NewMovement), nameof(NewMovement.OnTravel))]
+        static void TravelBefore() => CameraConverterP.TravelFrame = Time.frameCount;
+        // Once the body is through, the head's glide starts from where the portal carried it. The eyes were placed before the
+        // travel this frame and only moved with the body, while the right eye's view is taken after this
+        // (PortalPatch.LateUpdateRight): they are placed again, so that eye does not show the whole turn for one frame. A
+        // travel the game refused (false: a wall right behind the exit) leaves the body where it was: no easing then.
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(NewMovement), nameof(NewMovement.OnTravel))]
+        static void TravelAfter(bool? __result)
+        {
+            CameraConverterP.TravelFrame = -1;
+            if (!CameraConverterP.HeadAfterTravel.HasValue) return;
+            CameraController cc = Vars.Registered<CameraController>();
+            if (__result != true || cc == null || cc.transform.parent == null) { CameraConverterP.StopGravityEase(); return; }
+            CameraConverterP.ResolveTravel(cc);
+            if (CameraConverterP.EyesPlacedFrame == Time.frameCount && cc == CameraController.Instance && !cc.platformerCamera)
+                CameraConverterP.HandleRotationsAndPositions(cc);
         }
     }
 }
