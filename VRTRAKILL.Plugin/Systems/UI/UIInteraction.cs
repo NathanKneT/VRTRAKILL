@@ -44,7 +44,14 @@ namespace Plugin.Systems.UI
         {
             if (Cam == null) Cam = GetComponent<Camera>();
             ActiveHand = Vars.Config.Controllers.LeftHanded ? SteamVR_Input_Sources.LeftHand : SteamVR_Input_Sources.RightHand;
+            // the game reads a gamepad in its menus too (back, confirm, its own selection); a bug report should say if one is there
+            if (!LoggedGamepad && UnityEngine.InputSystem.Gamepad.current is UnityEngine.InputSystem.Gamepad Pad)
+            {
+                LoggedGamepad = true;
+                Vars.Log.LogInfo($"A gamepad is connected ({Pad.displayName}); the game also reads it in menus, beside the VR controllers.");
+            }
         }
+        private static bool LoggedGamepad;
 
         // Moves the laser to the active hand, handles hover, press, drag and release, and handles stick navigation and jump select in menus.
         public void LateUpdate()
@@ -91,7 +98,16 @@ namespace Plugin.Systems.UI
             if (Pointer != null) { SetHover(null); ClearPress(); }
             ES = NewES;
             Pointer = new PointerEventData(ES) { button = PointerEventData.InputButton.Left, pointerId = -2 };
+            // once a scene and for each new event system (up to 8 a game): another mod's event system or input module would
+            // be a second pointer beside the laser (issue #1)
+            if (EventSystemsLogged < 8)
+            {
+                EventSystemsLogged++;
+                Vars.Log.LogInfo($"Menu laser: event system \"{ES.name}\" ({FindObjectsOfType<EventSystem>().Length} in all), {ES.GetComponents<BaseInputModule>().Length} input module(s), "
+                               + $"current {(ES.currentInputModule != null ? ES.currentInputModule.GetType().Name : "none yet")}.");
+            }
         }
+        private static int EventSystemsLogged;
 
         // Hides the OS mouse from the game's input module, which also casts it through this camera and would double every click.
         private void HideModuleMouse()
@@ -113,9 +129,36 @@ namespace Plugin.Systems.UI
             transform.localRotation = Quaternion.identity;
         }
 
+        // A Quest log (Steam Link, issue #1) had 160 Unity errors "Screen position out of view frustum" in the main menu, next
+        // to the right controller coming back from "Uninitialized": the laser camera on that hand could not be turned back
+        // into a ray, for one raycast at least. Unity then casts along the world's forward axis from the hand instead, so the
+        // laser could hover something it did not point at. The laser now skips such frames, and the log says what the
+        // camera was, to tell a bad hand pose from something else.
+        private static bool Usable(Camera C)
+        {
+            float D = (C.projectionMatrix * C.worldToCameraMatrix).determinant;
+            Vector3 P = C.transform.position;
+            return !float.IsNaN(D) && !float.IsInfinity(D) && Mathf.Abs(D) > 1e-12f
+                && !float.IsNaN(P.x + P.y + P.z) && P.sqrMagnitude < 1e10f; // 100 km: no level goes there, floats fall apart past it
+        }
+        private bool LoggedUnusable;
+
         // Casts the pointer from the screen center and returns the first UI object hit.
         private GameObject Raycast()
         {
+            if (!Usable(Cam))
+            {
+                if (!LoggedUnusable)
+                {
+                    LoggedUnusable = true;
+                    Transform T = Cam.transform;
+                    Vars.Log.LogWarning($"Menu laser: its camera on the {(ActiveHand == SteamVR_Input_Sources.LeftHand ? "left" : "right")} hand cannot cast a ray (position {T.position}, "
+                                      + $"rotation {T.rotation.eulerAngles}, scale {T.lossyScale}, determinant {(Cam.projectionMatrix * Cam.worldToCameraMatrix).determinant}); the laser waits for it.");
+                }
+                Pointer.pointerCurrentRaycast = default;
+                HasHit = false;
+                return null;
+            }
             Pointer.position = new Vector2(Cam.pixelWidth / 2f, Cam.pixelHeight / 2f);
             Pointer.delta = Vector2.zero;
             Results.Clear();
