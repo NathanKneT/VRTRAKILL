@@ -27,7 +27,8 @@ namespace Plugin.Systems.VRCamera.Patches
             __instance.fakeCam.fieldOfView = __instance.playerCam.fieldOfView;
             __instance.fakeCam.targetTexture = __instance.skybox;
 
-            __instance.fakeCam.projectionMatrix = __instance.playerCam.projectionMatrix; // the only change from the game's method
+            // the only change from the game's method; a portal camera drawing a mirrored view adds its shear (MirrorStereoP)
+            __instance.fakeCam.projectionMatrix = MirrorStereoP.SkyProjection(__instance.playerCam);
 
             Shader.SetGlobalTexture("_LimboSky", __instance.skybox);
             Shader.SetGlobalFloat("_LimboSkyWidth", __instance.lastWidth);
@@ -49,7 +50,8 @@ namespace Plugin.Systems.VRCamera.Patches
             __instance.fakeCam.cullingMask = __instance.playerCam.cullingMask;
             __instance.fakeCam.fieldOfView = __instance.playerCam.fieldOfView;
             __instance.fakeCam.targetTexture = __instance.skybox;
-            __instance.fakeCam.projectionMatrix = __instance.playerCam.projectionMatrix; // the only change from the game's method
+            // the only change from the game's method; a portal camera drawing a mirrored view adds its shear (MirrorStereoP)
+            __instance.fakeCam.projectionMatrix = MirrorStereoP.SkyProjection(__instance.playerCam);
             __instance.fakeCam.Render();
 
             return false;

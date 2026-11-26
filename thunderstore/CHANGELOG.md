@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.0.4
+
+- Mirrors in the headset, two fixes (#2). The game draws a mirror by flipping the picture of a camera reflected in it, which is only right for a camera that looks through the middle of its picture, like a monitor's. A headset eye does not: each eye sees further to the outside than toward the nose. So each eye's reflection landed to the side, the two eyes in opposite directions, and portals seen in a mirror could lose their picture. The mirrored side of the view now takes each eye's own field of view into account. And a mirror seen by the right eye only (at the right edge of the view) could leave the game's "drawing a mirror" flag on while the left eye drew the rest of the level. Nothing changes outside mirrors. "Mirror fix for VR eyes" in the config (on by default, config version 25) turns both off.
+
 ## 2.0.3
 
 - Streamer view: the gaze ring is thicker and more opaque (85% instead of 50%), so it stays visible in a compressed video.

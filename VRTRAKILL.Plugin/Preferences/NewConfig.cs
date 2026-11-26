@@ -38,9 +38,9 @@ namespace Plugin.Prefs
 
         // Version of the defaults this file was written with; null for files from before 2.0.0. See Migrate.
         [JsonProperty("Config version")] public int? ConfigVersion { get; set; }
-        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added. 4: auto height. 5: HUD on wrist. 6: "Left handed" renamed (was "Left handed (BROKEN)"). 7: "Windows key presses". 8: rumble settings. 9: comfort vignette. 10: smaller UI. 11: screen flashes. 12: coin throw. 13: low health warning. 14: adaptive triggers. 15: weapon charge shake. 16: parry aim. 17: parry warning. 18: parry aim by the eyes. 19: "Enable controller-based aiming" and "WHIPLASH: camera-based aiming" removed (they did nothing). 20: streamer view replaces the desktop view. 21: streamer HUD and overlay. 22: "Start in VR". 23: streamer view headset comparison. 24: movement gestures.
+        // 2: new movement and punch defaults. 3: whiplash aim marker and height offset added. 4: auto height. 5: HUD on wrist. 6: "Left handed" renamed (was "Left handed (BROKEN)"). 7: "Windows key presses". 8: rumble settings. 9: comfort vignette. 10: smaller UI. 11: screen flashes. 12: coin throw. 13: low health warning. 14: adaptive triggers. 15: weapon charge shake. 16: parry aim. 17: parry warning. 18: parry aim by the eyes. 19: "Enable controller-based aiming" and "WHIPLASH: camera-based aiming" removed (they did nothing). 20: streamer view replaces the desktop view. 21: streamer HUD and overlay. 22: "Start in VR". 23: streamer view headset comparison. 24: movement gestures. 25: mirror fix for VR eyes.
         // Bump it when settings are added, so existing files are rewritten and show the new settings.
-        public const int CurrentConfigVersion = 24;
+        public const int CurrentConfigVersion = 25;
 
         // Moves values that are still the old defaults to the new defaults, once. Returns true when the file should be
         // rewritten (which also adds settings the file does not have yet).
@@ -220,6 +220,9 @@ namespace Plugin.Prefs
         {
             // off keeps PortalPatch.FixRed's behaviour: no blood instance buffers and no oil draw
             [JsonProperty("Game blood and oil stains (experimental)")] public bool Stains { get; set; } = false;
+            // mirrors drawn where each eye expects them; the game's mirror flip assumes a centred projection, which a headset
+            // eye does not have (Systems/VRCamera/Patches/MirrorStereoP). false gives the game's own mirrors back
+            [JsonProperty("Mirror fix for VR eyes")] public bool MirrorFix { get; set; } = true;
         }
 
         // Replaces sections that the config file set to null with their defaults.
